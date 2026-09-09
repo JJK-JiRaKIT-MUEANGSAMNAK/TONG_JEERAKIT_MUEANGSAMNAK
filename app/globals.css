@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --border: #cbd5e1;
+  --muted: #64748b;
+  --primary: #059669;
+  --primary-strong: #047857;
+  color-scheme: light;
+}
+
+:root.dark {
+  --background: #07111f;
+  --foreground: #e7eef9;
+  --surface: #101c31;
+  --surface-raised: #16253d;
+  --border: #263954;
+  --muted: #8fa3bd;
+  --primary: #10b981;
+  --primary-strong: #059669;
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-width: 0;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-prompt), Arial, Helvetica, sans-serif;
+}
+
+/* ==========================================================================
+   Non-POS Scoped UI Standards (Calendar, Scrollbars, Spinners)
+   These rules apply ONLY to non-POS routes and explicitly EXCLUDE /pos & /pos/**
+   ========================================================================== */
+
+/* 1. Hide scrollbar track, rails, and arrow buttons on Non-POS pages */
+.non-pos-ui,
+.non-pos-ui *,
+body.non-pos-route .non-pos-portal,
+body.non-pos-route .non-pos-portal * {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.non-pos-ui::-webkit-scrollbar,
+.non-pos-ui *::-webkit-scrollbar,
+body.non-pos-route .non-pos-portal::-webkit-scrollbar,
+body.non-pos-route .non-pos-portal *::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.non-pos-ui::-webkit-scrollbar-button,
+.non-pos-ui *::-webkit-scrollbar-button,
+body.non-pos-route .non-pos-portal::-webkit-scrollbar-button,
+body.non-pos-route .non-pos-portal *::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.non-pos-ui::-webkit-scrollbar-track,
+.non-pos-ui *::-webkit-scrollbar-track,
+body.non-pos-route .non-pos-portal::-webkit-scrollbar-track,
+body.non-pos-route .non-pos-portal *::-webkit-scrollbar-track {
+  background: transparent;
+  display: none;
+}
+
+.non-pos-ui::-webkit-scrollbar-thumb,
+.non-pos-ui *::-webkit-scrollbar-thumb,
+body.non-pos-route .non-pos-portal::-webkit-scrollbar-thumb,
+body.non-pos-route .non-pos-portal *::-webkit-scrollbar-thumb {
+  background: transparent;
+  display: none;
+}
+
+/* 2. Hide number input stepper spin buttons globally (Chrome, Safari, Edge, Opera, Firefox) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* 3. Hide native date picker indicator on Non-POS pages */
+.non-pos-ui input[type="date"]::-webkit-calendar-picker-indicator,
+.non-pos-ui input[type="date"]::-webkit-inner-spin-button,
+body.non-pos-route input[type="date"]::-webkit-calendar-picker-indicator,
+body.non-pos-route input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+::selection {
+  color: #ecfdf5;
+  background: #047857;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+    height: 0px;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ==========================================================================
+   Global A4 Print Styles
+   Hides all navigation, sidebars, buttons, modals, and web backgrounds.
+   Prints ONLY the designated A4 document at exact 210mm x 297mm dimensions.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  body > *:not(#central-print-target):not(#pos-print-document) {
+    display: none !important;
+  }
+
+  #central-print-target,
+  #central-print-target *,
+  #pos-print-document,
+  #pos-print-document *,
+  #app-print-target,
+  #app-print-target *,
+  .print-document-target,
+  .print-document-target * {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #central-print-target,
+  #pos-print-document,
+  #app-print-target,
+  .print-document-target {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    transform: none !important;
+    transform-origin: top left !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    float: none !important;
+  }
+
+  .print-multi-document-container {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .print-document-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    background: #ffffff !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-document-wrapper:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .pos-a4-fit-stage {
+    width: 210mm !important;
+    height: 297mm !important;
+  }
+
+  .pos-a4-fit-viewport {
+    overflow: visible !important;
+  }
+}
+

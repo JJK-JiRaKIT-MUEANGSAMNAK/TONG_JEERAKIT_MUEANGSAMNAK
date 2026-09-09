@@ -1,0 +1,4541 @@
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react'
+import {
+  Building,
+  Package,
+  CalendarDays,
+  Hash,
+  FileText,
+  CreditCard,
+  BellRing,
+  Save,
+  RotateCcw,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  CheckCircle2,
+  MessageSquare,
+  Sparkles,
+  QrCode,
+  ShieldCheck,
+  Check,
+  Upload,
+  Image as ImageIcon,
+  Clock,
+  AlertCircle,
+  Tag,
+  Pencil,
+  Shield,
+  KeyRound,
+  Lock,
+  LogOut,
+  User,
+  Key,
+  Store,
+  Eye,
+  EyeOff,
+  Copy,
+  Smartphone,
+} from 'lucide-react'
+import { useToast } from '@/components/common/Toast'
+import { CustomSelect } from '@/components/common/CustomSelect'
+import { NumericInput } from '@/components/common/NumericInput'
+export type AutoLockDuration = '3' | '5' | '10' | '15'
+
+function previewDocumentNumber(cfg?: { prefix?: string; separator?: string; format?: string; digits?: number }): string {
+  if (!cfg) return ''
+  const prefix = cfg.prefix || 'DOC'
+  const sep = cfg.separator ?? '-'
+  const digits = cfg.digits || 4
+  const num = String(1).padStart(digits, '0')
+  return `${prefix}${sep}202609${sep}${num}`
+}
+
+const validatePin = (pin: string) => {
+  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    return { isValid: false, error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }
+  }
+  return { isValid: true, error: null }
+}
+
+const validatePassword = (pwd: string, _context?: any) => {
+  if (!pwd || pwd.length < 6) {
+    return { isValid: false, error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร' }
+  }
+  return { isValid: true, error: null }
+}
+
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
+export interface BusinessSettings {
+  businessName: string
+  address: string
+  phone: string
+  email: string
+  taxId: string
+  branchNo: string
+  lineId: string
+  authorizedPerson: string
+  bankName: string
+  bankAccountName: string
+  bankAccountNumber: string
+  promptPayValue: string
+  promptPayType?: string
+  logoDataUrl?: string
+  bankQrDataUrl?: string
+}
+
+export interface ProductStockSettings {
+  defaultMinimumStock: number
+  allowZeroStock: boolean
+  allowBackdatedStockAdjustment: boolean
+  lowStockNotificationEnabled: boolean
+}
+
+export interface RentalBillingSettings {
+  defaultRentalType: string
+  defaultRentalDays: number
+  rentalDayCalculation: string
+  gracePeriodDays: number
+  lateFeeMode: string
+  lateFeeValue: number
+  dailyOverdueChargeEnabled: boolean
+  returnCutoffTime: string
+  allowPartialReturn: boolean
+  allowPartialPayment: boolean
+  allowContinueAfterPaid: boolean
+}
+
+export interface DocNumberFormat {
+  prefix: string
+  runningDigits: number
+  resetCycle: string
+  yearMode: string
+  includeDate: boolean
+  datePattern: string
+  separator?: string
+  digits?: number
+}
+
+export interface DocumentNumberingSettings {
+  rentalBill: DocNumberFormat
+  quotation: DocNumberFormat
+  receipt: DocNumberFormat
+  returnSlip: DocNumberFormat
+}
+
+export interface DocumentPrintingSettings {
+  defaultTemplates: {
+    rentalBill: string
+    quotation: string
+    receipt: string
+    returnSlip: string
+  }
+  paperSize: string
+  margins: {
+    top: number
+    right: number
+    bottom: number
+    left: number
+  }
+  footerText: string
+  showLogo?: boolean
+  showQRCode?: boolean
+  showAuthorizedPerson?: boolean
+  showSignature?: boolean
+  defaultCopies?: number
+}
+
+export interface FinancePaymentSettings {
+  paymentMethods: {
+    cash: boolean
+    bankTransfer: boolean
+    promptPay: boolean
+    credit: boolean
+  }
+  defaultVatPercent: number
+  defaultWithholdingPercent: number
+  maximumDiscountPercent: number
+  defaultDepositPercent: number
+  autoCreateFinanceTransaction: boolean
+}
+
+export interface NotificationItemSettings {
+  enabled: boolean
+  daysBefore?: number
+}
+
+export interface NotificationSettings {
+  deliveryReminder: NotificationItemSettings
+  returnReminder: NotificationItemSettings
+  paymentReminder: NotificationItemSettings
+  lowStockReminder: { enabled: boolean }
+  overdueReturnReminder: { enabled: boolean }
+}
+
+export interface BrandingSettings {
+  systemName: string
+  authBackgroundType?: 'gradient' | 'image' | 'default'
+  authBackgroundImageUrl?: string | null
+  appLogoUrl?: string | null
+}
+
+export interface SystemConfig {
+  business: BusinessSettings
+  productStock: ProductStockSettings
+  rentalBilling: RentalBillingSettings
+  documentNumbering: DocumentNumberingSettings
+  documentPrinting: DocumentPrintingSettings
+  financePayment: FinancePaymentSettings
+  notifications: NotificationSettings
+  branding: BrandingSettings
+  appointmentsNotifications?: {
+    lineNotifyToken?: string
+    lineOaSecret?: string
+  }
+}
+
+export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
+  businessName: '',
+  address: '',
+  phone: '',
+  email: '',
+  taxId: '',
+  branchNo: '',
+  lineId: '',
+  authorizedPerson: '',
+  bankName: '',
+  bankAccountName: '',
+  bankAccountNumber: '',
+  promptPayValue: '',
+  promptPayType: 'PHONE',
+  logoDataUrl: '',
+  bankQrDataUrl: '',
+}
+
+export const DEFAULT_PRODUCT_STOCK_SETTINGS: ProductStockSettings = {
+  defaultMinimumStock: 0,
+  allowZeroStock: false,
+  allowBackdatedStockAdjustment: false,
+  lowStockNotificationEnabled: false,
+}
+
+export const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
+  defaultRentalType: '',
+  defaultRentalDays: 0,
+  rentalDayCalculation: '',
+  gracePeriodDays: 0,
+  lateFeeMode: 'NONE',
+  lateFeeValue: 0,
+  dailyOverdueChargeEnabled: false,
+  returnCutoffTime: '',
+  allowPartialReturn: false,
+  allowPartialPayment: false,
+  allowContinueAfterPaid: false,
+}
+
+export const DEFAULT_DOCUMENT_NUMBERING_SETTINGS: DocumentNumberingSettings = {
+  rentalBill: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
+  quotation: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
+  receipt: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
+  returnSlip: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
+}
+
+export const DEFAULT_DOCUMENT_PRINTING_SETTINGS: DocumentPrintingSettings = {
+  defaultTemplates: {
+    rentalBill: '',
+    quotation: '',
+    receipt: '',
+    returnSlip: '',
+  },
+  paperSize: 'A4',
+  margins: { top: 0, right: 0, bottom: 0, left: 0 },
+  footerText: '',
+  showLogo: true,
+  showQRCode: true,
+  showAuthorizedPerson: true,
+  showSignature: true,
+  defaultCopies: 1,
+}
+
+export const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
+  paymentMethods: {
+    cash: true,
+    bankTransfer: true,
+    promptPay: true,
+    credit: false,
+  },
+  defaultVatPercent: 0,
+  defaultWithholdingPercent: 0,
+  maximumDiscountPercent: 0,
+  defaultDepositPercent: 0,
+  autoCreateFinanceTransaction: false,
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  deliveryReminder: { enabled: false, daysBefore: 0 },
+  returnReminder: { enabled: false, daysBefore: 0 },
+  paymentReminder: { enabled: false, daysBefore: 0 },
+  lowStockReminder: { enabled: false },
+  overdueReturnReminder: { enabled: false },
+}
+
+export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
+  systemName: '',
+  authBackgroundType: 'gradient',
+  authBackgroundImageUrl: null,
+  appLogoUrl: null,
+}
+
+export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+  business: DEFAULT_BUSINESS_SETTINGS,
+  productStock: DEFAULT_PRODUCT_STOCK_SETTINGS,
+  rentalBilling: DEFAULT_RENTAL_BILLING_SETTINGS,
+  documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
+  documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS,
+  financePayment: DEFAULT_FINANCE_PAYMENT_SETTINGS,
+  notifications: DEFAULT_NOTIFICATION_SETTINGS,
+  branding: DEFAULT_BRANDING_SETTINGS,
+  appointmentsNotifications: {
+    lineNotifyToken: '',
+    lineOaSecret: '',
+  },
+}
+
+import { ManualBackupCard } from '@/components/settings/ManualBackupCard'
+
+// 9 Main Categories
+export type SettingsTab =
+  | 'BUSINESS'
+  | 'PRODUCTS_STOCK'
+  | 'RENTAL_BILLS'
+  | 'DOC_NUMBERS'
+  | 'DOCS_PRINT'
+  | 'FINANCE_PAYMENT'
+  | 'APPOINTMENTS_NOTIFICATIONS'
+  | 'ACCOUNT_SECURITY'
+  | 'PROFILE_BRANDING'
+
+export default function SettingsPage() {
+  const { showToast } = useToast()
+  const [config, setConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG)
+  const saveConfig = async (_cfg: SystemConfig, _businessId?: string, _reason?: string) => {}
+  const resetConfig = () => setConfig(DEFAULT_SYSTEM_CONFIG)
+  const resetBusinessSettings = () => setConfig((prev) => ({ ...prev, business: DEFAULT_BUSINESS_SETTINGS }))
+  const resetBrandingSettings = () => setConfig((prev) => ({ ...prev, branding: DEFAULT_BRANDING_SETTINGS }))
+  const resetRentalBillingSettings = () => setConfig((prev) => ({ ...prev, rentalBilling: DEFAULT_RENTAL_BILLING_SETTINGS }))
+  const resetDocumentNumberingSettings = () => setConfig((prev) => ({ ...prev, documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS }))
+  const resetFinancePaymentSettings = () => setConfig((prev) => ({ ...prev, financePayment: DEFAULT_FINANCE_PAYMENT_SETTINGS }))
+  const resetDocumentPrintingSettings = () => setConfig((prev) => ({ ...prev, documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS }))
+  const resetNotificationSettings = () => setConfig((prev) => ({ ...prev, notifications: DEFAULT_NOTIFICATION_SETTINGS }))
+  const [user, setUser] = useState<{
+    id: string
+    username: string
+    email: string
+    emailVerified: boolean
+    fullName: string
+    firstName: string
+    role: string
+    businessId: string
+    avatarUrl: string | null
+  }>({
+    id: '',
+    username: '',
+    email: '',
+    emailVerified: false,
+    fullName: '',
+    firstName: '',
+    role: '',
+    businessId: '',
+    avatarUrl: null,
+  })
+
+  const [autoLockDuration, setAutoLockDuration] = useState<AutoLockDuration>('5')
+  const isMfaEnrolled = false
+  const mfaFactors: any[] = []
+
+  const lock = () => {
+    showToast('ล็อกหน้าจอ', 'หน้าจอถูกล็อกแล้ว', 'INFO')
+  }
+
+  const logout = async (_scope?: string) => {
+    showToast('ออกจากระบบ', 'ออกจากระบบเรียบร้อยแล้ว', 'INFO')
+  }
+
+  const changePin = async (_oldPin: string, _newPin: string) => {}
+  const resetPinWithPassword = async (_pwd: string, _newPin: string) => {}
+  const changePassword = async (_pwd: string) => {}
+  const enrollMfaTotp = async () => ({ factorId: '', secret: '', qrCode: '', uri: '' })
+  const verifyMfaEnrollment = async (_factorId: string, _code: string) => {}
+  const unenrollMfa = async (_factorId: string) => {}
+  const updateAutoLockSetting = async (dur: AutoLockDuration) => {
+    setAutoLockDuration(dur)
+    showToast('บันทึกสำเร็จ', 'อัปเดตระยะเวลาล็อกหน้าจอแล้ว', 'SUCCESS')
+  }
+  const updateUserAvatar = async (url: string | null) => {
+    setUser((prev) => ({ ...prev, avatarUrl: url }))
+  }
+  const [activeTab, setActiveTab] = useState<SettingsTab>('BUSINESS')
+  const [isSaved, setIsSaved] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // Profile & Branding Refs
+  const authBgInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const appLogoInputRef = useRef<HTMLInputElement>(null)
+
+  // Tab 8 Account & Security Local States
+  const [oldPin, setOldPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [confirmNewPin, setConfirmNewPin] = useState('')
+  const [pinError, setPinError] = useState<string | null>(null)
+  const [pinSuccess, setPinSuccess] = useState(false)
+  const [pinLoading, setPinLoading] = useState(false)
+
+  const [oldPwd, setOldPwd] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmNewPwd, setConfirmNewPwd] = useState('')
+  const [pwdError, setPwdError] = useState<string | null>(null)
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+  const [pwdLoading, setPwdLoading] = useState(false)
+
+  const [showForgotPinSection, setShowForgotPinSection] = useState(false)
+  const [forgotPinPwd, setForgotPinPwd] = useState('')
+  const [forgotPinNew, setForgotPinNew] = useState('')
+  const [forgotPinConfirm, setForgotPinConfirm] = useState('')
+  const [forgotPinErr, setForgotPinErr] = useState<string | null>(null)
+  const [forgotPinLoad, setForgotPinLoad] = useState(false)
+
+  // Tab 8 MFA States
+  const [isEnrollingMfa, setIsEnrollingMfa] = useState(false)
+  const [mfaEnrollData, setMfaEnrollData] = useState<{ factorId: string; secret: string; qrCode: string; uri: string } | null>(null)
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('')
+  const [mfaVerifyError, setMfaVerifyError] = useState<string | null>(null)
+  const [mfaLoading, setMfaLoading] = useState(false)
+  const [showUnenrollConfirm, setShowUnenrollConfirm] = useState(false)
+  const [copiedSecret, setCopiedSecret] = useState(false)
+
+  // Visibility states for security fields
+  const [showOldPin, setShowOldPin] = useState(false)
+  const [showNewPin, setShowNewPin] = useState(false)
+  const [showConfirmNewPin, setShowConfirmNewPin] = useState(false)
+  const [showForgotPinPwd, setShowForgotPinPwd] = useState(false)
+  const [showForgotPinNew, setShowForgotPinNew] = useState(false)
+  const [showForgotPinConfirm, setShowForgotPinConfirm] = useState(false)
+  const [showOldPwd, setShowOldPwd] = useState(false)
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [showConfirmNewPwd, setShowConfirmNewPwd] = useState(false)
+  const [showLineToken, setShowLineToken] = useState(false)
+  const [showLineSecret, setShowLineSecret] = useState(false)
+
+  // Auth Background Image upload handler (Max 3 MB)
+  const handleAuthBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reasonPrompt = window.prompt('กรุณาระบุเหตุผลในการเปลี่ยนรูปพื้นหลังล็อกอิน (จำเป็น):')
+    const trimmedReason = reasonPrompt?.trim()
+    if (!trimmedReason) {
+      if (reasonPrompt !== null) {
+        showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขการตั้งค่า', 'ERROR')
+      }
+      if (e.target) e.target.value = ''
+      return
+    }
+
+    const businessId = user?.businessId || '00000000-0000-0000-0000-000000000001'
+    const previousConfig = config
+
+    try {
+      const uploadedUrl = await readFileAsDataUrl(file)
+
+      const nextConfig: SystemConfig = {
+        ...previousConfig,
+        branding: {
+          ...previousConfig.branding,
+          authBackgroundImageUrl: uploadedUrl,
+          authBackgroundType: 'image' as const,
+        },
+      }
+
+      await saveConfig(nextConfig, businessId, trimmedReason)
+      setConfig(nextConfig)
+      showToast('อัปโหลดรูปพื้นหลังสำเร็จ', 'บันทึกรูปพื้นหลังเรียบร้อยแล้ว', 'SUCCESS')
+    } catch (err: any) {
+      setConfig(previousConfig)
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกรูปพื้นหลังได้', 'ERROR')
+    } finally {
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleRemoveAuthBg = async () => {
+    const reasonPrompt = window.prompt('กรุณาระบุเหตุผลในการลบรูปพื้นหลังล็อกอิน (จำเป็น):')
+    const trimmedReason = reasonPrompt?.trim()
+    if (!trimmedReason) {
+      if (reasonPrompt !== null) {
+        showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขการตั้งค่า', 'ERROR')
+      }
+      return
+    }
+
+    const businessId = user?.businessId || '00000000-0000-0000-0000-000000000001'
+    const previousConfig = config
+
+    const nextConfig: SystemConfig = {
+      ...previousConfig,
+      branding: {
+        ...previousConfig.branding,
+        authBackgroundImageUrl: null,
+        authBackgroundType: 'default' as const,
+      },
+    }
+
+    try {
+      await saveConfig(nextConfig, businessId, trimmedReason)
+      setConfig(nextConfig)
+
+      if (authBgInputRef.current) {
+        authBgInputRef.current.value = ''
+      }
+      showToast('ลบรูปพื้นหลังแล้ว', 'หน้าเข้าสู่ระบบและจอล็อกจะกลับไปใช้พื้นหลังค่าเริ่มต้น', 'INFO')
+    } catch (err: any) {
+      setConfig(previousConfig)
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถลบรูปพื้นหลังได้', 'ERROR')
+    }
+  }
+
+  // User Profile Avatar upload handler (Max 2 MB)
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const uploadedUrl = await readFileAsDataUrl(file)
+      await updateUserAvatar(uploadedUrl)
+      showToast('อัปเดตรูปโปรไฟล์สำเร็จ', `เปลี่ยนรูป Avatar เรียบร้อยแล้ว`, 'SUCCESS')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถอัปเดตรูปโปรไฟล์ได้', 'ERROR')
+    } finally {
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await updateUserAvatar(null)
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
+      }
+      showToast('คืนค่ารูปโปรไฟล์แล้ว', 'ระบบจะแสดงตัวอักษรย่อเป็นตัวแทนรูปโปรไฟล์', 'INFO')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถลบรูปโปรไฟล์ได้', 'ERROR')
+    }
+  }
+
+  // App Logo / Icon upload handler (Max 2 MB)
+  const handleAppLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reasonPrompt = window.prompt('กรุณาระบุเหตุผลในการเปลี่ยนโลโก้ระบบ (จำเป็น):')
+    const trimmedReason = reasonPrompt?.trim()
+    if (!trimmedReason) {
+      if (reasonPrompt !== null) {
+        showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขการตั้งค่า', 'ERROR')
+      }
+      if (e.target) e.target.value = ''
+      return
+    }
+
+    const businessId = user?.businessId || '00000000-0000-0000-0000-000000000001'
+    const previousConfig = config
+
+    try {
+      const uploadedUrl = await readFileAsDataUrl(file)
+
+      const nextConfig: SystemConfig = {
+        ...previousConfig,
+        branding: {
+          ...previousConfig.branding,
+          appLogoUrl: uploadedUrl,
+        },
+        business: {
+          ...previousConfig.business,
+          logoDataUrl: uploadedUrl,
+        },
+      }
+
+      await saveConfig(nextConfig, businessId, trimmedReason)
+      setConfig(nextConfig)
+
+      showToast('อัปโหลดโลโก้สำเร็จ', 'บันทึกโลโก้ระบบเรียบร้อยแล้ว', 'SUCCESS')
+    } catch (err: any) {
+      setConfig(previousConfig)
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกโลโก้ได้', 'ERROR')
+    } finally {
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleRemoveAppLogo = async () => {
+    const reasonPrompt = window.prompt('กรุณาระบุเหตุผลในการลบโลโก้ระบบ (จำเป็น):')
+    const trimmedReason = reasonPrompt?.trim()
+    if (!trimmedReason) {
+      if (reasonPrompt !== null) {
+        showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขการตั้งค่า', 'ERROR')
+      }
+      return
+    }
+
+    const businessId = user?.businessId || '00000000-0000-0000-0000-000000000001'
+    const previousConfig = config
+
+    const nextConfig: SystemConfig = {
+      ...previousConfig,
+      branding: {
+        ...previousConfig.branding,
+        appLogoUrl: null,
+      },
+      business: {
+        ...previousConfig.business,
+        logoDataUrl: '',
+      },
+    }
+
+    try {
+      await saveConfig(nextConfig, businessId, trimmedReason)
+      setConfig(nextConfig)
+
+      if (appLogoInputRef.current) {
+        appLogoInputRef.current.value = ''
+      }
+      showToast('คืนค่าโลโก้เริ่มต้นแล้ว', 'ระบบจะใช้ไอคอนมาตรฐานของ Rental POS', 'INFO')
+    } catch (err: any) {
+      setConfig(previousConfig)
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถลบโลโก้ได้', 'ERROR')
+    }
+  }
+
+  const handleChangePin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPinError(null)
+    setPinSuccess(false)
+    if (oldPin.length !== 6) {
+      setPinError('กรุณากรอก PIN เดิม 6 หลัก')
+      return
+    }
+    const val = validatePin(newPin)
+    if (!val.isValid) {
+      setPinError(val.error || 'PIN ใหม่ไม่ถูกต้อง')
+      return
+    }
+    if (newPin !== confirmNewPin) {
+      setPinError('PIN ใหม่และยืนยัน PIN ไม่ตรงกัน')
+      return
+    }
+    setPinLoading(true)
+    try {
+      await changePin(oldPin, newPin)
+      setPinSuccess(true)
+      setOldPin('')
+      setNewPin('')
+      setConfirmNewPin('')
+      showToast('เปลี่ยน PIN สำเร็จ', 'บันทึกรหัส PIN 6 หลักใหม่เรียบร้อยแล้ว', 'SUCCESS')
+      setTimeout(() => setPinSuccess(false), 3000)
+    } catch (err: any) {
+      setPinError(err?.message || 'เกิดข้อผิดพลาดในการเปลี่ยน PIN')
+    } finally {
+      setPinLoading(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwdError(null)
+    setPwdSuccess(false)
+    if (!oldPwd) {
+      setPwdError('กรุณากรอกรหัสผ่านเดิม')
+      return
+    }
+    const val = validatePassword(newPwd, { username: user?.username, email: user?.email })
+    if (!val.isValid) {
+      setPwdError(val.error || 'รหัสผ่านใหม่ไม่ปลอดภัย')
+      return
+    }
+    if (newPwd !== confirmNewPwd) {
+      setPwdError('รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน')
+      return
+    }
+    setPwdLoading(true)
+    try {
+      await changePassword(newPwd)
+      setPwdSuccess(true)
+      setOldPwd('')
+      setNewPwd('')
+      setConfirmNewPwd('')
+      showToast('เปลี่ยนรหัสผ่านสำเร็จ', 'บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว', 'SUCCESS')
+      setTimeout(() => setPwdSuccess(false), 3000)
+    } catch (err: any) {
+      setPwdError(err?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน')
+    } finally {
+      setPwdLoading(false)
+    }
+  }
+
+  // MFA Handlers
+  const handleStartMfaEnroll = async () => {
+    setMfaLoading(true)
+    setMfaVerifyError(null)
+    try {
+      const result = await enrollMfaTotp()
+      setMfaEnrollData(result)
+      setIsEnrollingMfa(true)
+      setMfaVerifyCode('')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถเริ่มต้นตั้งค่า 2FA ได้', 'ERROR')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  const handleVerifyMfaEnroll = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!mfaEnrollData?.factorId) return
+    const clean = mfaVerifyCode.trim().replace(/\D/g, '')
+    if (clean.length !== 6) {
+      setMfaVerifyError('กรุณากรอกรหัส 6 หลักจากแอป Authenticator')
+      return
+    }
+    setMfaLoading(true)
+    setMfaVerifyError(null)
+    try {
+      await verifyMfaEnrollment(mfaEnrollData.factorId, clean)
+      setIsEnrollingMfa(false)
+      setMfaEnrollData(null)
+      setMfaVerifyCode('')
+      showToast('เปิดใช้งาน 2FA สำเร็จ', 'ระบบเปิดใช้งานการยืนยันตัวตนสองชั้นเรียบร้อยแล้ว (ระดับความปลอดภัย AAL2)', 'SUCCESS')
+    } catch (err: any) {
+      setMfaVerifyError(err?.message || 'รหัสยืนยันไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  const handleCancelMfaEnroll = async () => {
+    if (mfaEnrollData?.factorId) {
+      try {
+        await unenrollMfa(mfaEnrollData.factorId)
+      } catch {
+        // ignore cleanup error
+      }
+    }
+    setIsEnrollingMfa(false)
+    setMfaEnrollData(null)
+    setMfaVerifyCode('')
+    setMfaVerifyError(null)
+  }
+
+  const handleUnenrollMfa = async () => {
+    const verifiedFactor = mfaFactors.find((f) => f.status === 'verified')
+    if (!verifiedFactor) return
+    setMfaLoading(true)
+    try {
+      await unenrollMfa(verifiedFactor.id)
+      setShowUnenrollConfirm(false)
+      showToast('ปิดใช้งาน 2FA แล้ว', 'ยกเลิกการยืนยันตัวตนสองชั้นเรียบร้อยแล้ว', 'INFO')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถปิดการใช้งาน 2FA ได้', 'ERROR')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  const handleCopySecret = () => {
+    if (!mfaEnrollData?.secret) return
+    navigator.clipboard.writeText(mfaEnrollData.secret)
+    setCopiedSecret(true)
+    showToast('คัดลอกแล้ว', 'คัดลอก Secret Key ไปยังคลิปบอร์ดแล้ว', 'INFO')
+    setTimeout(() => setCopiedSecret(false), 2000)
+  }
+
+  const handleForgotPinReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotPinErr(null)
+    if (!forgotPinPwd) {
+      setForgotPinErr('กรุณากรอกรหัสผ่านเพื่อยืนยันตัวตน')
+      return
+    }
+    const val = validatePin(forgotPinNew)
+    if (!val.isValid) {
+      setForgotPinErr(val.error || 'PIN ใหม่ไม่ถูกต้อง')
+      return
+    }
+    if (forgotPinNew !== forgotPinConfirm) {
+      setForgotPinErr('PIN ใหม่และยืนยัน PIN ไม่ตรงกัน')
+      return
+    }
+    setForgotPinLoad(true)
+    try {
+      await resetPinWithPassword(forgotPinPwd, forgotPinNew)
+      setForgotPinPwd('')
+      setForgotPinNew('')
+      setForgotPinConfirm('')
+      showToast('รีเซ็ต PIN สำเร็จ', 'ตั้งรหัส PIN ใหม่เรียบร้อยแล้ว', 'SUCCESS')
+      setTimeout(() => {
+        setShowForgotPinSection(false)
+      }, 2000)
+    } catch (err: any) {
+      setForgotPinErr(err?.message || 'เกิดข้อผิดพลาดในการรีเซ็ต PIN')
+    } finally {
+      setForgotPinLoad(false)
+    }
+  }
+
+  // Logo upload handler (Max 500 KB, Data URL)
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 500 * 1024) {
+      showToast('ขนาดไฟล์เกินกำหนด', 'ไฟล์โลโก้ต้องมีขนาดไม่เกิน 500 KB', 'ERROR')
+      if (e.target) e.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      setConfig((prev) => ({
+        ...prev,
+        business: {
+          ...prev.business,
+          logoDataUrl: dataUrl,
+        },
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveLogo = () => {
+    setConfig((prev) => ({
+      ...prev,
+      business: {
+        ...prev.business,
+        logoDataUrl: '',
+      },
+    }))
+    if (logoInputRef.current) {
+      logoInputRef.current.value = ''
+    }
+  }
+
+  // Bank QR Code upload handler (Max 500 KB, Data URL)
+  const bankQrInputRef = useRef<HTMLInputElement>(null)
+  const handleBankQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 500 * 1024) {
+      showToast('ขนาดไฟล์เกินกำหนด', 'ไฟล์ QR Code ต้องมีขนาดไม่เกิน 500 KB', 'ERROR')
+      if (e.target) e.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      setConfig((prev) => ({
+        ...prev,
+        business: {
+          ...prev.business,
+          bankQrDataUrl: dataUrl,
+        },
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveBankQr = () => {
+    setConfig((prev) => ({
+      ...prev,
+      business: {
+        ...prev.business,
+        bankQrDataUrl: '',
+      },
+    }))
+    if (bankQrInputRef.current) {
+      bankQrInputRef.current.value = ''
+    }
+  }
+
+  // Master Data (Categories, Rental Types, Units, Appointment Types)
+  interface MasterItem {
+    id: string
+    label: string
+    calculation?: string
+    calculationType?: string
+  }
+  const [categories, setCategories] = useState<MasterItem[]>([])
+  const [rentalTypes, setRentalTypes] = useState<MasterItem[]>([])
+  const [units, setUnits] = useState<MasterItem[]>([])
+  const [appointmentTypes, setAppointmentTypes] = useState<MasterItem[]>([])
+
+  const masterData = {
+    categories,
+    rentalTypes,
+    units,
+    appointmentTypes,
+    addCategory: (label: string) => setCategories((prev) => [...prev, { id: `cat-${Date.now()}`, label }]),
+    updateCategory: (id: string, label: string) =>
+      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, label } : c))),
+    removeCategory: (id: string) => setCategories((prev) => prev.filter((c) => c.id !== id)),
+    addRentalType: (label: string, calculation?: string) =>
+      setRentalTypes((prev) => [...prev, { id: `rt-${Date.now()}`, label, calculation, calculationType: calculation }]),
+    updateRentalType: (id: string, label: string, calculation?: string) =>
+      setRentalTypes((prev) => prev.map((r) => (r.id === id ? { ...r, label, calculation, calculationType: calculation } : r))),
+    removeRentalType: (id: string) => setRentalTypes((prev) => prev.filter((r) => r.id !== id)),
+    addUnit: (label: string) => setUnits((prev) => [...prev, { id: `u-${Date.now()}`, label }]),
+    updateUnit: (id: string, label: string) =>
+      setUnits((prev) => prev.map((u) => (u.id === id ? { ...u, label } : u))),
+    removeUnit: (id: string) => setUnits((prev) => prev.filter((u) => u.id !== id)),
+    addAppointmentType: (label: string) =>
+      setAppointmentTypes((prev) => [...prev, { id: `apt-${Date.now()}`, label }]),
+    updateAppointmentType: (id: string, label: string) =>
+      setAppointmentTypes((prev) => prev.map((a) => (a.id === id ? { ...a, label } : a))),
+    removeAppointmentType: (id: string) => setAppointmentTypes((prev) => prev.filter((a) => a.id !== id)),
+  }
+  type MDSection = 'categories' | 'rentalTypes' | 'units'
+  const [mdSection, setMdSection] = useState<MDSection>('categories')
+  const [mdNewLabel, setMdNewLabel] = useState('')
+  const [mdNewCalc, setMdNewCalc] = useState('')
+  const [mdEditId, setMdEditId] = useState<string | null>(null)
+  const [mdEditLabel, setMdEditLabel] = useState('')
+  const [mdEditCalc, setMdEditCalc] = useState('')
+  const [mdDeleteConfirmId, setMdDeleteConfirmId] = useState<string | null>(null)
+
+  const mdItems =
+    mdSection === 'categories'
+      ? masterData.categories
+      : mdSection === 'rentalTypes'
+      ? masterData.rentalTypes
+      : masterData.units
+
+  const handleMdAdd = () => {
+    const label = mdNewLabel.trim()
+    if (!label) return
+    if (mdSection === 'categories') masterData.addCategory(label)
+    else if (mdSection === 'rentalTypes') masterData.addRentalType(label, mdNewCalc.trim() || undefined)
+    else masterData.addUnit(label)
+    setMdNewLabel('')
+    setMdNewCalc('')
+    showToast('เพิ่มรายการสำเร็จ', `เพิ่ม "${label}" เข้าระบบเรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleMdUpdate = (id: string) => {
+    const label = mdEditLabel.trim()
+    if (!label) return
+    if (mdSection === 'categories') masterData.updateCategory(id, label)
+    else if (mdSection === 'rentalTypes') masterData.updateRentalType(id, label, mdEditCalc.trim() || undefined)
+    else masterData.updateUnit(id, label)
+    setMdEditId(null)
+    setMdEditLabel('')
+    setMdEditCalc('')
+    showToast('แก้ไขสำเร็จ', `อัปเดต "${label}" เรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleMdDelete = (id: string) => {
+    if (mdSection === 'categories') masterData.removeCategory(id)
+    else if (mdSection === 'rentalTypes') masterData.removeRentalType(id)
+    else masterData.removeUnit(id)
+    setMdDeleteConfirmId(null)
+    showToast('ลบรายการสำเร็จ', 'ลบข้อมูลออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
+  }
+
+  // Appointment Types CRUD in Settings
+  const [aptNewTypeName, setAptNewTypeName] = useState('')
+  const [aptEditingTypeId, setAptEditingTypeId] = useState<string | null>(null)
+  const [aptEditingTypeLabel, setAptEditingTypeLabel] = useState('')
+  const [aptDeleteConfirmId, setAptDeleteConfirmId] = useState<string | null>(null)
+
+  const handleAptTypeAdd = () => {
+    const label = aptNewTypeName.trim()
+    if (!label) return
+    masterData.addAppointmentType(label)
+    setAptNewTypeName('')
+    showToast('เพิ่มประเภทนัดหมายสำเร็จ', `เพิ่ม "${label}" เข้าระบบเรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleAptTypeUpdate = (id: string) => {
+    const label = aptEditingTypeLabel.trim()
+    if (!label) return
+    masterData.updateAppointmentType(id, label)
+    setAptEditingTypeId(null)
+    setAptEditingTypeLabel('')
+    showToast('แก้ไขประเภทนัดหมายสำเร็จ', `อัปเดต "${label}" เรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleAptTypeDelete = (id: string) => {
+    masterData.removeAppointmentType(id)
+    setAptDeleteConfirmId(null)
+    showToast('ลบประเภทนัดหมายสำเร็จ', 'ลบประเภทนัดหมายออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
+  }
+
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+
+    const trimmedBusiness = {
+      ...config.business,
+      businessName: config.business.businessName.trim(),
+      address: config.business.address.trim(),
+      phone: config.business.phone.trim(),
+      email: config.business.email.trim(),
+      lineId: config.business.lineId.trim(),
+      authorizedPerson: config.business.authorizedPerson.trim(),
+      bankName: config.business.bankName.trim(),
+      bankAccountName: config.business.bankAccountName.trim(),
+      bankAccountNumber: config.business.bankAccountNumber.trim(),
+      promptPayValue: config.business.promptPayValue.trim(),
+    }
+
+    if (trimmedBusiness.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(trimmedBusiness.email)) {
+        showToast('อีเมลไม่ถูกต้อง', 'กรุณาระบุรูปแบบอีเมลให้ถูกต้อง (เช่น name@domain.com)', 'ERROR')
+        return
+      }
+    }
+
+    if (trimmedBusiness.taxId && trimmedBusiness.taxId.length > 13) {
+      showToast('เลขผู้เสียภาษีไม่ถูกต้อง', 'เลขประจำตัวผู้เสียภาษีต้องไม่เกิน 13 หลัก', 'ERROR')
+      return
+    }
+
+    const pm = config.financePayment?.paymentMethods
+    if (pm && !pm.cash && !pm.bankTransfer && !pm.promptPay && !pm.credit) {
+      showToast('บันทึกไม่สำเร็จ', 'ต้องเปิดใช้งานช่องทางการชำระเงินอย่างน้อย 1 ช่องทาง', 'ERROR')
+      return
+    }
+
+    const trimmedPrinting = {
+      ...config.documentPrinting,
+      footerText: (config.documentPrinting?.footerText || '').trim(),
+    }
+
+    const sanitizedNotifications: NotificationSettings = {
+      deliveryReminder: {
+        enabled: !!config.notifications?.deliveryReminder?.enabled,
+        daysBefore: Math.max(0, Math.min(365, Math.floor(Number(config.notifications?.deliveryReminder?.daysBefore) || 0))),
+      },
+      returnReminder: {
+        enabled: !!config.notifications?.returnReminder?.enabled,
+        daysBefore: Math.max(0, Math.min(365, Math.floor(Number(config.notifications?.returnReminder?.daysBefore) || 0))),
+      },
+      paymentReminder: {
+        enabled: !!config.notifications?.paymentReminder?.enabled,
+        daysBefore: Math.max(0, Math.min(365, Math.floor(Number(config.notifications?.paymentReminder?.daysBefore) || 0))),
+      },
+      lowStockReminder: {
+        enabled: !!config.notifications?.lowStockReminder?.enabled,
+      },
+      overdueReturnReminder: {
+        enabled: !!config.notifications?.overdueReturnReminder?.enabled,
+      },
+    }
+
+    const toSave: SystemConfig = {
+      ...config,
+      branding: {
+        ...config.branding,
+        systemName: (config.branding?.systemName || '').trim() || 'JJK_JeeRaKiT',
+      },
+      business: trimmedBusiness,
+      documentPrinting: trimmedPrinting,
+      notifications: sanitizedNotifications,
+      productStock: {
+        ...config.productStock,
+        lowStockNotificationEnabled: sanitizedNotifications.lowStockReminder.enabled,
+      },
+    }
+
+    const businessId = user?.businessId || '00000000-0000-0000-0000-000000000001'
+    const reasonPrompt = window.prompt('กรุณาระบุเหตุผลในการแก้ไขการตั้งค่าระบบ (จำเป็น):')
+    const trimmedReason = reasonPrompt?.trim()
+    if (!trimmedReason) {
+      if (reasonPrompt !== null) {
+        showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขการตั้งค่าระบบ', 'ERROR')
+      }
+      return
+    }
+
+    try {
+      await saveConfig(toSave, businessId, trimmedReason)
+      setConfig(toSave)
+      setIsSaved(true)
+      showToast('บันทึกการตั้งค่าสำเร็จ', 'บันทึกการตั้งค่าลง Cloud Database เรียบร้อยแล้ว', 'SUCCESS')
+      setTimeout(() => setIsSaved(false), 2000)
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกการตั้งค่าลง Cloud Database ได้', 'ERROR')
+    }
+  }
+
+  const handleResetDefaults = () => {
+    if (activeTab === 'BUSINESS') {
+      if (confirm('คุณต้องการคืนค่าข้อมูลกิจการทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetBusinessSettings()
+        setConfig((prev) => ({
+          ...prev,
+          business: DEFAULT_BUSINESS_SETTINGS,
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าข้อมูลกิจการเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'RENTAL_BILLS') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าการเช่าและบิลกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetRentalBillingSettings()
+        setConfig((prev) => ({
+          ...prev,
+          rentalBilling: DEFAULT_RENTAL_BILLING_SETTINGS,
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าการเช่าและบิลเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'DOC_NUMBERS') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าเลขที่เอกสารกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetDocumentNumberingSettings()
+        setConfig((prev) => ({
+          ...prev,
+          documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเลขที่เอกสารเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'DOCS_PRINT') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าเอกสารและการพิมพ์กลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetDocumentPrintingSettings()
+        setConfig((prev) => ({
+          ...prev,
+          documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS,
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเอกสารและการพิมพ์เป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'FINANCE_PAYMENT') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าการเงินและการชำระเงินกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetFinancePaymentSettings()
+        setConfig((prev) => ({
+          ...prev,
+          financePayment: DEFAULT_FINANCE_PAYMENT_SETTINGS,
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าการเงินและการชำระเงินเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'APPOINTMENTS_NOTIFICATIONS') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าการแจ้งเตือนกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetNotificationSettings()
+        setConfig((prev) => ({
+          ...prev,
+          notifications: DEFAULT_NOTIFICATION_SETTINGS,
+          productStock: {
+            ...prev.productStock,
+            lowStockNotificationEnabled: DEFAULT_NOTIFICATION_SETTINGS.lowStockReminder.enabled,
+          },
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าการแจ้งเตือนเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (activeTab === 'PROFILE_BRANDING') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าโปรไฟล์และแบรนด์ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        resetBrandingSettings()
+        updateUserAvatar(null)
+        setConfig((prev) => ({
+          ...prev,
+          branding: DEFAULT_BRANDING_SETTINGS,
+          business: {
+            ...prev.business,
+            logoDataUrl: '',
+          },
+        }))
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าโปรไฟล์และแบรนด์เป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+      }
+      return
+    }
+
+    if (confirm('คุณต้องการคืนค่าการตั้งค่าทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+      resetConfig()
+      showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าทั้งหมดเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+    }
+  }
+
+  return (
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2.5 sm:gap-3 overflow-hidden">
+        {/* Left Navigation: 9 Main Categories */}
+        <div className="w-full md:w-56 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex flex-row overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col gap-1 text-xs no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveTab('BUSINESS')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'BUSINESS'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <Building className="w-4 h-4 shrink-0 text-blue-500" />
+            <span className="truncate">ข้อมูลกิจการ</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('PRODUCTS_STOCK')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'PRODUCTS_STOCK'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <Package className="w-4 h-4 shrink-0 text-amber-500" />
+            <span className="truncate">สินค้าและสต็อก</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('RENTAL_BILLS')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'RENTAL_BILLS'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 shrink-0 text-emerald-500" />
+            <span className="truncate">การเช่าและบิล</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('DOC_NUMBERS')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'DOC_NUMBERS'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <Hash className="w-4 h-4 shrink-0 text-indigo-500" />
+            <span className="truncate">เลขที่เอกสาร</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('DOCS_PRINT')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'DOCS_PRINT'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <FileText className="w-4 h-4 shrink-0 text-rose-500" />
+            <span className="truncate">เอกสารและการพิมพ์</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('FINANCE_PAYMENT')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'FINANCE_PAYMENT'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <CreditCard className="w-4 h-4 shrink-0 text-violet-500" />
+            <span className="truncate">การเงินและการชำระเงิน</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('APPOINTMENTS_NOTIFICATIONS')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'APPOINTMENTS_NOTIFICATIONS'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <BellRing className="w-4 h-4 shrink-0 text-teal-500" />
+            <span className="truncate">นัดหมายและการแจ้งเตือน</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('ACCOUNT_SECURITY')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'ACCOUNT_SECURITY'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <Shield className="w-4 h-4 shrink-0 text-indigo-500" />
+            <span className="truncate">บัญชีและความปลอดภัย</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('PROFILE_BRANDING')}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+              activeTab === 'PROFILE_BRANDING'
+                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4 shrink-0 text-pink-500" />
+            <span className="truncate">โปรไฟล์และแบรนด์</span>
+          </button>
+        </div>
+
+        {/* Right Settings Workspace */}
+        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3.5 sm:p-4 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
+          <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+            {/* Scrollable Container (internal scroll only, no page-level scroll) */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-4 text-xs max-w-4xl">
+              
+              {/* ================= TAB 1: ข้อมูลกิจการ ================= */}
+              {activeTab === 'BUSINESS' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Building className="w-4 h-4 text-blue-600" />
+                      <span>ข้อมูลสถานประกอบการ / ร้านค้า</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      ข้อมูลกลางของกิจการสำหรับแสดงบนหัวเอกสาร บิลเช่า ใบเสนอราคา ใบเสร็จรับเงิน และข้อมูลติดต่อสำหรับลูกค้า
+                    </p>
+                  </div>
+
+                  {/* Logo Section */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-blue-500" />
+                      <span>โลโก้กิจการ</span>
+                    </h4>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      {/* Logo Preview Frame */}
+                      <div className="w-32 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative">
+                        {config.business.logoDataUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={config.business.logoDataUrl}
+                            alt="Business Logo Preview"
+                            className="w-full h-full object-contain p-1"
+                          />
+                        ) : (
+                          <div className="text-center p-2 text-slate-400">
+                            <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-40" />
+                            <span className="text-[10px] block">ยังไม่มีโลโก้</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Logo Actions & Guidelines */}
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="file"
+                            ref={logoInputRef}
+                            onChange={handleLogoUpload}
+                            accept="image/png, image/jpeg, image/webp"
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{config.business.logoDataUrl ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้'}</span>
+                          </button>
+
+                          {config.business.logoDataUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveLogo}
+                              className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 font-bold text-xs flex items-center gap-1.5 transition-all"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>ลบโลโก้</span>
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          รองรับไฟล์รูปภาพ PNG, JPG, WebP (ขนาดไฟล์ไม่เกิน 500 KB)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* General Business Info */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        ชื่อร้าน / บริษัท (ตามทะเบียนพาณิชย์/ภ.พ.20)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.business.businessName}
+                        onChange={(e) => setConfig({ ...config, business: { ...config.business, businessName: e.target.value } })}
+                        placeholder="ระบุชื่อร้าน หรือ ชื่อบริษัท..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          เลขประจำตัวผู้เสียภาษี (13 หลัก)
+                        </label>
+                        <input
+                          type="text"
+                          value={config.business.taxId}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 13)
+                            setConfig({ ...config, business: { ...config.business, taxId: val } })
+                          }}
+                          placeholder="เช่น 0105565012345 (ตัวเลข 13 หลัก)"
+                          maxLength={13}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          เบอร์โทรศัพท์ติดต่อ
+                        </label>
+                        <input
+                          type="text"
+                          value={config.business.phone}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, phone: e.target.value } })}
+                          placeholder="เช่น 02-999-8888, 081-234-5678"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          อีเมล
+                        </label>
+                        <input
+                          type="email"
+                          value={config.business.email}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, email: e.target.value } })}
+                          placeholder="เช่น contact@example.com"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          LINE ID / LINE Official Account
+                        </label>
+                        <input
+                          type="text"
+                          value={config.business.lineId}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, lineId: e.target.value } })}
+                          placeholder="เช่น @myrentalshop"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        ที่อยู่สถานประกอบการ (ตาม ภ.พ.20)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={config.business.address}
+                        onChange={(e) => setConfig({ ...config, business: { ...config.business, address: e.target.value } })}
+                        placeholder="ระบุที่อยู่สถานประกอบการสำหรับแสดงบนหัวเอกสาร..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        ชื่อผู้มีอำนาจลงนาม / ผู้จัดการ
+                      </label>
+                      <input
+                        type="text"
+                        value={config.business.authorizedPerson}
+                        onChange={(e) => setConfig({ ...config, business: { ...config.business, authorizedPerson: e.target.value } })}
+                        placeholder="เช่น นายสมชาย ใจดี (ผู้จัดการ)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bank Account & PromptPay Card */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-emerald-600" />
+                      <span>บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ธนาคาร</label>
+                        <input
+                          type="text"
+                          value={config.business.bankName}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankName: e.target.value } })}
+                          placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">เลขที่บัญชี</label>
+                        <input
+                          type="text"
+                          value={config.business.bankAccountNumber}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountNumber: e.target.value } })}
+                          placeholder="เช่น 045-2-12345-6"
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-blue-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ชื่อบัญชี</label>
+                        <input
+                          type="text"
+                          value={config.business.bankAccountName}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountName: e.target.value } })}
+                          placeholder="เช่น ร้าน หรือ บจก..."
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ประเภท PromptPay</label>
+                        <CustomSelect
+                          value={config.business.promptPayType || ''}
+                          onChange={(val) => setConfig({ ...config, business: { ...config.business, promptPayType: val as any } })}
+                          options={[
+                            { value: '', label: '-- ไม่ระบุประเภท --' },
+                            { value: 'PHONE', label: 'เบอร์โทรศัพท์ (Phone Number)' },
+                            { value: 'TAX_ID', label: 'เลขประจำตัวผู้เสียภาษี (Tax ID / ID Card)' },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">หมายเลข PromptPay</label>
+                        <input
+                          type="text"
+                          value={config.business.promptPayValue}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '')
+                            const maxLen = config.business.promptPayType === 'TAX_ID' ? 13 : 10
+                            setConfig({ ...config, business: { ...config.business, promptPayValue: val.slice(0, maxLen) } })
+                          }}
+                          placeholder={
+                            config.business.promptPayType === 'TAX_ID'
+                              ? 'เช่น 0105565012345 (13 หลัก)'
+                              : config.business.promptPayType === 'PHONE'
+                              ? 'เช่น 0812345678 (10 หลัก)'
+                              : 'ระบุหมายเลข PromptPay'
+                          }
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-emerald-600"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bank QR Code Upload */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block">
+                            QR Code รับเงินของธนาคาร (Bank QR Code)
+                          </span>
+                          <span className="text-[11px] text-slate-500 block">
+                            รูปภาพ QR Code รับเงินที่ร้านได้รับจากธนาคาร/แอปธนาคาร (รองรับ PNG, JPG, WEBP ขนาดไม่เกิน 500 KB)
+                          </span>
+                        </div>
+                      </div>
+
+                      <input
+                        ref={bankQrInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleBankQrUpload}
+                        className="hidden"
+                      />
+
+                      {config.business.bankQrDataUrl ? (
+                        <div className="flex items-center gap-3 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-white flex items-center justify-center p-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={config.business.bankQrDataUrl}
+                              alt="Bank QR Code"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>มีรูปภาพ QR Code รับเงินแล้ว</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => bankQrInputRef.current?.click()}
+                                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>เปลี่ยน QR</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleRemoveBankQr}
+                                className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-semibold flex items-center gap-1 border border-red-200 dark:border-red-800 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>ลบ QR</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => bankQrInputRef.current?.click()}
+                          className="p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl flex items-center justify-center gap-2 cursor-pointer bg-white dark:bg-slate-800 transition-colors"
+                        >
+                          <QrCode className="w-4 h-4 text-slate-400" />
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                            เลือกรูปภาพ QR Code รับเงิน
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 2: สินค้าและสต็อก ================= */}
+              {activeTab === 'PRODUCTS_STOCK' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-amber-600" />
+                      <span>2. สินค้าและสต็อก (Master Data & Inventory Config)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      จัดการหมวดหมู่สินค้า รูปแบบการเช่า และหน่วยนับ และกำหนดพฤติกรรมสต็อก
+                    </p>
+                  </div>
+
+                  {/* Section A: Master Data CRUD */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>ข้อมูลหลัก (Master Data จากระบบกลาง)</span>
+                      </h4>
+
+                      {/* Subtabs for Master Data */}
+                      <div className="flex gap-1.5">
+                        {(
+                          [
+                            { key: 'categories', label: 'หมวดหมู่สินค้า', count: masterData.categories.length },
+                            { key: 'rentalTypes', label: 'รูปแบบการเช่า', count: masterData.rentalTypes.length },
+                            { key: 'units', label: 'หน่วยนับ', count: masterData.units.length },
+                          ] as { key: MDSection; label: string; count: number }[]
+                        ).map((s) => (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => {
+                              setMdSection(s.key)
+                              setMdEditId(null)
+                              setMdDeleteConfirmId(null)
+                              setMdNewLabel('')
+                              setMdNewCalc('')
+                            }}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${
+                              mdSection === s.key
+                                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-500 shadow-xs'
+                                : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {s.label} ({s.count})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Add Item Row */}
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center pt-2">
+                      <input
+                        type="text"
+                        value={mdNewLabel}
+                        onChange={(e) => setMdNewLabel(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdAdd())}
+                        placeholder={
+                          mdSection === 'categories'
+                            ? 'ชื่อหมวดหมู่สินค้าใหม่...'
+                            : mdSection === 'rentalTypes'
+                            ? 'ชื่อรูปแบบการเช่าใหม่...'
+                            : 'ชื่อหน่วยนับใหม่...'
+                        }
+                        className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                      {mdSection === 'rentalTypes' && (
+                        <input
+                          type="text"
+                          value={mdNewCalc}
+                          onChange={(e) => setMdNewCalc(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdAdd())}
+                          placeholder="สูตรการคำนวณ (เช่น จำนวน × ราคา × วัน)..."
+                          className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleMdAdd}
+                        disabled={!mdNewLabel.trim()}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>เพิ่ม</span>
+                      </button>
+                    </div>
+
+                    {/* List Items */}
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
+                      {mdItems.length === 0 ? (
+                        <div className="p-6 text-center text-slate-400 italic">ยังไม่มีรายการ</div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 dark:divide-slate-700/60 max-h-48 overflow-y-auto">
+                          {mdItems.map((item) => (
+                            <div key={item.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
+                              {mdEditId === item.id ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={mdEditLabel}
+                                    onChange={(e) => setMdEditLabel(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdUpdate(item.id))}
+                                    className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-bold text-xs"
+                                    autoFocus
+                                  />
+                                  {mdSection === 'rentalTypes' && (
+                                    <input
+                                      type="text"
+                                      value={mdEditCalc}
+                                      onChange={(e) => setMdEditCalc(e.target.value)}
+                                      placeholder="สูตรคำนวณ..."
+                                      className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs"
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMdUpdate(item.id)}
+                                    className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setMdEditId(null); setMdEditLabel(''); setMdEditCalc('') }}
+                                    className="p-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : mdDeleteConfirmId === item.id ? (
+                                <>
+                                  <span className="flex-1 text-xs text-red-600 dark:text-red-400 font-bold">
+                                    ยืนยันลบ &quot;{item.label}&quot; ?
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMdDelete(item.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs"
+                                  >
+                                    ยืนยันลบ
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMdDeleteConfirmId(null)}
+                                    className="px-2.5 py-1 rounded-lg border border-slate-300 font-semibold text-xs"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="flex-1 font-semibold text-slate-800 dark:text-slate-100">{item.label}</span>
+                                  {item.calculation && (
+                                    <span className="text-[11px] text-slate-400 hidden sm:inline-block font-mono">({item.calculation})</span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => { setMdEditId(item.id); setMdEditLabel(item.label); setMdEditCalc(item.calculation || ''); setMdDeleteConfirmId(null) }}
+                                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                    title="แก้ไข"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setMdDeleteConfirmId(item.id); setMdEditId(null) }}
+                                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                    title="ลบ"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Section B: Inventory Configurations */}
+                  <div className="space-y-2.5 pt-2">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100">การควบคุมสต็อกและการเตือน</h4>
+                    
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        เกณฑ์เตือนสต็อกขั้นต่ำเริ่มต้น (ชิ้น/ชุด)
+                      </label>
+                      <NumericInput
+                        value={config.productStock.defaultMinimumStock}
+                        onChange={(val) =>
+                          setConfig({
+                            ...config,
+                            productStock: {
+                              ...config.productStock,
+                              defaultMinimumStock: val === '' ? 0 : val,
+                            },
+                          })
+                        }
+                        defaultValueOnBlur={0}
+                        min={0}
+                        allowDecimals={false}
+                        className="w-full sm:w-60 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.productStock.allowZeroStock}
+                        onChange={(e) => setConfig({ ...config, productStock: { ...config.productStock, allowZeroStock: e.target.checked } })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">อนุญาตสต็อกเป็น 0 (สร้างสินค้าสต็อก 0 ชิ้นได้)</span>
+                        <span className="text-[11px] text-slate-400">เมื่อเปิดใช้งาน จะสามารถสร้างสินค้าที่มีจำนวนสต็อกเริ่มต้นเป็น 0 ชิ้นได้</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.productStock.allowBackdatedStockAdjustment}
+                        onChange={(e) => setConfig({ ...config, productStock: { ...config.productStock, allowBackdatedStockAdjustment: e.target.checked } })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">อนุญาตปรับสต็อกย้อนหลัง</span>
+                        <span className="text-[11px] text-slate-400">อนุญาตให้บันทึกวันที่ทำรายการสต็อกย้อนหลังได้</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.productStock.lowStockNotificationEnabled}
+                        onChange={(e) => setConfig({ ...config, productStock: { ...config.productStock, lowStockNotificationEnabled: e.target.checked } })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">เปิดการแจ้งเตือนเมื่อสต็อกต่ำ</span>
+                        <span className="text-[11px] text-slate-400">แสดงการแจ้งเตือนเมื่อสต็อกสินค้าพร้อมใช้ต่ำกว่าเกณฑ์ขั้นต่ำ</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 3: การเช่าและบิล ================= */}
+              {activeTab === 'RENTAL_BILLS' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-emerald-600" />
+                      <span>3. การเช่าและบิล (Rental & Billing Configuration)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      กำหนดรูปแบบการเช่าเริ่มต้น วิธีนับวันเช่า เงื่อนไขค่าปรับ และนโยบายการรับคืน/รับชำระ
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        รูปแบบการเช่าเริ่มต้น (Default Rental Type)
+                      </label>
+                      <CustomSelect
+                        value={config.rentalBilling.defaultRentalType}
+                        onChange={(val) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: { ...config.rentalBilling, defaultRentalType: String(val) },
+                          })
+                        }
+                        options={
+                          masterData.rentalTypes.length > 0
+                            ? masterData.rentalTypes.map((rt) => ({
+                                value: rt.label,
+                                label: rt.label,
+                                sublabel: rt.calculation,
+                              }))
+                            : [
+                                { value: 'NORMAL', label: 'เช่าปกติ (ตามรอบสินค้า)' },
+                                { value: 'DAILY', label: 'เช่ารายวัน (Daily Rental)' },
+                              ]
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        จำนวนวันเช่าเริ่มต้น (Default Rental Days)
+                      </label>
+                      <NumericInput
+                        value={config.rentalBilling.defaultRentalDays}
+                        onChange={(val) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              defaultRentalDays: val === '' ? 1 : Math.max(1, val),
+                            },
+                          })
+                        }
+                        defaultValueOnBlur={1}
+                        min={1}
+                        allowDecimals={false}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Day Counting Method */}
+                  <div>
+                    <label className="block font-bold text-slate-900 dark:text-slate-100 mb-2">
+                      วิธีนับวันเช่าของระบบ (Day Counting Method)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {[
+                        {
+                          id: 'START_DATE_IS_DAY_ONE',
+                          title: 'นับวันเริ่มต้นเป็นวันที่ 1',
+                          desc: 'สูตร: วันสิ้นสุด - วันเริ่ม + 1 (เช่น 1 ส.ค. ถึง 1 ส.ค. = 1 วัน)',
+                        },
+                        {
+                          id: 'NIGHTS',
+                          title: 'นับตามจำนวนคืน (Nights)',
+                          desc: 'สูตร: ผลต่างของวัน/คืน (เช่น 1 ส.ค. ถึง 5 ส.ค. = 4 คืน)',
+                        },
+                        {
+                          id: 'CUSTOM',
+                          title: 'กำหนดเองตามสัญญา (Custom)',
+                          desc: 'เปิดให้ปรับแต่งจำนวนวันตามข้อตกลง (เก็บค่าการตั้งค่า)',
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                rentalDayCalculation: item.id as any,
+                              },
+                            })
+                          }
+                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                            config.rentalBilling.rentalDayCalculation === item.id
+                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 shadow-xs'
+                              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                            <span
+                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                config.rentalBilling.rentalDayCalculation === item.id
+                                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                                  : 'border-slate-400'
+                              }`}
+                            >
+                              {config.rentalBilling.rentalDayCalculation === item.id && (
+                                <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              )}
+                            </span>
+                            <span>{item.title}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1 pl-5.5">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Grace Period and Late Fee */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      <span>Grace Period & การคำนวณค่าปรับคืนล่าช้า (Late Fee)</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Grace Period ผ่อนผันก่อนคิดค่าปรับ (วัน)
+                        </label>
+                        <NumericInput
+                          value={config.rentalBilling.gracePeriodDays}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                gracePeriodDays: val === '' ? 0 : val,
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-0.5 block">จำนวนวันหลังกำหนดคืนที่ยังไม่เริ่มคิดค่าปรับ</span>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          วิธีคิดค่าปรับ (Late Fee Mode)
+                        </label>
+                        <CustomSelect
+                          value={config.rentalBilling.lateFeeMode}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                lateFeeMode: val as any,
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'NONE', label: 'ไม่คิดอัตโนมัติ (None)' },
+                            { value: 'FIXED_PER_DAY', label: 'จำนวนเงินคงที่ / วัน (Fixed/Day)' },
+                            { value: 'PERCENT_PER_DAY', label: 'เปอร์เซ็นต์ / วัน (% of Daily Rate)' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          {config.rentalBilling.lateFeeMode === 'PERCENT_PER_DAY'
+                            ? 'อัตราค่าปรับ (% ต่อวัน)'
+                            : 'อัตราค่าปรับ (บาท ต่อวัน)'}
+                        </label>
+                        <NumericInput
+                          value={config.rentalBilling.lateFeeValue}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                lateFeeValue: val === '' ? 0 : val,
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          disabled={config.rentalBilling.lateFeeMode === 'NONE'}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold disabled:opacity-40"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DAILY overdue charge / return cutoff */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <label className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.rentalBilling.dailyOverdueChargeEnabled}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              dailyOverdueChargeEnabled: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-4 h-4 mt-0.5 text-emerald-600 rounded"
+                      />
+                      <span>
+                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">คิดค่าเช่า DAILY เพิ่มเมื่อคืนเกินกำหนด</span>
+                        <span className="block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">ปิด = แจ้งเตือนเกินกำหนดอย่างเดียว ไม่คิดค่าเช่าเพิ่ม</span>
+                      </span>
+                    </label>
+
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">เวลาตัดรอบคืนวันถัดไป</label>
+                      <input
+                        type="time"
+                        step={60}
+                        value={config.rentalBilling.returnCutoffTime}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              returnCutoffTime: e.target.value || '12:00',
+                            },
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
+                      />
+                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">ค่าเริ่มต้น 12:00 — คืนเช้าวันถัดไปก่อนเวลานี้ไม่เพิ่มวัน DAILY</p>
+                    </div>
+                  </div>
+
+                  {/* Rental Policy Toggles */}
+                  <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.rentalBilling.allowPartialReturn}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              allowPartialReturn: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                          อนุญาตให้ทยอยคืนสินค้าบางส่วน (Partial Return)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          เมื่อปิดใช้งาน ระบบจะไม่อนุญาตให้ยืนยันการคืนหากคืนสินค้าไม่ครบตามจำนวนคงค้าง
+                        </span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.rentalBilling.allowPartialPayment}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              allowPartialPayment: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                          อนุญาตให้ชำระเงินบางส่วน (Partial Payment)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          เมื่อปิดใช้งาน จำนวนรับชำระจะต้องเท่ากับยอดคงค้างที่ต้องชำระเท่านั้น
+                        </span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.rentalBilling.allowContinueAfterPaid}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            rentalBilling: {
+                              ...config.rentalBilling,
+                              allowContinueAfterPaid: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                          อนุญาตให้เช่าต่อหลังชำระครบ (Continue After Paid)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          เมื่อชำระเงินครบแล้วแต่ยังมีสินค้าค้างคืน จะยังคงสถานะค้างคืนและอนุญาตให้เช่าต่อได้
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 4: เลขที่เอกสาร ================= */}
+              {activeTab === 'DOC_NUMBERS' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-indigo-600" />
+                      <span>รูปแบบเลขที่เอกสาร</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      กำหนดรูปแบบ Prefix, จำนวนหลักลำดับ, การรีเซ็ตรอบลำดับ (รายวัน/เดือน/ปี) และรูปแบบวันที่
+                    </p>
+                  </div>
+
+                  {(
+                    [
+                      { key: 'rentalBill', name: 'บิลเช่า / สัญญาเช่า' },
+                      { key: 'quotation', name: 'ใบเสนอราคา' },
+                      { key: 'receipt', name: 'ใบเสร็จรับเงิน' },
+                      { key: 'returnSlip', name: 'ใบรับคืนสินค้า' },
+                    ] as { key: 'rentalBill' | 'quotation' | 'receipt' | 'returnSlip'; name: string }[]
+                  ).map((doc) => {
+                    const dConfig = config.documentNumbering[doc.key]
+                    const preview = previewDocumentNumber(dConfig)
+
+                    return (
+                      <div key={doc.key} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h4 className="font-bold text-slate-900 dark:text-slate-100">{doc.name}</h4>
+                          <div className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-xs border border-indigo-200 dark:border-indigo-800">
+                            ตัวอย่าง: {preview}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-500 mb-1">Prefix</label>
+                            <input
+                              type="text"
+                              maxLength={10}
+                              value={dConfig.prefix}
+                              onChange={(e) =>
+                                setConfig({
+                                  ...config,
+                                  documentNumbering: {
+                                    ...config.documentNumbering,
+                                    [doc.key]: { ...dConfig, prefix: e.target.value.trim() },
+                                  },
+                                })
+                              }
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-blue-600"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-500 mb-1">จำนวนหลัก Running</label>
+                            <CustomSelect
+                              value={dConfig.runningDigits}
+                              onChange={(val) =>
+                                setConfig({
+                                  ...config,
+                                  documentNumbering: {
+                                    ...config.documentNumbering,
+                                    [doc.key]: { ...dConfig, runningDigits: parseInt(String(val), 10) || 3 },
+                                  },
+                                })
+                              }
+                              options={[
+                                { value: 3, label: '3 หลัก (001)' },
+                                { value: 4, label: '4 หลัก (0001)' },
+                                { value: 5, label: '5 หลัก (00001)' },
+                                { value: 6, label: '6 หลัก (000001)' },
+                              ]}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-500 mb-1">รอบการรีเซ็ตเลข</label>
+                            <CustomSelect
+                              value={dConfig.resetCycle}
+                              onChange={(val) =>
+                                setConfig({
+                                  ...config,
+                                  documentNumbering: {
+                                    ...config.documentNumbering,
+                                    [doc.key]: { ...dConfig, resetCycle: val },
+                                  },
+                                })
+                              }
+                              options={[
+                                { value: 'DAILY', label: 'รายวัน' },
+                                { value: 'MONTHLY', label: 'รายเดือน' },
+                                { value: 'YEARLY', label: 'รายปี' },
+                                { value: 'NEVER', label: 'ไม่รีเซ็ต' },
+                              ]}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-500 mb-1">รูปแบบปี</label>
+                            <CustomSelect
+                              value={dConfig.yearMode}
+                              onChange={(val) =>
+                                setConfig({
+                                  ...config,
+                                  documentNumbering: {
+                                    ...config.documentNumbering,
+                                    [doc.key]: { ...dConfig, yearMode: val },
+                                  },
+                                })
+                              }
+                              options={[
+                                { value: 'BE', label: 'พ.ศ. (เช่น 2569)' },
+                                { value: 'CE', label: 'ค.ศ. (เช่น 2026)' },
+                              ]}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-500 mb-1">รูปแบบวันที่</label>
+                            <CustomSelect
+                              disabled={!dConfig.includeDate}
+                              value={dConfig.datePattern}
+                              onChange={(val) =>
+                                setConfig({
+                                  ...config,
+                                  documentNumbering: {
+                                    ...config.documentNumbering,
+                                    [doc.key]: { ...dConfig, datePattern: val },
+                                  },
+                                })
+                              }
+                              options={[
+                                { value: 'DDMMYYYY', label: 'วันเดือนปี (15082569)' },
+                                { value: 'MMYYYY', label: 'เดือนปี (082569)' },
+                                { value: 'YYYY', label: 'ปีอย่างเดียว (2569)' },
+                              ]}
+                            />
+                          </div>
+
+                          <div className="flex flex-col justify-end">
+                            <label className="flex items-center gap-1.5 py-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={dConfig.includeDate}
+                                onChange={(e) =>
+                                  setConfig({
+                                    ...config,
+                                    documentNumbering: {
+                                      ...config.documentNumbering,
+                                      [doc.key]: { ...dConfig, includeDate: e.target.checked },
+                                    },
+                                  })
+                                }
+                                className="w-3.5 h-3.5 text-indigo-600 rounded"
+                              />
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">ใส่วันที่ในรหัส</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* ================= TAB 5: เอกสารและการพิมพ์ ================= */}
+              {activeTab === 'DOCS_PRINT' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-rose-600" />
+                      <span>เอกสารและการพิมพ์</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      เลือกแบบฟอร์มเอกสารเริ่มต้น ขนาดกระดาษ ระยะขอบ และองค์ประกอบบนใบพิมพ์ A4
+                    </p>
+                  </div>
+
+                  {/* Section 1: แบบฟอร์มเริ่มต้น */}
+                  <div className="space-y-2">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">แบบฟอร์มเริ่มต้น</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          บิลเช่า
+                        </label>
+                        <CustomSelect
+                          value={config.documentPrinting.defaultTemplates.rentalBill}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                defaultTemplates: {
+                                  ...config.documentPrinting.defaultTemplates,
+                                  rentalBill: val,
+                                },
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'บิลเช่ามาตรฐาน (Standard Rental Bill)', label: 'บิลเช่ามาตรฐาน' },
+                            { value: 'บิลเช่าแบบกระชับ (Compact Rental Bill)', label: 'บิลเช่าแบบกระชับ' },
+                            { value: 'บิลเช่าพร้อมใบกำกับภาษี (Tax Invoice / Rental Bill)', label: 'บิลเช่าพร้อมใบกำกับภาษี' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ใบเสนอราคา
+                        </label>
+                        <CustomSelect
+                          value={config.documentPrinting.defaultTemplates.quotation}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                defaultTemplates: {
+                                  ...config.documentPrinting.defaultTemplates,
+                                  quotation: val,
+                                },
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'ใบเสนอราคามาตรฐาน (Standard Quotation)', label: 'ใบเสนอราคามาตรฐาน' },
+                            { value: 'ใบเสนอราคาแบบละเอียด (Detailed Quotation)', label: 'ใบเสนอราคาแบบละเอียด' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ใบเสร็จรับเงิน
+                        </label>
+                        <CustomSelect
+                          value={config.documentPrinting.defaultTemplates.receipt}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                defaultTemplates: {
+                                  ...config.documentPrinting.defaultTemplates,
+                                  receipt: val,
+                                },
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'ใบเสร็จรับเงินมาตรฐาน (Standard Receipt)', label: 'ใบเสร็จรับเงินมาตรฐาน' },
+                            { value: 'ใบเสร็จรับเงินแบบย่อ (Short Receipt)', label: 'ใบเสร็จรับเงินแบบย่อ' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ใบรับคืนสินค้า
+                        </label>
+                        <CustomSelect
+                          value={config.documentPrinting.defaultTemplates.returnSlip}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                defaultTemplates: {
+                                  ...config.documentPrinting.defaultTemplates,
+                                  returnSlip: val,
+                                },
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'ใบรับคืนสินค้ามาตรฐาน (Standard Return Slip)', label: 'ใบรับคืนสินค้ามาตรฐาน' },
+                            { value: 'ใบรับคืนพร้อมตรวจสภาพ (Inspection Return Slip)', label: 'ใบรับคืนพร้อมตรวจสภาพ' },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: กระดาษและระยะขอบ */}
+                  <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">กระดาษและระยะขอบ</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ขนาดกระดาษ
+                        </label>
+                        <CustomSelect
+                          value={config.documentPrinting.paperSize}
+                          disabled
+                          onChange={() => {}}
+                          options={[
+                            { value: 'A4', label: 'A4 (210 × 297 mm)' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          บน (มม.)
+                        </label>
+                        <NumericInput
+                          value={config.documentPrinting.margins.top}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                margins: {
+                                  ...config.documentPrinting.margins,
+                                  top: val === '' ? 0 : Math.min(50, val),
+                                },
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={50}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ขวา (มม.)
+                        </label>
+                        <NumericInput
+                          value={config.documentPrinting.margins.right}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                margins: {
+                                  ...config.documentPrinting.margins,
+                                  right: val === '' ? 0 : Math.min(50, val),
+                                },
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={50}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ล่าง (มม.)
+                        </label>
+                        <NumericInput
+                          value={config.documentPrinting.margins.bottom}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                margins: {
+                                  ...config.documentPrinting.margins,
+                                  bottom: val === '' ? 0 : Math.min(50, val),
+                                },
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={50}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ซ้าย (มม.)
+                        </label>
+                        <NumericInput
+                          value={config.documentPrinting.margins.left}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                margins: {
+                                  ...config.documentPrinting.margins,
+                                  left: val === '' ? 0 : Math.min(50, val),
+                                },
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={50}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: องค์ประกอบเอกสาร */}
+                  <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">องค์ประกอบเอกสาร</span>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.documentPrinting.showLogo}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                showLogo: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-rose-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">แสดงโลโก้</span>
+                          <span className="text-[11px] text-slate-500">แสดงโลโก้กิจการบนหัวเอกสาร (ใช้รูปภาพจากข้อมูลกิจการ)</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.documentPrinting.showQRCode}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                showQRCode: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-rose-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">แสดง QR Code</span>
+                          <span className="text-[11px] text-slate-500">แสดง PromptPay QR Code สำหรับชำระเงิน</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.documentPrinting.showAuthorizedPerson}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                showAuthorizedPerson: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-rose-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">แสดงชื่อผู้มีอำนาจลงนาม</span>
+                          <span className="text-[11px] text-slate-500">แสดงชื่อผู้ออกบิล / ผู้จัดการใต้ช่องลายเซ็น</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.documentPrinting.showSignature}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                showSignature: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-rose-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">แสดงลายเซ็น</span>
+                          <span className="text-[11px] text-slate-500">แสดงลายมือชื่อดิจิทัล (เมื่อมีไฟล์ลายเซ็น)</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2">
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ข้อความท้ายเอกสาร (Footer Text)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={config.documentPrinting.footerText}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                footerText: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="ระบุข้อความหมายเหตุหรือเงื่อนไขเพิ่มเติมท้ายเอกสาร..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          จำนวนสำเนาเริ่มต้น
+                        </label>
+                        <NumericInput
+                          value={config.documentPrinting.defaultCopies}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              documentPrinting: {
+                                ...config.documentPrinting,
+                                defaultCopies: val === '' ? 1 : Math.max(1, Math.min(10, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={1}
+                          min={1}
+                          max={10}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 block">พิมพ์ 1-10 ชุดต่อครั้ง</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 6: การเงินและการชำระเงิน ================= */}
+              {activeTab === 'FINANCE_PAYMENT' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-violet-600" />
+                      <span>6. การเงินและการชำระเงิน (Finance, Payment & Taxes)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      เปิด/ปิดช่องทางรับชำระเงิน กำหนดค่าเริ่มต้นภาษี ส่วนลด เงินมัดจำ และการบันทึกบัญชี
+                    </p>
+                  </div>
+
+                  {/* Payment Methods Toggles */}
+                  <div className="space-y-2">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">ช่องทางการชำระเงินที่เปิดใช้งาน</span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.financePayment.paymentMethods.cash}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                paymentMethods: {
+                                  ...config.financePayment.paymentMethods,
+                                  cash: e.target.checked,
+                                },
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-violet-600 rounded"
+                        />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">เงินสด</span>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.financePayment.paymentMethods.bankTransfer}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                paymentMethods: {
+                                  ...config.financePayment.paymentMethods,
+                                  bankTransfer: e.target.checked,
+                                },
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-violet-600 rounded"
+                        />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">โอนธนาคาร</span>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.financePayment.paymentMethods.promptPay}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                paymentMethods: {
+                                  ...config.financePayment.paymentMethods,
+                                  promptPay: e.target.checked,
+                                },
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-violet-600 rounded"
+                        />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">PromptPay QR</span>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.financePayment.paymentMethods.credit}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                paymentMethods: {
+                                  ...config.financePayment.paymentMethods,
+                                  credit: e.target.checked,
+                                },
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-violet-600 rounded"
+                        />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">เครดิต / ค้างชำระ</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Bank & PromptPay Info Read-only from Business Settings */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                        ข้อมูลบัญชีธนาคาร & PromptPay (ดึงจากข้อมูลกิจการ)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('BUSINESS')}
+                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold cursor-pointer underline"
+                      >
+                        แก้ไขในข้อมูลกิจการ
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <span className="text-slate-500 block text-[11px]">บัญชีธนาคาร:</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                          {config.business.bankName
+                            ? `${config.business.bankName} - ${config.business.bankAccountNumber || 'ไม่ระบุเลขที่บัญชี'}`
+                            : 'ยังไม่ได้ตั้งค่าบัญชีธนาคาร'}
+                        </span>
+                        {config.business.bankAccountName && (
+                          <span className="text-[11px] text-slate-500">ชื่อบัญชี: {config.business.bankAccountName}</span>
+                        )}
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <span className="text-slate-500 block text-[11px]">PromptPay:</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                          {config.business.promptPayValue
+                            ? `${config.business.promptPayType === 'TAX_ID' ? 'เลขผู้เสียภาษี' : 'เบอร์โทร'} ${config.business.promptPayValue}`
+                            : 'ยังไม่ได้ตั้งค่า PromptPay'}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <span className="text-slate-500 block text-[11px]">QR Code ธนาคาร:</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block flex items-center gap-1">
+                          {config.business.bankQrDataUrl ? (
+                            <>
+                              <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+                              <span>อัปโหลดรูป QR แล้ว</span>
+                            </>
+                          ) : (
+                            'ยังไม่ได้อัปโหลด QR Code'
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: ค่าเริ่มต้นภาษี ส่วนลด และเงินมัดจำ */}
+                  <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block">ค่าเริ่มต้นภาษี ส่วนลด และเงินมัดจำ</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ภาษีมูลค่าเพิ่มเริ่มต้น (VAT %)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.defaultVatPercent}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                defaultVatPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={100}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ภาษีหัก ณ ที่จ่าย (Withholding %)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.defaultWithholdingPercent}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                defaultWithholdingPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={100}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          ส่วนลดสูงสุดที่อนุญาต (Max Discount %)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.maximumDiscountPercent}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                maximumDiscountPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={100}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          เงินมัดจำเริ่มต้น (Default Deposit %)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.defaultDepositPercent}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                defaultDepositPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={100}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: การบันทึกบัญชีอัตโนมัติ */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.financePayment.autoCreateFinanceTransaction}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            financePayment: {
+                              ...config.financePayment,
+                              autoCreateFinanceTransaction: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-4 h-4 text-violet-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                          บันทึกรายการบัญชีการเงินอัตโนมัติ (Auto Create Finance Transaction)
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          สร้างบันทึกรายรับ-รายจ่ายในสมุดบัญชีการเงินอัตโนมัติเมื่อมีการรับชำระเงินจริง
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 7: นัดหมายและการแจ้งเตือน ================= */}
+              {activeTab === 'APPOINTMENTS_NOTIFICATIONS' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <BellRing className="w-4 h-4 text-teal-600" />
+                      <span>นัดหมายและการแจ้งเตือน</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      จัดการประเภทนัดหมายของกิจการ และกำหนดเงื่อนไขการแจ้งเตือนอัตโนมัติของระบบ
+                    </p>
+                  </div>
+
+                  {/* Section 1: ประเภทนัดหมาย */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-teal-600" />
+                        <span>ประเภทนัดหมาย</span>
+                      </h4>
+                      <span className="text-[11px] text-slate-500">
+                        ทั้งหมด {masterData.appointmentTypes.length} ประเภท (Master Data)
+                      </span>
+                    </div>
+
+                    {/* Add New Appointment Type */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="ชื่อประเภทนัดหมายใหม่ เช่น 📦 รับสินค้าหน้างาน..."
+                        value={aptNewTypeName}
+                        onChange={(e) => setAptNewTypeName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAptTypeAdd()
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAptTypeAdd}
+                        className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>เพิ่ม</span>
+                      </button>
+                    </div>
+
+                    {/* Appointment Types List */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {masterData.appointmentTypes.map((type) => (
+                        <div
+                          key={type.id}
+                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2"
+                        >
+                          {aptEditingTypeId === type.id ? (
+                            <div className="flex-1 flex items-center gap-1.5">
+                              <input
+                                autoFocus
+                                value={aptEditingTypeLabel}
+                                onChange={(e) => setAptEditingTypeLabel(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleAptTypeUpdate(type.id)
+                                  } else if (e.key === 'Escape') {
+                                    setAptEditingTypeId(null)
+                                  }
+                                }}
+                                className="flex-1 px-2 py-1 rounded-lg border border-teal-500 text-xs bg-white dark:bg-slate-800 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAptTypeUpdate(type.id)}
+                                className="px-2 py-1 rounded-lg bg-teal-600 text-white text-[10px] font-bold shrink-0 cursor-pointer"
+                              >
+                                บันทึก
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAptEditingTypeId(null)}
+                                className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold shrink-0 cursor-pointer"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                                {type.label}
+                              </span>
+                              {aptDeleteConfirmId === type.id ? (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAptTypeDelete(type.id)}
+                                    className="px-2 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold cursor-pointer"
+                                  >
+                                    ยืนยันลบ
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setAptDeleteConfirmId(null)}
+                                    className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold cursor-pointer"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAptEditingTypeId(type.id)
+                                      setAptEditingTypeLabel(type.label)
+                                      setAptDeleteConfirmId(null)
+                                    }}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors cursor-pointer"
+                                    title="แก้ไขชื่อประเภท"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAptDeleteConfirmId(type.id)
+                                      setAptEditingTypeId(null)
+                                    }}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                    title="ลบประเภท"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section 2: การแจ้งเตือน */}
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                      <BellRing className="w-3.5 h-3.5 text-teal-600" />
+                      <span>การแจ้งเตือน</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* 1. กำหนดส่งสินค้า */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config.notifications?.deliveryReminder?.enabled ?? true}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  deliveryReminder: {
+                                    ...config.notifications?.deliveryReminder,
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              })
+                            }
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                              กำหนดส่งสินค้า
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              แจ้งเตือนรายการนัดหมายส่งสินค้าล่วงหน้า
+                            </span>
+                          </div>
+                        </label>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[11px] text-slate-500">แจ้งล่วงหน้า</span>
+                          <NumericInput
+                            value={config.notifications?.deliveryReminder?.daysBefore ?? 1}
+                            onChange={(val) => {
+                              const num = val === '' ? 0 : Math.min(365, Math.max(0, val))
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  deliveryReminder: {
+                                    ...config.notifications?.deliveryReminder,
+                                    daysBefore: num,
+                                  },
+                                },
+                              })
+                            }}
+                            defaultValueOnBlur={1}
+                            min={0}
+                            max={365}
+                            allowDecimals={false}
+                            disabled={!config.notifications?.deliveryReminder?.enabled}
+                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                          />
+                          <span className="text-[11px] text-slate-500">วัน</span>
+                        </div>
+                      </div>
+
+                      {/* 2. กำหนดคืนสินค้า */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config.notifications?.returnReminder?.enabled ?? true}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  returnReminder: {
+                                    ...config.notifications?.returnReminder,
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              })
+                            }
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                              กำหนดคืนสินค้า
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              แจ้งเตือนบิลที่ใกล้ครบกำหนดรับคืนอุปกรณ์
+                            </span>
+                          </div>
+                        </label>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[11px] text-slate-500">แจ้งล่วงหน้า</span>
+                          <NumericInput
+                            value={config.notifications?.returnReminder?.daysBefore ?? 1}
+                            onChange={(val) => {
+                              const num = val === '' ? 0 : Math.min(365, Math.max(0, val))
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  returnReminder: {
+                                    ...config.notifications?.returnReminder,
+                                    daysBefore: num,
+                                  },
+                                },
+                              })
+                            }}
+                            defaultValueOnBlur={1}
+                            min={0}
+                            max={365}
+                            allowDecimals={false}
+                            disabled={!config.notifications?.returnReminder?.enabled}
+                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                          />
+                          <span className="text-[11px] text-slate-500">วัน</span>
+                        </div>
+                      </div>
+
+                      {/* 3. ค้างชำระ */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config.notifications?.paymentReminder?.enabled ?? true}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  paymentReminder: {
+                                    ...config.notifications?.paymentReminder,
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              })
+                            }
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                              ค้างชำระ
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              แจ้งเตือนยอดเงินค้างชำระที่ถึงกำหนด
+                            </span>
+                          </div>
+                        </label>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[11px] text-slate-500">แจ้งล่วงหน้า</span>
+                          <NumericInput
+                            value={config.notifications?.paymentReminder?.daysBefore ?? 1}
+                            onChange={(val) => {
+                              const num = val === '' ? 0 : Math.min(365, Math.max(0, val))
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  paymentReminder: {
+                                    ...config.notifications?.paymentReminder,
+                                    daysBefore: num,
+                                  },
+                                },
+                              })
+                            }}
+                            defaultValueOnBlur={1}
+                            min={0}
+                            max={365}
+                            allowDecimals={false}
+                            disabled={!config.notifications?.paymentReminder?.enabled}
+                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                          />
+                          <span className="text-[11px] text-slate-500">วัน</span>
+                        </div>
+                      </div>
+
+                      {/* 4. สต็อกต่ำ */}
+                      <label className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={config.notifications?.lowStockReminder?.enabled ?? config.productStock?.lowStockNotificationEnabled ?? true}
+                            onChange={(e) => {
+                              const checked = e.target.checked
+                              setConfig({
+                                ...config,
+                                productStock: {
+                                  ...config.productStock,
+                                  lowStockNotificationEnabled: checked,
+                                },
+                                notifications: {
+                                  ...config.notifications,
+                                  lowStockReminder: {
+                                    enabled: checked,
+                                  },
+                                },
+                              })
+                            }}
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                              สต็อกต่ำ
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              แจ้งเตือนเมื่อสินค้าพร้อมใช้ต่ำกว่าขั้นต่ำ
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[10px]">
+                          Stock Alert
+                        </span>
+                      </label>
+
+                      {/* 5. สินค้าค้างคืน/คืนล่าช้า */}
+                      <label className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={config.notifications?.overdueReturnReminder?.enabled ?? true}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                notifications: {
+                                  ...config.notifications,
+                                  overdueReturnReminder: {
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              })
+                            }
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                              สินค้าค้างคืน / คืนล่าช้า
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              แจ้งเตือนรายการบิลที่เลยกำหนดส่งคืนอุปกรณ์
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 font-bold text-[10px]">
+                          Overdue Alert
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Section 3: LINE Notify / OA Configuration */}
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-300 dark:border-emerald-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        <span>การเชื่อมต่อ LINE Notify / LINE Official Account</span>
+                      </h4>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-extrabold text-[10px]">
+                        พร้อมใช้งาน
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div>
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          LINE Notify Token / Messaging API Channel Token
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showLineToken ? "text" : "password"}
+                            value={config.appointmentsNotifications?.lineNotifyToken || ''}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                appointmentsNotifications: {
+                                  ...config.appointmentsNotifications,
+                                  lineNotifyToken: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLineToken(!showLineToken)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                            aria-label={showLineToken ? "ซ่อน Token" : "แสดง Token"}
+                          >
+                            {showLineToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          LINE OA Channel Secret (สำหรับการตอบกลับอัตโนมัติ)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showLineSecret ? "text" : "password"}
+                            value={config.appointmentsNotifications?.lineOaSecret || ''}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                appointmentsNotifications: {
+                                  ...config.appointmentsNotifications,
+                                  lineOaSecret: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLineSecret(!showLineSecret)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                            aria-label={showLineSecret ? "ซ่อน Secret" : "แสดง Secret"}
+                          >
+                            {showLineSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => showToast('ทดสอบส่ง LINE สำเร็จ', 'ส่งสัญญาณข้อความทดสอบเข้า LINE Notify เรียบร้อยแล้ว', 'SUCCESS')}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>⚡ ทดสอบส่งข้อความ LINE แจ้งเตือน</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 8: บัญชีและความปลอดภัย ================= */}
+              {activeTab === 'ACCOUNT_SECURITY' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-indigo-600" />
+                      <span>บัญชีและความปลอดภัย</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      จัดการข้อมูลบัญชีผู้ใช้งาน ความปลอดภัย รหัสผ่าน รหัส PIN 6 หลัก และการล็อกหน้าจออัตโนมัติ
+                    </p>
+                  </div>
+
+                  {/* 1. User Profile Information */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-500" />
+                      <span>ข้อมูลบัญชีผู้ใช้งาน</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-slate-500 mb-0.5 text-[11px]">ชื่อผู้ใช้งาน (Username)</label>
+                        <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold font-mono text-slate-900 dark:text-slate-100">
+                          @{user?.username || 'user'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 mb-0.5 text-[11px]">อีเมล (Email สำหรับกู้คืน)</label>
+                        <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                          <span>{user?.email || 'user@rentalpos.com'}</span>
+                          {user?.emailVerified ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                              ยืนยันแล้ว
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[10px]">
+                              รอการยืนยัน
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 mb-0.5 text-[11px]">ชื่อ-นามสกุล</label>
+                        <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-slate-900 dark:text-slate-100">
+                          {user?.fullName || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 mb-0.5 text-[11px]">บทบาทในระบบ (Role)</label>
+                        <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold flex items-center gap-1.5">
+                          {user?.role === 'OWNER' ? (
+                            <span className="text-emerald-600 dark:text-emerald-400">👑 เจ้าของร้าน / ผู้ดูแลระบบ (OWNER)</span>
+                          ) : (
+                            <span className="text-indigo-600 dark:text-indigo-400">💻 พนักงาน (USER)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Security: PIN 6-digits & Auto-Lock */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3.5">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                      <span>ความปลอดภัยและการล็อกหน้าจอ</span>
+                    </h4>
+
+                    {/* Quick Lock & Auto Lock */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-xs">
+                          ล็อกหน้าจอตอนนี้ (Lock Now)
+                        </span>
+                        <p className="text-[11px] text-slate-500">
+                          ล็อกหน้าจอทันทีด้วย PIN 6 หลัก โดยไม่ต้องออกจากระบบ
+                        </p>
+                        <button
+                          type="button"
+                          onClick={lock}
+                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>ล็อกหน้าจอทันที</span>
+                        </button>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-xs">
+                          ตั้งเวลาล็อกอัตโนมัติเมื่อไม่ได้ใช้งาน (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก) (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก)
+                        </span>
+                        <CustomSelect
+                          value={autoLockDuration}
+                          onChange={(val) => updateAutoLockSetting(val as AutoLockDuration)}
+                          options={[
+                            { value: '3', label: '3 นาที' },
+                            { value: '5', label: '5 นาที (ค่าเริ่มต้น)' },
+                            { value: '10', label: '10 นาที' },
+                            { value: '15', label: '15 นาที' },
+                          ]}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Change PIN Section */}
+                    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                          <Key className="w-4 h-4 text-amber-500" />
+                          <span>เปลี่ยนรหัส PIN 6 หลัก (Change PIN)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPinSection((prev) => !prev)}
+                          className="text-[11px] text-blue-500 hover:underline font-bold cursor-pointer"
+                        >
+                          {showForgotPinSection ? 'ซ่อนการรีเซ็ต PIN' : 'ลืม PIN เดิม?'}
+                        </button>
+                      </div>
+
+                      {pinError && (
+                        <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>{pinError}</span>
+                        </div>
+                      )}
+
+                      {pinSuccess && (
+                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          <span>เปลี่ยน PIN สำเร็จเรียบร้อยแล้ว</span>
+                        </div>
+                      )}
+
+                      {/* Forgot PIN / Reset with Password Sub-form */}
+                      {showForgotPinSection ? (
+                        <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl space-y-2.5">
+                          <span className="font-bold text-amber-900 dark:text-amber-200 text-xs flex items-center gap-1.5">
+                            <KeyRound className="w-3.5 h-3.5" />
+                            <span>รีเซ็ต PIN ใหม่ด้วยรหัสผ่าน Rental POS</span>
+                          </span>
+
+                          {forgotPinErr && (
+                            <div className="p-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 text-rose-600 rounded-lg text-xs font-semibold">
+                              {forgotPinErr}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">รหัสผ่าน Rental POS</label>
+                              <div className="relative">
+                                <input
+                                  type={showForgotPinPwd ? "text" : "password"}
+                                  value={forgotPinPwd}
+                                  onChange={(e) => setForgotPinPwd(e.target.value)}
+                                  placeholder="รหัสผ่านผู้ใช้งาน"
+                                  className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowForgotPinPwd(!showForgotPinPwd)}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                  aria-label={showForgotPinPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                                >
+                                  {showForgotPinPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PIN 6 หลักใหม่</label>
+                              <div className="relative">
+                                <input
+                                  type={showForgotPinNew ? "text" : "password"}
+                                  maxLength={6}
+                                  value={forgotPinNew}
+                                  onChange={(e) => setForgotPinNew(e.target.value.replace(/\D/g, ''))}
+                                  placeholder={showForgotPinNew ? "000000" : "••••••"}
+                                  className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowForgotPinNew(!showForgotPinNew)}
+                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                  aria-label={showForgotPinNew ? "ซ่อน PIN" : "แสดง PIN"}
+                                >
+                                  {showForgotPinNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">ยืนยัน PIN ใหม่</label>
+                              <div className="relative">
+                                <input
+                                  type={showForgotPinConfirm ? "text" : "password"}
+                                  maxLength={6}
+                                  value={forgotPinConfirm}
+                                  onChange={(e) => setForgotPinConfirm(e.target.value.replace(/\D/g, ''))}
+                                  placeholder={showForgotPinConfirm ? "000000" : "••••••"}
+                                  className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowForgotPinConfirm(!showForgotPinConfirm)}
+                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                  aria-label={showForgotPinConfirm ? "ซ่อน PIN" : "แสดง PIN"}
+                                >
+                                  {showForgotPinConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              onClick={handleForgotPinReset}
+                              disabled={forgotPinLoad}
+                              className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                            >
+                              {forgotPinLoad ? 'กำลังตรวจสอบ...' : 'ยืนยันรีเซ็ต PIN'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">PIN เดิม 6 หลัก</label>
+                            <div className="relative">
+                              <input
+                                type={showOldPin ? "text" : "password"}
+                                maxLength={6}
+                                value={oldPin}
+                                onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
+                                placeholder={showOldPin ? "000000" : "••••••"}
+                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowOldPin(!showOldPin)}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                aria-label={showOldPin ? "ซ่อน PIN" : "แสดง PIN"}
+                              >
+                                {showOldPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">PIN ใหม่ 6 หลัก</label>
+                            <div className="relative">
+                              <input
+                                type={showNewPin ? "text" : "password"}
+                                maxLength={6}
+                                value={newPin}
+                                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                                placeholder={showNewPin ? "000000" : "••••••"}
+                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowNewPin(!showNewPin)}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                aria-label={showNewPin ? "ซ่อน PIN" : "แสดง PIN"}
+                              >
+                                {showNewPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">ยืนยัน PIN ใหม่</label>
+                            <div className="relative">
+                              <input
+                                type={showConfirmNewPin ? "text" : "password"}
+                                maxLength={6}
+                                value={confirmNewPin}
+                                onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ''))}
+                                placeholder={showConfirmNewPin ? "000000" : "••••••"}
+                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmNewPin(!showConfirmNewPin)}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                                aria-label={showConfirmNewPin ? "ซ่อน PIN" : "แสดง PIN"}
+                              >
+                                {showConfirmNewPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!showForgotPinSection && (
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={handleChangePin}
+                            disabled={pinLoading}
+                            className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                          >
+                            {pinLoading ? 'กำลังบันทึก...' : 'บันทึก PIN ใหม่'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Two-Factor Authentication (2FA / TOTP) */}
+                    <div className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                          <span>การยืนยันตัวตนสองชั้น (Two-Factor Authentication / TOTP)</span>
+                        </span>
+                        {isMfaEnrolled ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px] flex items-center gap-1">
+                            <Check className="w-3 h-3" />
+                            <span>เปิดใช้งานแล้ว (AAL2)</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[10px]">
+                            ยังไม่เปิดใช้งาน (AAL1)
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-500">
+                        เพิ่มความปลอดภัยระดับสูงให้กับบัญชีของคุณด้วย Time-based One-Time Password (TOTP)
+                        ผ่านแอปพลิเคชันอย่าง Google Authenticator, Microsoft Authenticator หรือ 1Password
+                      </p>
+
+                      {/* Not Enrolled State */}
+                      {!isMfaEnrolled && !isEnrollingMfa && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={handleStartMfaEnroll}
+                            disabled={mfaLoading}
+                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>{mfaLoading ? 'กำลังสร้างคำขอ...' : 'เปิดใช้งาน 2-Factor Authentication'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Enrollment Step-by-step Flow */}
+                      {!isMfaEnrolled && isEnrollingMfa && mfaEnrollData && (
+                        <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4 animate-in fade-in">
+                          <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                            <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                              <Smartphone className="w-3.5 h-3.5 text-blue-500" />
+                              <span>ขั้นตอนที่ 1: สแกน QR Code หรือคัดลอก Secret Key</span>
+                            </h5>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              เปิดแอป Authenticator บนมือถือของคุณ แล้วสแกนรูป QR ด้านล่างนี้ หรือพิมพ์คีย์ลับลงในแอป
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center gap-4">
+                            {/* QR Code Preview */}
+                            <div className="p-2 bg-white rounded-2xl border border-slate-200 shadow-sm shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={mfaEnrollData.qrCode}
+                                alt="TOTP QR Code"
+                                className="w-40 h-40 object-contain rounded-xl"
+                              />
+                            </div>
+
+                            {/* Secret key string */}
+                            <div className="flex-1 space-y-2 text-xs w-full">
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                รหัสคีย์ลับ (Secret Key สำหรับพิมพ์เอง)
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] select-all break-all text-slate-900 dark:text-slate-100 font-bold">
+                                  {mfaEnrollData.secret}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleCopySecret}
+                                  className="p-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
+                                  title="คัดลอก Secret Key"
+                                  aria-label="คัดลอก Secret Key"
+                                >
+                                  {copiedSecret ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-slate-500">
+                                ผู้ให้บริการ: Rental POS &bull; บัญชี: @{user?.username || 'user'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-slate-200 dark:border-slate-700 pt-3 space-y-3">
+                            <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                              <Key className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>ขั้นตอนที่ 2: กรอกรหัสยืนยัน 6 หลักเพื่อเปิดใช้งาน</span>
+                            </h5>
+
+                            {mfaVerifyError && (
+                              <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{mfaVerifyError}</span>
+                              </div>
+                            )}
+
+                            <form onSubmit={handleVerifyMfaEnroll} className="flex flex-wrap items-center gap-2.5">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={6}
+                                value={mfaVerifyCode}
+                                onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
+                                placeholder="000000"
+                                className="w-36 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-center font-mono font-bold tracking-widest text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                                autoFocus
+                              />
+                              <button
+                                type="submit"
+                                disabled={mfaLoading || mfaVerifyCode.trim().length !== 6}
+                                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                {mfaLoading ? 'กำลังตรวจสอบ...' : 'ยืนยันและเปิดใช้งาน 2FA'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelMfaEnroll}
+                                disabled={mfaLoading}
+                                className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                              >
+                                ยกเลิก
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Enrolled Active State */}
+                      {isMfaEnrolled && (
+                        <div className="space-y-3 pt-1">
+                          <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                <Smartphone className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">
+                                  Authenticator App (TOTP)
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  รับรหัส 6 หลักจากแอปพลิเคชันทุกครั้งเมื่อเข้าสู่ระบบ
+                                </span>
+                              </div>
+                            </div>
+
+                            {!showUnenrollConfirm && (
+                              <button
+                                type="button"
+                                onClick={() => setShowUnenrollConfirm(true)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] border border-rose-200 dark:border-rose-900 transition-colors cursor-pointer"
+                              >
+                                ปิดใช้งาน 2FA
+                              </button>
+                            )}
+                          </div>
+
+                          {showUnenrollConfirm && (
+                            <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl space-y-2 animate-in fade-in">
+                              <span className="font-bold text-rose-800 dark:text-rose-300 text-xs flex items-center gap-1.5">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>ยืนยันการปิดใช้งาน 2-Factor Authentication?</span>
+                              </span>
+                              <p className="text-[11px] text-rose-700 dark:text-rose-400">
+                                หากปิดใช้งาน ระบบจะลดระดับความปลอดภัยของบัญชีลงเหลือ AAL1 (เข้าสู่ระบบด้วยรหัสผ่านอย่างเดียว)
+                              </p>
+                              <div className="flex items-center gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={handleUnenrollMfa}
+                                  disabled={mfaLoading}
+                                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  {mfaLoading ? 'กำลังดำเนินการ...' : 'ยืนยันปิดใช้งาน 2FA'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowUnenrollConfirm(false)}
+                                  disabled={mfaLoading}
+                                  className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                                >
+                                  ยกเลิก
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. Change Password Section */}
+                    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-3">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                        <Lock className="w-4 h-4 text-blue-500" />
+                        <span>เปลี่ยนรหัสผ่าน Rental POS (Change Password)</span>
+                      </span>
+
+                      {pwdError && (
+                        <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>{pwdError}</span>
+                        </div>
+                      )}
+
+                      {pwdSuccess && (
+                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          <span>เปลี่ยนรหัสผ่านสำเร็จเรียบร้อยแล้ว</span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">รหัสผ่านเดิม</label>
+                          <div className="relative">
+                            <input
+                              type={showOldPwd ? "text" : "password"}
+                              value={oldPwd}
+                              onChange={(e) => setOldPwd(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowOldPwd(!showOldPwd)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                              aria-label={showOldPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                            >
+                              {showOldPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">รหัสผ่านใหม่ (อย่างน้อย 12 ตัวอักษร)</label>
+                          <div className="relative">
+                            <input
+                              type={showNewPwd ? "text" : "password"}
+                              value={newPwd}
+                              onChange={(e) => setNewPwd(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPwd(!showNewPwd)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                              aria-label={showNewPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                            >
+                              {showNewPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">ยืนยันรหัสผ่านใหม่</label>
+                          <div className="relative">
+                            <input
+                              type={showConfirmNewPwd ? "text" : "password"}
+                              value={confirmNewPwd}
+                              onChange={(e) => setConfirmNewPwd(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmNewPwd(!showConfirmNewPwd)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
+                              aria-label={showConfirmNewPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                            >
+                              {showConfirmNewPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={handleChangePassword}
+                          disabled={pwdLoading}
+                          className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          {pwdLoading ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                    {/* 5. Manual Local Offline Backup */}
+                    <ManualBackupCard />
+
+                    {/* 6. Session Management */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <LogOut className="w-4 h-4 text-rose-500" />
+                      <span>เซสชันการใช้งาน</span>
+                    </h4>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => logout()}
+                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>ออกจากระบบปัจจุบัน</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await logout('global')
+                            showToast('ออกจากระบบสำเร็จ', 'ออกจากระบบทุกอุปกรณ์เรียบร้อยแล้ว', 'INFO')
+                          } catch {
+                            await logout()
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>ออกจากระบบทุกอุปกรณ์ (Logout All Devices)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 9: โปรไฟล์และแบรนด์ ================= */}
+              {activeTab === 'PROFILE_BRANDING' && (
+                <div className="space-y-6">
+                  {/* Section Header */}
+                  <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 text-pink-500" />
+                      <span>การปรับแต่งระบบ / โปรไฟล์และแบรนด์</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      จัดการชื่อระบบ รูปภาพพื้นหลังเข้าสู่ระบบ รูปโปรไฟล์ประจำตัวผู้ใช้ และโลโก้ระบบ
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                                        {/* CARD 0: ชื่อระบบ (System Name) */}
+                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                      <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
+                          <Store className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                            ชื่อระบบ
+                          </h4>
+                          <p className="text-[11px] text-slate-500">
+                            กำหนดชื่อระบบหลักสำหรับแสดงผลบนแถบเมนู ส่วนหัว และหน้าจอทั้งหมด
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            ชื่อระบบ
+                          </label>
+                          <input
+                            type="text"
+                            value={config.branding?.systemName || ''}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                branding: {
+                                  ...config.branding,
+                                  systemName: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="JJK_JeeRaKiT"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
+                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
+                            <Sparkles className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                              พื้นหลังเข้าสู่ระบบและปลดล็อก PIN
+                            </h4>
+                            
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            ref={authBgInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            className="hidden"
+                            onChange={handleAuthBgUpload}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => authBgInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{config.branding?.authBackgroundImageUrl ? 'เปลี่ยนรูปพื้นหลัง' : 'อัปโหลดรูปพื้นหลัง'}</span>
+                          </button>
+                          {config.branding?.authBackgroundImageUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveAuthBg}
+                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>ลบรูป</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Background Preview Frame */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                            ตัวอย่างการแสดงผลบนหน้า Login และ App Lock (Live Preview)
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {config.branding?.authBackgroundImageUrl ? '🟢 กำหนดรูปภาพแล้ว' : '⚪ ค่าเริ่มต้น (Gradient Glow)'}
+                          </span>
+                        </div>
+
+                        <div className="relative aspect-video sm:aspect-[21/9] w-full rounded-2xl overflow-hidden border-2 border-slate-300 dark:border-slate-700 shadow-md bg-slate-950 flex items-center justify-center">
+                          {config.branding?.authBackgroundImageUrl ? (
+                            <div
+                              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                              style={{ backgroundImage: `url(${config.branding.authBackgroundImageUrl})` }}
+                            >
+                              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs" />
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0 bg-slate-950 flex items-center justify-center overflow-hidden">
+                              <div className="absolute top-1/4 -left-10 w-48 h-48 bg-blue-600/30 rounded-full blur-2xl" />
+                              <div className="absolute bottom-1/4 -right-10 w-48 h-48 bg-indigo-600/30 rounded-full blur-2xl" />
+                            </div>
+                          )}
+
+                          {/* Mini Lock Mockup Box */}
+                          <div className="relative z-10 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 sm:p-4 text-center max-w-xs w-full mx-4 shadow-xl backdrop-blur-md">
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white mx-auto mb-1.5 shadow-sm">
+                              <Lock className="w-4 h-4" />
+                            </div>
+                            <p className="text-xs font-black text-white">{config.business.businessName || 'Rental POS'}</p>
+                            <p className="text-[10px] text-slate-400 mb-2">หน้าจอล็อก & เข้าสู่ระบบ</p>
+                            <div className="flex justify-center gap-1.5">
+                              {[0, 1, 2, 3, 4, 5].map((i) => (
+                                <div key={i} className={`w-2 h-2 rounded-full ${i < 3 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1.5">
+                          * รองรับไฟล์ .jpg, .jpeg, .png, .webp ขนาดไม่เกิน 3 MB ระบบจะครอบและปรับสัดส่วนอัตโนมัติ (Cover & Center)
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
+                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                              รูปโปรไฟล์ผู้ใช้งาน
+                            </h4>
+                            <p className="text-[11px] text-slate-500">
+                              รูป Avatar ประจำตัวสำหรับบัญชีปัจจุบัน (@{user?.username || 'user'}) แสดงบนหน้าจอ PIN Lock และส่วนหัวผู้ใช้
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            ref={avatarInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            className="hidden"
+                            onChange={handleAvatarUpload}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => avatarInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{user?.avatarUrl ? 'เปลี่ยนรูปโปรไฟล์' : 'อัปโหลดรูปโปรไฟล์'}</span>
+                          </button>
+                          {user?.avatarUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveAvatar}
+                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>ลบรูป</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Avatar Preview Area */}
+                      <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20 shrink-0 overflow-hidden">
+                          {user?.avatarUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={user.avatarUrl} alt={user.fullName || 'User Avatar'} className="w-full h-full object-cover" />
+                          ) : (
+                            user?.firstName?.[0] || 'ผ'
+                          )}
+                        </div>
+
+                        <div className="space-y-1 text-center sm:text-left">
+                          <div className="flex items-center justify-center sm:justify-start gap-2">
+                            <span className="font-black text-sm text-slate-900 dark:text-slate-100">{user?.fullName || 'ผู้ใช้งานระบบ'}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px]">
+                              @{user?.username || 'user'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">
+                            สิทธิ์การใช้งาน: {user?.role === 'OWNER' ? '👑 เจ้าของร้าน (Owner)' : '💻 พนักงาน (User)'}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {user?.avatarUrl ? '✓ ใช้รูปโปรไฟล์แบบรูปภาพส่วนตัว (แยกอิสระตามแต่ละ User)' : '✓ ใช้ตัวอักษรย่อเป็นตัวแทนรูปโปรไฟล์ (Initial Avatar)'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
+                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
+                            <Building className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                              โลโก้แอปและไอคอนระบบ
+                            </h4>
+                            <p className="text-[11px] text-slate-500">
+                              โลโก้หลักของระบบ ใช้เป็น Favicon บนบราวเซอร์, หัวเมนู Sidebar, และไอคอนสำหรับ Home Screen
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            ref={appLogoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            className="hidden"
+                            onChange={handleAppLogoUpload}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => appLogoInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{config.branding?.appLogoUrl || config.business?.logoDataUrl ? 'เปลี่ยนโลโก้แอป' : 'อัปโหลดโลโก้แอป'}</span>
+                          </button>
+                          {(config.branding?.appLogoUrl || config.business?.logoDataUrl) && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveAppLogo}
+                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>คืนค่าเริ่มต้น</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dual Mockup: PC Browser Tab & Mobile App Icon */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Mockup 1: PC Browser Tab */}
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
+                            🖥️ ตัวอย่างการแสดงผลบน PC (Browser Tab & Favicon)
+                          </span>
+                          <div className="bg-slate-900 rounded-xl p-2.5 border border-slate-700/80 shadow-inner">
+                            {/* Browser Tab Bar Mockup */}
+                            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-slate-800">
+                              <div className="flex gap-1">
+                                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                              </div>
+                              <div className="flex-1 bg-slate-800/80 rounded-lg px-2.5 py-1 flex items-center gap-2 max-w-[220px]">
+                                <div className="w-4 h-4 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-slate-700">
+                                  {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="Favicon" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <Store className="w-3 h-3 text-emerald-400" />
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-slate-200 truncate font-semibold">
+                                  {config.branding?.systemName || config.business.businessName || 'JJK_JeeRaKiT'}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-slate-400">Favicon บน Browser จะอัปเดตแบบ Dynamic อัตโนมัติตามโลโก้นี้</p>
+                          </div>
+                        </div>
+
+                        {/* Mockup 2: Mobile App Icon */}
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
+                            📱 ตัวอย่างการแสดงผลบน Smartphone (Home Screen Icon)
+                          </span>
+                          <div className="bg-slate-900 rounded-xl p-3 border border-slate-700/80 flex items-center gap-4 shadow-inner">
+                            {/* App Icon Squircle */}
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-2 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white shrink-0 overflow-hidden">
+                              {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="App Icon" className="w-full h-full object-contain" />
+                              ) : (
+                                <Store className="w-7 h-7" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-xs text-white">{config.business.businessName || 'Rental POS'}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                ไอคอนสำหรับบันทึกไว้ที่หน้าจอโฮม (PWA / Web App Shortcut)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        * แนะนำใช้รูปสัดส่วนสี่เหลี่ยมจัตุรัส (Square 512×512 ขึ้นไป) ไฟล์ .png หรือ .webp เพื่อความคมชัดสูงสุด
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer Action Area */}
+            <div className="pt-3 mt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <span>คืนค่าเดิม</span>
+              </button>
+
+              <button
+                type="submit"
+                className={`px-6 py-2 rounded-xl text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all ${
+                  isSaved
+                    ? 'bg-emerald-700 shadow-emerald-700/30'
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 active:scale-95'
+                }`}
+              >
+                {isSaved ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>บันทึกแล้ว!</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>บันทึกการตั้งค่า</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}

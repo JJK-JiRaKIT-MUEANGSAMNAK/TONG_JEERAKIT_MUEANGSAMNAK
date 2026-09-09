@@ -1,0 +1,612 @@
+'use client'
+import { ModalHeader } from '@/components/common/ModalHeader'
+
+import React, { useState, useEffect } from 'react'
+import {
+  Plus,
+  ArrowRight,
+  Search,
+  ShoppingBag,
+  RefreshCw,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Printer,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { CustomSelect } from '@/components/common/CustomSelect'
+import { Quotation } from '@/lib/types/rental-pos'
+import { logger } from '@/lib/utils/logger'
+
+export interface ReservationFulfillmentResult {
+  hasShortage: boolean
+  requestedQuantity: number
+  reservedQuantity: number
+  shortageQuantity: number
+  items: Array<{
+    productId: string
+    productName: string
+    shortageQuantity: number
+  }>
+}
+
+export default function QuotationsPage() {
+  const router = useRouter()
+  const [quotations, setQuotations] = useState<Quotation[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('ALL')
+
+  const [selectedQuotationForConversion, setSelectedQuotationForConversion] = useState<Quotation | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [actionError, setActionError] = useState('')
+  const [reservationResult, setReservationResult] = useState<ReservationFulfillmentResult | null>(null)
+
+  // Quotation Release Reservation with Mandatory User Reason
+  const [quotationForRelease, setQuotationForRelease] = useState<Quotation | null>(null)
+  const [releaseReason, setReleaseReason] = useState('')
+  const [releaseTargetStatus, setReleaseTargetStatus] = useState<'CANCELLED' | 'WAITING' | 'REJECTED'>('CANCELLED')
+  const [releaseError, setReleaseError] = useState('')
+  const [isReleasing, setIsReleasing] = useState(false)
+
+  const handleOpenReleaseModal = (quotation: Quotation) => {
+    setQuotationForRelease(quotation)
+    setReleaseReason('')
+    setReleaseTargetStatus('CANCELLED')
+    setReleaseError('')
+    setIsReleasing(false)
+  }
+
+  const handleCloseReleaseModal = () => {
+    if (isReleasing) return
+    setQuotationForRelease(null)
+    setReleaseReason('')
+    setReleaseError('')
+  }
+
+  const handleConfirmRelease = async () => {
+    if (!quotationForRelease || isReleasing) return
+    const trimmedReason = releaseReason.trim()
+    if (!trimmedReason) {
+      setReleaseError('กรุณาระบุเหตุผลในการปล่อยหรือยกเลิกการจองสินค้า')
+      return
+    }
+
+    setIsReleasing(true)
+    setReleaseError('')
+    try {
+      setQuotations((prev) =>
+        prev.map((q) => (q.id === quotationForRelease.id ? { ...q, status: releaseTargetStatus } : q))
+      )
+      setQuotationForRelease(null)
+      setReleaseReason('')
+      if (selectedQuotationForConversion?.id === quotationForRelease.id) {
+        closeActionModal()
+      }
+    } catch (err: any) {
+      setReleaseError(err?.message || 'ไม่สามารถปล่อยการจองได้')
+    } finally {
+      setIsReleasing(false)
+    }
+  }
+
+  const loadQuotations = React.useCallback(async () => {
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadQuotations()
+  }, [loadQuotations])
+
+  const filteredQuotations = quotations.filter((q) => {
+    const matchesSearch =
+      q.quotationNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'ALL' || q.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  const closeActionModal = () => {
+    setSelectedQuotationForConversion(null)
+    setReservationResult(null)
+    setActionError('')
+    setIsProcessing(false)
+  }
+
+  const handleOpenConversionVerification = (quotation: Quotation) => {
+    setReservationResult(null)
+    setActionError('')
+    setSelectedQuotationForConversion(quotation)
+  }
+
+  const routeAcceptedQuotationToPos = (quotationId: string) => {
+    closeActionModal()
+    router.push(`/pos?quotationId=${encodeURIComponent(quotationId)}`)
+  }
+
+  const handlePrintQuotation = (_q: Quotation) => {
+    window.print()
+  }
+
+  const handleConfirmConvertToPos = async () => {
+    if (!selectedQuotationForConversion || isProcessing) return
+    const targetQuotation = selectedQuotationForConversion
+    if (targetQuotation.status === 'CONVERTED') return
+
+    setIsProcessing(true)
+    setActionError('')
+    routeAcceptedQuotationToPos(targetQuotation.id)
+    setIsProcessing(false)
+  }
+
+  return (
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 shrink-0">
+        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] text-slate-500 font-semibold block">ใบเสนอราคาทั้งหมด</span>
+          <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{quotations.length}</h3>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] text-slate-500 font-semibold block">ตอบรับ / จองสินค้าแล้ว</span>
+          <h3 className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {quotations.filter((q) => q.status === 'ACCEPTED').length}
+          </h3>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] text-slate-500 font-semibold block">รอยืนยัน</span>
+          <h3 className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">
+            {quotations.filter((q) => q.status === 'WAITING' || q.status === 'SENT' || q.status === 'DRAFT').length}
+          </h3>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] text-slate-500 font-semibold block">ทำรายการสำเร็จ</span>
+          <h3 className="text-lg sm:text-xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
+            {quotations.filter((q) => q.status === 'CONVERTED').length}
+          </h3>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="ค้นหาเลขที่ใบเสนอราคา หรือ ชื่อลูกค้า..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 text-xs w-full sm:w-auto shrink-0">
+          <div className="w-48">
+            <CustomSelect
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(String(value))}
+              options={[
+                { value: 'ALL', label: 'สถานะ: ทั้งหมด' },
+                { value: 'ACCEPTED', label: 'ตอบรับ / จองสินค้าแล้ว' },
+                { value: 'WAITING', label: 'รอยืนยัน' },
+                { value: 'CONVERTED', label: 'แปลงเป็นบิลแล้ว' },
+              ]}
+            />
+          </div>
+
+          <button
+            onClick={() => router.push('/pos?mode=quotation')}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ สร้างใบเสนอราคา</span>
+          </button>
+        </div>
+      </div>
+
+      {isLoading && (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center py-16 text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin mb-3" />
+          <span className="text-sm font-semibold">กำลังโหลดข้อมูลใบเสนอราคา...</span>
+        </div>
+      )}
+
+      {!isLoading && filteredQuotations.length === 0 && (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center py-16 text-slate-400">
+          <FileText className="w-10 h-10 mb-3 opacity-40" />
+          <span className="text-sm font-semibold">ไม่พบรายการใบเสนอราคา</span>
+          <span className="text-xs mt-1 text-slate-500">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</span>
+        </div>
+      )}
+
+      {!isLoading && filteredQuotations.length > 0 && (
+        <>
+          {/* 1. Mobile Card View (< md screens) */}
+          <div className="md:hidden flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1">
+            {filteredQuotations.map((q) => {
+              const isConverted = q.status === 'CONVERTED'
+              const buttonLabel = isConverted ? 'เปิดบิลแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล POS' : 'ตอบรับ / จองสินค้า'
+              return (
+                <div
+                  key={q.id}
+                  className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm space-y-2"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 block">
+                        {q.quotationNo}
+                      </span>
+                      <span className="text-[11px] text-slate-400 block">วันที่: {q.quotationDate}</span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      q.status === 'ACCEPTED'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : q.status === 'CONVERTED'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    }`}>
+                      {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-slate-100 dark:border-slate-700/80">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">ลูกค้า:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                        {q.customerName}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">ช่วงเช่า:</span>
+                      <span className="font-mono text-slate-600 dark:text-slate-400 block text-[11px]">
+                        {q.rentalStartDate} - {q.rentalEndDate}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">ยอดสุทธิ:</span>
+                      <span className="font-black text-sm text-slate-900 dark:text-slate-100">
+                        ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handlePrintQuotation(q)}
+                        className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 active:scale-95 cursor-pointer min-h-[36px]"
+                        title="พิมพ์ใบเสนอราคา"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span>พิมพ์</span>
+                      </button>
+
+                      {q.status === 'ACCEPTED' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReleaseModal(q)}
+                          className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs inline-flex items-center gap-1 shadow-xs cursor-pointer min-h-[36px]"
+                          title="ปล่อยการจองสินค้า"
+                        >
+                          <span>ปล่อยจอง</span>
+                        </button>
+                      )}
+
+                      <button
+                        disabled={isConverted}
+                        onClick={() => !isConverted && handleOpenConversionVerification(q)}
+                        className={`px-3 py-1.5 rounded-xl text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all min-h-[36px] ${
+                          isConverted
+                            ? 'bg-slate-400 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'
+                        }`}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>{buttonLabel}</span>
+                        {!isConverted && <ArrowRight className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* 2. Desktop/Tablet Table View (>= md screens) */}
+          <div className="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex-1 min-h-0 flex-col">
+            <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-auto">
+              <table className="w-full table-fixed text-left text-[11px] leading-tight border-collapse">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-sm">
+                  <tr className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-sans font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                    <th className="w-[15%] px-2 py-2.5 whitespace-nowrap">เลขที่ใบเสนอราคา</th>
+                    <th className="w-[11%] px-2 py-2.5 whitespace-nowrap">วันที่เอกสาร</th>
+                    <th className="w-[20%] px-2 py-2.5 whitespace-nowrap">ชื่อลูกค้า</th>
+                    <th className="w-[18%] px-2 py-2.5 whitespace-nowrap">ช่วงเช่าสินค้า</th>
+                    <th className="w-[13%] px-2 py-2.5 text-right whitespace-nowrap">ยอดรวมสุทธิ</th>
+                    <th className="w-[11%] px-2 py-2.5 text-center whitespace-nowrap">สถานะ</th>
+                    <th className="w-[12%] px-2 py-2.5 text-center whitespace-nowrap">การกระทำ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {filteredQuotations.map((q) => {
+                    const isConverted = q.status === 'CONVERTED'
+                    const buttonLabel = isConverted ? 'เปิดแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล' : 'ตอบรับ/จอง'
+                    return (
+                      <tr key={q.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="px-2 py-2.5 font-bold text-blue-600 dark:text-blue-400 font-mono whitespace-nowrap truncate">{q.quotationNo}</td>
+                        <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.quotationDate}</td>
+                        <td className="px-2 py-2.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap truncate">{q.customerName}</td>
+                        <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.rentalStartDate} ถึง {q.rentalEndDate}</td>
+                        <td className="px-2 py-2.5 text-right font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
+                          ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                            q.status === 'ACCEPTED'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : q.status === 'CONVERTED'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          }`}>
+                            {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handlePrintQuotation(q)}
+                              className="shrink-0 px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 hover:scale-[1.02] cursor-pointer"
+                              title="พิมพ์ใบเสนอราคา"
+                            >
+                              <Printer className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <span>พิมพ์</span>
+                            </button>
+
+                            {q.status === 'ACCEPTED' && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReleaseModal(q)}
+                                className="shrink-0 px-2 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:scale-[1.02] cursor-pointer"
+                                title="ปล่อย / ยกเลิกการจองสินค้า"
+                              >
+                                <span>ปล่อยจอง</span>
+                              </button>
+                            )}
+
+                            <button
+                              disabled={isConverted}
+                              onClick={() => !isConverted && handleOpenConversionVerification(q)}
+                              className={`shrink-0 px-2 py-1 rounded-lg text-white font-extrabold text-[10px] inline-flex items-center gap-1 shadow-md transition-all ${
+                                isConverted ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] cursor-pointer'
+                              }`}
+                            >
+                              <ShoppingBag className="w-3 h-3" />
+                              <span>{buttonLabel}</span>
+                              {!isConverted && <ArrowRight className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {selectedQuotationForConversion && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isProcessing) closeActionModal()
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 cursor-default max-h-[90vh] overflow-y-auto"
+          >
+            <ModalHeader onClose={() => !isProcessing && closeActionModal()} inset="p6">
+              <div>
+                <span className="text-xs font-mono font-bold text-blue-600">{selectedQuotationForConversion.quotationNo}</span>
+                <h3 className="font-black text-lg text-slate-900 dark:text-slate-100">
+                  {selectedQuotationForConversion.status === 'ACCEPTED' ? 'ตรวจสอบก่อนเปิดบิล' : 'ตอบรับและจองสินค้า'}
+                </h3>
+              </div>
+            </ModalHeader>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-1">
+                <p>ลูกค้า: <strong>{selectedQuotationForConversion.customerName}</strong> ({selectedQuotationForConversion.phone})</p>
+                <p>ช่วงเวลาเช่า: <strong className="font-mono">{selectedQuotationForConversion.rentalStartDate} ถึง {selectedQuotationForConversion.rentalEndDate}</strong></p>
+              </div>
+
+              <h4 className="font-bold">รายการสินค้า</h4>
+              <div className="border rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {selectedQuotationForConversion.items.map((item, idx) => (
+                  <div key={idx} className="p-3 flex justify-between items-center bg-white dark:bg-slate-900">
+                    <div>
+                      <span className="font-bold block">{item.productName}</span>
+                      <span className="text-[11px] text-slate-500">จำนวน: {item.quantity} | ราคา: {item.unitPrice} บาท</span>
+                    </div>
+                    <span className="font-extrabold text-blue-600">{item.lineTotal.toLocaleString()} บาท</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl space-y-1 text-right border border-blue-100 dark:border-blue-900">
+                <p>ยอดรวมส่วนลด/ค่าขนส่ง/VAT: <span className="font-bold">{(selectedQuotationForConversion.grandTotal - selectedQuotationForConversion.subtotal).toLocaleString()} บาท</span></p>
+                <h4 className="text-sm font-black text-blue-600 dark:text-blue-400">
+                  ยอดรวมสุทธิทั้งสิ้น: {selectedQuotationForConversion.grandTotal.toLocaleString()} บาท
+                </h4>
+              </div>
+
+              {reservationResult && (
+                <div className={`p-3 rounded-xl border ${reservationResult.hasShortage ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900'}`}>
+                  <div className="flex gap-2 items-start">
+                    {reservationResult.hasShortage ? <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" /> : <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                    <div className="space-y-1 flex-1">
+                      <p className="font-black">
+                        {reservationResult.hasShortage ? `ยืนยันแล้ว — รอสินค้า ${reservationResult.shortageQuantity} ชิ้น` : 'จองสินค้าได้ครบ'}
+                      </p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                        ต้องการ {reservationResult.requestedQuantity} / จองได้ {reservationResult.reservedQuantity} / ขาด {reservationResult.shortageQuantity}
+                      </p>
+                      {reservationResult.items.filter((item) => item.shortageQuantity > 0).map((item) => (
+                        <div key={item.productId} className="text-[11px] flex justify-between gap-2">
+                          <span>{item.productName}</span>
+                          <span className="font-bold text-amber-700 dark:text-amber-300">ขาด {item.shortageQuantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionError && (
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300">
+                  {actionError}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-between items-center gap-2 text-xs">
+              <div>
+                {selectedQuotationForConversion.status === 'ACCEPTED' && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handleOpenReleaseModal(selectedQuotationForConversion)}
+                    className="px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    ยกเลิก / ปล่อยการจองสินค้านี้
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={closeActionModal}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold disabled:opacity-50"
+                >
+                  {reservationResult?.hasShortage ? 'ปิด' : 'ยกเลิก'}
+                </button>
+
+                {!reservationResult?.hasShortage && (
+                  <button
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={handleConfirmConvertToPos}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold shadow-lg shadow-emerald-500/30 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
+                    <span>{selectedQuotationForConversion.status === 'ACCEPTED' ? 'เข้า POS เพื่อเปิดบิล' : 'ยืนยันและจองสินค้า'}</span>
+                    {!isProcessing && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quotation Release Reservation Modal */}
+      {quotationForRelease && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isReleasing) handleCloseReleaseModal()
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 cursor-default"
+          >
+            <ModalHeader onClose={handleCloseReleaseModal} inset="p6">
+              <div>
+                <span className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
+                  {quotationForRelease.quotationNo}
+                </span>
+                <h3 className="font-black text-lg text-slate-900 dark:text-slate-100">
+                  ปล่อยการจองสินค้าจากใบเสนอราคา
+                </h3>
+              </div>
+            </ModalHeader>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-1">
+                <p>ลูกค้า: <strong>{quotationForRelease.customerName}</strong></p>
+                <p>ช่วงเวลาเช่า: <strong className="font-mono">{quotationForRelease.rentalStartDate} ถึง {quotationForRelease.rentalEndDate}</strong></p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                  สถานะหลังปล่อยการจอง *
+                </label>
+                <select
+                  value={releaseTargetStatus}
+                  onChange={(e) => setReleaseTargetStatus(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                >
+                  <option value="CANCELLED">CANCELLED (ยกเลิกใบเสนอราคา)</option>
+                  <option value="WAITING">WAITING (ปรับกลับเป็นรอยืนยัน)</option>
+                  <option value="REJECTED">REJECTED (ปฏิเสธใบเสนอราคา)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                  เหตุผลในการปล่อยการจอง (จำเป็นต้องระบุ) *
+                </label>
+                <textarea
+                  rows={3}
+                  value={releaseReason}
+                  onChange={(e) => {
+                    setReleaseReason(e.target.value)
+                    if (releaseError) setReleaseError('')
+                  }}
+                  placeholder="กรุณาระบุเหตุผล เช่น ลูกค้ายกเลิกคำสั่งเช่า, ไม่สะดวกชำระมัดจำ, สินค้าไม่พร้อม ฯลฯ"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              {releaseError && (
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
+                  {releaseError}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2 text-xs">
+              <button
+                type="button"
+                disabled={isReleasing}
+                onClick={handleCloseReleaseModal}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                disabled={isReleasing || !releaseReason.trim()}
+                onClick={handleConfirmRelease}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold shadow-lg shadow-rose-500/30 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isReleasing ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
+                <span>ยืนยันปล่อยการจอง</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

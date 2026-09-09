@@ -1,0 +1,79 @@
+# .gitignore — Rental POS (Next.js / pnpm)
+# Generated: Phase 0 remediation — 2026-08-10
+
+# ── Environment files (CRITICAL — ห้าม commit credentials) ──────────────────
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# ── Next.js build output ─────────────────────────────────────────────────────
+.next/
+out/
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+# NOTE: pnpm-lock.yaml ต้องเก็บไว้ใน repository — ห้ามเพิ่มที่นี่
+
+# ── TypeScript build cache ────────────────────────────────────────────────────
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# ── OS / Editor artifacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/settings.json
+.idea/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Test & Coverage ──────────────────────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ── Misc generated / artifact files ──────────────────────────────────────────
+COPY_MANIFEST.txt
+*.tmp
+*.bak
+*.before-*
+_BACKUP/
+_CLEAN/
+_PROJECT_AUDIT/
+*.zip
+.eslintcache
+
+# ── Supabase ─────────────────────────────────────────────────────────────────
+supabase/.temp/
+supabase/.branches/
+supabase/backup/
+supabase/migrations_UUID_BACKUP_*/
+backups/
+.supabase/
+
+# ── Credentials & Secrets ────────────────────────────────────────────────────
+*.key
+*.pem
+*.p8
+*.p12
+*.pfx
+id_rsa*
+*credential*
+*token*
+serviceAccountKey*.json
+
+# Generated / local audit artifacts
+_CURRENT_AUDIT_STATE/
+.env.production
+
+# OpenNext / Cloudflare generated artifacts
+.open-next/
+.wrangler/
