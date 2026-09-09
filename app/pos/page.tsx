@@ -8,6 +8,7 @@ import { QuantityModal } from '@/components/pos/QuantityModal'
 import { Product, Customer } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { ShoppingBag, Package, FileText, ArrowLeft } from 'lucide-react'
+import { loadProducts } from '@/lib/product-storage'
 
 function POSContent() {
   const router = useRouter()
@@ -19,6 +20,10 @@ function POSContent() {
   const [customersList, setCustomersList] = useState<Customer[]>([])
   const [productsList, setProductsList] = useState<Product[]>([])
   const [mobileTab, setMobileTab] = useState<'PRODUCTS' | 'CART'>('PRODUCTS')
+
+  useEffect(() => {
+    setProductsList(loadProducts())
+  }, [])
 
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product)

@@ -25,6 +25,7 @@ import { NewProductModal } from '@/components/products/NewProductModal'
 import { DamagedRestoreModal } from '@/components/products/DamagedRestoreModal'
 import { DamagedTransformModal } from '@/components/products/DamagedTransformModal'
 import { logger } from '@/lib/utils/logger'
+import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
 
 export default function ProductsPage() {
   const { showToast } = useToast()
@@ -38,6 +39,7 @@ export default function ProductsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const loadProducts = React.useCallback(async () => {
+    setProducts(loadStorageProducts())
     setIsLoading(false)
   }, [])
 
@@ -77,7 +79,8 @@ export default function ProductsPage() {
 
     setIsDeleting(true)
     try {
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id))
+      const updated = deleteStorageProduct(productToDelete.id)
+      setProducts(updated)
       showToast('ลบสินค้าสำเร็จ', `ลบรายการ "${productToDelete.name}" เรียบร้อยแล้ว`, 'SUCCESS')
       setDeleteReason('')
       setProductToDelete(null)
@@ -541,15 +544,21 @@ export default function ProductsPage() {
           if (Array.isArray(saved)) {
             setProducts((prev) => {
               const savedIds = new Set(saved.map((s) => s.id))
-              return [...saved, ...prev.filter((p) => !savedIds.has(p.id))]
+              const next = [...saved, ...prev.filter((p) => !savedIds.has(p.id))]
+              saveStorageProducts(next)
+              return next
             })
           } else {
             setProducts((prev) => {
               const exists = prev.some((p) => p.id === saved.id)
+              let next: Product[]
               if (exists) {
-                return prev.map((p) => (p.id === saved.id ? saved : p))
+                next = prev.map((p) => (p.id === saved.id ? saved : p))
+              } else {
+                next = [saved, ...prev]
               }
-              return [saved, ...prev]
+              saveStorageProducts(next)
+              return next
             })
             setSelectedProduct((prev) => (prev && prev.id === saved.id ? saved : prev))
           }
@@ -562,7 +571,7 @@ export default function ProductsPage() {
         isOpen={showCountModal}
         onClose={() => setShowCountModal(false)}
         products={products}
-        onSuccess={(updated) => setProducts(updated)}
+        onSuccess={(updated) => { saveStorageProducts(updated); setProducts(updated) }}
       />
 
       {/* Damaged Restore Modal */}
@@ -571,7 +580,11 @@ export default function ProductsPage() {
         onClose={() => setRestoreTargetProduct(null)}
         product={restoreTargetProduct}
         onSuccess={({ product: updatedP }) => {
-          setProducts((prev) => prev.map((p) => (p.id === updatedP.id ? updatedP : p)))
+          setProducts((prev) => {
+            const next = prev.map((p) => (p.id === updatedP.id ? updatedP : p))
+            saveStorageProducts(next)
+            return next
+          })
           if (selectedProduct?.id === updatedP.id) {
             setSelectedProduct(updatedP)
           }
@@ -586,13 +599,15 @@ export default function ProductsPage() {
         sourceProduct={transformTargetProduct}
         allProducts={products}
         onSuccess={({ sourceProduct: updatedSource, targetProduct: updatedTarget }) => {
-          setProducts((prev) =>
-            prev.map((p) => {
+          setProducts((prev) => {
+            const next = prev.map((p) => {
               if (p.id === updatedSource.id) return updatedSource
               if (p.id === updatedTarget.id) return updatedTarget
               return p
             })
-          )
+            saveStorageProducts(next)
+            return next
+          })
           if (selectedProduct?.id === updatedSource.id) setSelectedProduct(updatedSource)
           if (selectedProduct?.id === updatedTarget.id) setSelectedProduct(updatedTarget)
         }}
