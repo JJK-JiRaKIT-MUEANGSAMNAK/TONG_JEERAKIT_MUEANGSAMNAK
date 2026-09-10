@@ -113,7 +113,8 @@ export interface Product {
   rentalTypeId?: string
   normalPrice: number
   dailyPrice: number
-  salePrice?: number
+  rentPrice?: number | null
+  salePrice?: number | null
   costPrice?: number
   replacementPrice?: number
   defaultDamageFee: number
@@ -129,6 +130,10 @@ export interface Product {
   status: 'ACTIVE' | 'INACTIVE'
   description?: string
   totalRentalCount?: number
+  createdAt?: string
+  categoryRuleId?: string
+  calculationType?: string
+  calculationLabel?: string
   // Compatibility aliases
   product_code?: string
   product_name?: string

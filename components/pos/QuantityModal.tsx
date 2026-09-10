@@ -23,6 +23,7 @@ export function calculateBillableDays(startStr: string, endStr: string, mode: st
 
 interface QuantityModalProps {
   product: Product
+  mode?: 'RENT' | 'SALE'
   onAdd: (itemData: {
     product: Product
     rentalType: CartRentalType
@@ -35,14 +36,22 @@ interface QuantityModalProps {
   onClose: () => void
 }
 
-export function QuantityModal({ product, onAdd, onClose }: QuantityModalProps) {
+export function QuantityModal({ product, mode = 'RENT', onAdd, onClose }: QuantityModalProps) {
   const defaultDays = 1
   const calculationMode = 'START_DATE_IS_DAY_ONE'
 
-  const rentalType = product.rental_type ?? product.rentalType ?? 'NORMAL'
+  const isSale = mode === 'SALE' || (mode !== 'RENT' && product.rentalType === 'SALE')
+  const isDaily = !isSale && (product.calculationType === 'PER_DAY' || product.rentalType === 'DAILY')
+  const rentalType: CartRentalType = isSale ? 'SALE' : isDaily ? 'DAILY' : 'NORMAL'
+
   const normalPrice = product.normal_price ?? product.normalPrice ?? 0
   const dailyPrice = product.daily_price ?? product.dailyPrice ?? 0
-  const salePrice = product.sale_price ?? product.salePrice ?? 0
+  const salePrice = product.salePrice ?? product.sale_price ?? 0
+  const rentPrice = product.rentPrice !== undefined && product.rentPrice !== null
+    ? product.rentPrice
+    : (isDaily ? dailyPrice : normalPrice)
+
+  const initialUnitPrice = isSale ? salePrice : rentPrice
   const available = product.available_qty ?? product.availableQuantity ?? product.totalQuantity ?? 0
   const productName = product.product_name || product.name || ''
   const productCode = product.product_code || product.code || ''
@@ -51,13 +60,7 @@ export function QuantityModal({ product, onAdd, onClose }: QuantityModalProps) {
   const [selectedQty, setSelectedQty] = useState<number | null>(1)
   const [pendingConfirm, setPendingConfirm] = useState<boolean>(false)
   const [inputQty, setInputQty] = useState<number | ''>(1)
-  const [unitPrice, setUnitPrice] = useState<number | ''>(
-    rentalType === 'DAILY'
-      ? dailyPrice
-      : rentalType === 'SALE'
-        ? salePrice
-        : normalPrice
-  )
+  const [unitPrice, setUnitPrice] = useState<number | ''>(initialUnitPrice)
   const [usageCount, setUsageCount] = useState<number | ''>(1)
 
   const today = new Date()

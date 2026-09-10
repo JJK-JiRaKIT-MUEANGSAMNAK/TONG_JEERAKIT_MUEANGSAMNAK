@@ -9,6 +9,8 @@ import { Product, Customer } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { ShoppingBag, Package, FileText, ArrowLeft } from 'lucide-react'
 import { loadProducts } from '@/lib/product-storage'
+import { loadCustomers, addCustomer as addStorageCustomer } from '@/lib/customer-storage'
+import { CartItem } from '@/lib/cart-storage'
 
 function POSContent() {
   const router = useRouter()
@@ -17,19 +19,24 @@ function POSContent() {
   const { showToast } = useToast()
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedProductMode, setSelectedProductMode] = useState<'RENT' | 'SALE'>('RENT')
   const [customersList, setCustomersList] = useState<Customer[]>([])
   const [productsList, setProductsList] = useState<Product[]>([])
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [mobileTab, setMobileTab] = useState<'PRODUCTS' | 'CART'>('PRODUCTS')
 
   useEffect(() => {
     setProductsList(loadProducts())
+    setCustomersList(loadCustomers())
   }, [])
 
-  const handleSelectProduct = (product: Product) => {
+  const handleSelectProduct = (product: Product, mode: 'RENT' | 'SALE' = 'RENT') => {
     setSelectedProduct(product)
+    setSelectedProductMode(mode)
   }
 
-  const handleAddToCart = (_data: {
+  const handleAddToCart = (data: {
     product: Product
     rentalType: 'NORMAL' | 'DAILY' | 'SALE'
     quantity: number
@@ -38,11 +45,42 @@ function POSContent() {
     dailyStartDate?: Date
     dailyEndDate?: Date
   }) => {
+    const isSale = data.rentalType === 'SALE'
+    const days = !isSale && data.dailyStartDate && data.dailyEndDate
+      ? Math.max(1, Math.round((data.dailyEndDate.getTime() - data.dailyStartDate.getTime()) / (1000 * 60 * 60 * 24)))
+      : Math.max(1, data.usageCount)
+
+    const multiplier = isSale ? 1 : data.rentalType === 'DAILY' ? days : Math.max(1, data.usageCount)
+    const lineTotal = data.quantity * data.unitPrice * multiplier
+
+    const newItem: CartItem = {
+      id: `cart-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      product: data.product,
+      productId: data.product.id,
+      productName: data.product.name,
+      itemType: isSale ? 'SALE' : 'RENT',
+      unitName: data.product.unit || data.product.unit_name,
+      calculationType: data.product.calculationType as any,
+      calculationLabel: data.product.calculationLabel,
+      rentalType: data.rentalType,
+      quantity: data.quantity,
+      unitPrice: data.unitPrice,
+      usageCount: isSale ? 1 : data.usageCount,
+      billableDays: isSale ? 1 : days,
+      dailyStartDate: !isSale && data.dailyStartDate ? data.dailyStartDate.toISOString().slice(0, 10) : undefined,
+      dailyEndDate: !isSale && data.dailyEndDate ? data.dailyEndDate.toISOString().slice(0, 10) : undefined,
+      lineTotal,
+    }
+
+    setCartItems((prev) => [...prev, newItem])
     setSelectedProduct(null)
+    showToast('เพิ่มสินค้าในตะกร้าแล้ว', `${data.product.name} × ${data.quantity}`, 'SUCCESS')
   }
 
   const handleAddCustomer = async (newCustomer: Customer) => {
-    setCustomersList((prev) => [newCustomer, ...prev])
+    const updated = addStorageCustomer(newCustomer)
+    setCustomersList(updated)
+    setSelectedCustomer(newCustomer)
     showToast('เพิ่มลูกค้าสำเร็จ', `เพิ่มลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
   }
 
@@ -59,7 +97,7 @@ function POSContent() {
     router.push('/quotations')
   }
 
-  const cartTotalItems = 0
+  const cartTotalItems = cartItems.reduce((sum, i) => sum + (i.quantity || 0), 0)
 
   return (
     <div className="h-full p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-[#07111f] flex flex-col gap-2.5 md:gap-3 overflow-hidden min-h-0">
@@ -129,6 +167,10 @@ function POSContent() {
         >
           <CartPanel
             customers={customersList}
+            items={cartItems}
+            setItems={setCartItems}
+            customer={selectedCustomer}
+            setCustomer={setSelectedCustomer}
             onAddCustomer={handleAddCustomer}
             onCheckout={handleCheckout}
             isQuotationMode={isQuotationMode}
@@ -141,6 +183,7 @@ function POSContent() {
       {selectedProduct && (
         <QuantityModal
           product={selectedProduct}
+          mode={selectedProductMode}
           onAdd={handleAddToCart}
           onClose={() => setSelectedProduct(null)}
         />

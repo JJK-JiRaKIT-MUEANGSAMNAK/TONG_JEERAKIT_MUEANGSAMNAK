@@ -9,6 +9,7 @@ import { CustomDatePicker, getLocalDateString } from '@/components/common/Custom
 import { useToast } from '@/components/common/Toast'
 import { logger } from '@/lib/utils/logger'
 import * as XLSX from 'xlsx'
+import { loadTransactions as fetchTransactions, addTransaction } from '@/lib/finance-storage'
 
 interface StatementTransaction {
   id: string
@@ -44,7 +45,10 @@ export default function StatementPage() {
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
 
-  const loadTransactions = React.useCallback(async () => {}, [])
+  const loadTransactions = React.useCallback(async () => {
+    const list = fetchTransactions()
+    setTransactions(list)
+  }, [])
 
   useEffect(() => {
     loadTransactions()
@@ -200,6 +204,7 @@ export default function StatementPage() {
       channel: manualChannel,
     }
 
+    addTransaction(newTx)
     setTransactions((prev) => [newTx, ...prev])
     setShowAddModal(false)
     setManualAmount(0)

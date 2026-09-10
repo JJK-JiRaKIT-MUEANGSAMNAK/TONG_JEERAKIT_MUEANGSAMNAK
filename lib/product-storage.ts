@@ -37,14 +37,14 @@ function buildProduct(
     rentalTypeId,
     unit,
     unitId,
-    normalPrice: 0,
-    dailyPrice: 0,
-    salePrice: 0,
+    normalPrice: overrides.normalPrice ?? (overrides.rentPrice ?? 35),
+    dailyPrice: overrides.dailyPrice ?? 0,
+    salePrice: overrides.salePrice ?? (rentalType === 'SALE' ? 100 : isAccessory ? 20 : 0),
     costPrice: 0,
     defaultDamageFee: 0,
     defaultLossFee: 0,
-    totalQuantity: 0,
-    availableQuantity: 0,
+    totalQuantity: 20,
+    availableQuantity: 20,
     rentedQuantity: 0,
     damagedQuantity: 0,
     lostQuantity: 0,
@@ -52,7 +52,12 @@ function buildProduct(
     status: 'ACTIVE',
     isAccessory,
     isChargeable: !isAccessory,
-    requiresReturn: true,
+    requiresReturn: rentalType !== 'SALE',
+    categoryRuleId: overrides.categoryRuleId ?? categoryId,
+    calculationType: overrides.calculationType ?? (rentalType === 'DAILY' ? 'PER_DAY' : rentalType === 'SALE' ? 'SALE' : 'PER_ROUND'),
+    calculationLabel: overrides.calculationLabel ?? (rentalType === 'DAILY' ? 'ราคาเช่าต่อวัน × จำนวนสินค้า × จำนวนวัน' : rentalType === 'SALE' ? 'ราคาขายต่อชิ้น × จำนวนสินค้า' : 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'),
+    rentPrice: overrides.rentPrice !== undefined ? overrides.rentPrice : (rentalType === 'SALE' ? null : 35),
+    createdAt: overrides.createdAt ?? new Date().toISOString().slice(0, 10),
     ...overrides,
   }
 }
@@ -122,7 +127,29 @@ export function loadProducts(): Product[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as Product[]
+      if (Array.isArray(parsed)) {
+        // Normalize backward-compatible prices without destroying existing data
+        return parsed.map((p: Product) => {
+          let rentPrice = p.rentPrice
+          let salePrice = p.salePrice
+
+          if (rentPrice === undefined && salePrice === undefined) {
+            if (p.rentalType === 'SALE') {
+              salePrice = p.salePrice ?? p.sale_price ?? (p.normalPrice || 0)
+              rentPrice = null
+            } else {
+              rentPrice = p.normalPrice || p.dailyPrice || p.normal_price || p.daily_price || 0
+              salePrice = p.salePrice ?? p.sale_price ?? null
+            }
+          }
+
+          return {
+            ...p,
+            rentPrice: rentPrice !== undefined ? rentPrice : null,
+            salePrice: salePrice !== undefined ? salePrice : null,
+          }
+        })
+      }
     }
     // First launch → seed
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PRODUCTS))
@@ -164,6 +191,123 @@ export function updateProduct(updated: Product): Product[] {
 export function deleteProduct(id: string): Product[] {
   const current = loadProducts()
   const next = current.filter((p) => p.id !== id)
+  saveProducts(next)
+  return next
+}
+
+/** Deduct stock when items are rented or sold. */
+export function rentProductStock(
+  itemsOrProductId: string | Array<{ productId: string; quantity: number; isSale?: boolean }>,
+  quantity?: number,
+  isSale?: boolean
+): Product[] {
+  const current = loadProducts()
+  let list: Array<{ productId: string; quantity: number; isSale?: boolean }> = []
+
+  if (typeof itemsOrProductId === 'string') {
+    list = [{ productId: itemsOrProductId, quantity: quantity || 0, isSale }]
+  } else if (Array.isArray(itemsOrProductId)) {
+    list = itemsOrProductId
+  }
+
+  const map = new Map(list.map((i) => [i.productId, i]))
+  const next = current.map((p) => {
+    const item = map.get(p.id)
+    if (!item) return p
+    const qty = Math.max(0, item.quantity)
+    const isProductSale = item.isSale || p.rentalType === 'SALE'
+
+    if (isProductSale) {
+      return {
+        ...p,
+        totalQuantity: Math.max(0, (p.totalQuantity || 0) - qty),
+        availableQuantity: Math.max(0, (p.availableQuantity || 0) - qty),
+      }
+    }
+    return {
+      ...p,
+      availableQuantity: Math.max(0, (p.availableQuantity || 0) - qty),
+      rentedQuantity: (p.rentedQuantity || 0) + qty,
+      totalRentalCount: (p.totalRentalCount || 0) + qty,
+    }
+  })
+  saveProducts(next)
+  return next
+}
+
+/** Restore stock when items are returned (normal, damaged, lost). */
+export function returnProductStock(
+  itemsOrProductId: string | Array<{ productId: string; normalQty?: number; damagedQty?: number; lostQty?: number; quantity?: number }>,
+  normalQtyOrTotal?: number,
+  damagedQty?: number,
+  lostQty?: number
+): Product[] {
+  const current = loadProducts()
+  let list: Array<{ productId: string; normalQty: number; damagedQty: number; lostQty: number }> = []
+
+  if (typeof itemsOrProductId === 'string') {
+    list = [{
+      productId: itemsOrProductId,
+      normalQty: normalQtyOrTotal || 0,
+      damagedQty: damagedQty || 0,
+      lostQty: lostQty || 0,
+    }]
+  } else if (Array.isArray(itemsOrProductId)) {
+    list = itemsOrProductId.map((i) => ({
+      productId: i.productId,
+      normalQty: i.normalQty !== undefined ? i.normalQty : (i.quantity || 0),
+      damagedQty: i.damagedQty || 0,
+      lostQty: i.lostQty || 0,
+    }))
+  }
+
+  const map = new Map(list.map((i) => [i.productId, i]))
+  const next = current.map((p) => {
+    const item = map.get(p.id)
+    if (!item) return p
+    const normal = Math.max(0, item.normalQty || 0)
+    const damaged = Math.max(0, item.damagedQty || 0)
+    const lost = Math.max(0, item.lostQty || 0)
+    const totalReturned = normal + damaged + lost
+
+    return {
+      ...p,
+      rentedQuantity: Math.max(0, (p.rentedQuantity || 0) - totalReturned),
+      availableQuantity: (p.availableQuantity || 0) + normal,
+      damagedQuantity: (p.damagedQuantity || 0) + damaged,
+      lostQuantity: (p.lostQuantity || 0) + lost,
+      totalQuantity: Math.max(0, (p.totalQuantity || 0) - lost),
+    }
+  })
+  saveProducts(next)
+  return next
+}
+
+/** Restore stock when a sale bill is cancelled (increases totalQuantity and availableQuantity back, without touching rentedQuantity). */
+export function restoreSaleProductStock(
+  itemsOrProductId: string | Array<{ productId: string; quantity: number }>,
+  quantity?: number
+): Product[] {
+  const current = loadProducts()
+  let list: Array<{ productId: string; quantity: number }> = []
+
+  if (typeof itemsOrProductId === 'string') {
+    list = [{ productId: itemsOrProductId, quantity: quantity || 0 }]
+  } else if (Array.isArray(itemsOrProductId)) {
+    list = itemsOrProductId
+  }
+
+  const map = new Map(list.map((i) => [i.productId, i]))
+  const next = current.map((p) => {
+    const item = map.get(p.id)
+    if (!item) return p
+    const qty = Math.max(0, item.quantity)
+    return {
+      ...p,
+      totalQuantity: (p.totalQuantity || 0) + qty,
+      availableQuantity: (p.availableQuantity || 0) + qty,
+    }
+  })
   saveProducts(next)
   return next
 }

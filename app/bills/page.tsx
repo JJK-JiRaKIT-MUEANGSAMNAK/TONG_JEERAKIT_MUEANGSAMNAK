@@ -10,6 +10,8 @@ import { DepositRefundModal } from '@/components/bills/DepositRefundModal'
 import { PaymentRefundModal } from '@/components/bills/PaymentRefundModal'
 import { useToast } from '@/components/common/Toast'
 import { FullBill } from '@/lib/types/rental-return'
+import { loadBills as fetchBills, saveBills } from '@/lib/bill-storage'
+import { returnProductStock, restoreSaleProductStock } from '@/lib/product-storage'
 import {
   Search,
   RefreshCw,
@@ -53,8 +55,26 @@ export default function BillsPage() {
   const [cancelReason, setCancelReason] = useState<string>('')
 
   const loadBills = React.useCallback(async () => {
-    setIsLoading(false)
+    setIsLoading(true)
+    try {
+      const data = fetchBills()
+      setBills(data)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
+
+  React.useEffect(() => {
+    loadBills()
+  }, [loadBills])
+
+  const handleSetBills: React.Dispatch<React.SetStateAction<FullBill[]>> = (action) => {
+    setBills((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action
+      saveBills(next)
+      return next
+    })
+  }
 
   // Calculate Overdue status using current calendar date
   const isOverdueBill = (b: FullBill) => {
@@ -108,6 +128,38 @@ export default function BillsPage() {
   const handleConfirmCancelBill = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedBillForCancel || !cancelReason.trim()) return
+
+    if (selectedBillForCancel.items) {
+      selectedBillForCancel.items.forEach((item) => {
+        const isSaleItem = item.rentalType === 'SALE' || item.requiresReturn === false
+        if (isSaleItem) {
+          if (item.productId && item.quantity > 0) {
+            restoreSaleProductStock(item.productId, item.quantity)
+          }
+          return
+        }
+        const remaining = item.outstandingQty ?? (item.quantity - (item.returnedQty || 0))
+        if (remaining > 0 && item.productId) {
+          returnProductStock(item.productId, remaining)
+        }
+      })
+    }
+
+    const updatedBills = bills.map((b) =>
+      b.id === selectedBillForCancel.id
+        ? {
+            ...b,
+            rentalStatus: 'CANCELLED' as const,
+            status: 'CANCELLED' as const,
+            cancelReason: cancelReason.trim(),
+            remark: [b.remark, `ยกเลิกบิล: ${cancelReason.trim()}`].filter(Boolean).join(' | '),
+          }
+        : b
+    )
+
+    setBills(updatedBills)
+    saveBills(updatedBills)
+
     showToast('ยกเลิกบิลสำเร็จ', `ยกเลิกบิล ${selectedBillForCancel.billNo} เรียบร้อยแล้ว`, 'SUCCESS')
     setSelectedBillForCancel(null)
     setCancelReason('')
@@ -182,7 +234,7 @@ export default function BillsPage() {
             <BillActionView 
               customerName={selectedRowBill?.customerName || ''}
               bills={bills}
-              setBills={setBills}
+              setBills={handleSetBills}
               initialMode={activeWorkflow}
               initialBillId={selectedRowBill?.id}
               onClose={() => {

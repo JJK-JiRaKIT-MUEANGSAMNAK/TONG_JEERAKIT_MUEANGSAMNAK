@@ -42,6 +42,15 @@ import {
 import { useToast } from '@/components/common/Toast'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
+import {
+  ProductCategoryRule,
+  CalculationType,
+  CALCULATION_OPTIONS,
+  loadCategoryRules,
+  addCategoryRule,
+  updateCategoryRule,
+  deleteCategoryRule,
+} from '@/lib/category-rules-storage'
 export type AutoLockDuration = '3' | '5' | '10' | '15'
 
 function previewDocumentNumber(cfg?: { prefix?: string; separator?: string; format?: string; digits?: number }): string {
@@ -203,7 +212,7 @@ export interface SystemConfig {
   }
 }
 
-export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
+const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   businessName: '',
   address: '',
   phone: '',
@@ -221,14 +230,14 @@ export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   bankQrDataUrl: '',
 }
 
-export const DEFAULT_PRODUCT_STOCK_SETTINGS: ProductStockSettings = {
+const DEFAULT_PRODUCT_STOCK_SETTINGS: ProductStockSettings = {
   defaultMinimumStock: 0,
   allowZeroStock: false,
   allowBackdatedStockAdjustment: false,
   lowStockNotificationEnabled: false,
 }
 
-export const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
+const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
   defaultRentalType: '',
   defaultRentalDays: 0,
   rentalDayCalculation: '',
@@ -242,14 +251,14 @@ export const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
   allowContinueAfterPaid: false,
 }
 
-export const DEFAULT_DOCUMENT_NUMBERING_SETTINGS: DocumentNumberingSettings = {
+const DEFAULT_DOCUMENT_NUMBERING_SETTINGS: DocumentNumberingSettings = {
   rentalBill: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
   quotation: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
   receipt: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
   returnSlip: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
 }
 
-export const DEFAULT_DOCUMENT_PRINTING_SETTINGS: DocumentPrintingSettings = {
+const DEFAULT_DOCUMENT_PRINTING_SETTINGS: DocumentPrintingSettings = {
   defaultTemplates: {
     rentalBill: '',
     quotation: '',
@@ -266,7 +275,7 @@ export const DEFAULT_DOCUMENT_PRINTING_SETTINGS: DocumentPrintingSettings = {
   defaultCopies: 1,
 }
 
-export const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
+const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
   paymentMethods: {
     cash: true,
     bankTransfer: true,
@@ -280,7 +289,7 @@ export const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
   autoCreateFinanceTransaction: false,
 }
 
-export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   deliveryReminder: { enabled: false, daysBefore: 0 },
   returnReminder: { enabled: false, daysBefore: 0 },
   paymentReminder: { enabled: false, daysBefore: 0 },
@@ -288,14 +297,14 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   overdueReturnReminder: { enabled: false },
 }
 
-export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
+const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   systemName: '',
   authBackgroundType: 'gradient',
   authBackgroundImageUrl: null,
   appLogoUrl: null,
 }
 
-export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   business: DEFAULT_BUSINESS_SETTINGS,
   productStock: DEFAULT_PRODUCT_STOCK_SETTINGS,
   rentalBilling: DEFAULT_RENTAL_BILLING_SETTINGS,
@@ -877,87 +886,92 @@ export default function SettingsPage() {
     }
   }
 
-  // Master Data (Categories, Rental Types, Units, Appointment Types)
+  // Master Category Rules (1 row = 1 Product Category Rule)
+  const [categoryRules, setCategoryRules] = useState<ProductCategoryRule[]>([])
+  const [ruleNewName, setRuleNewName] = useState('')
+  const [ruleNewCalcType, setRuleNewCalcType] = useState<CalculationType>('PER_ROUND')
+  const [ruleNewUnit, setRuleNewUnit] = useState('')
+  const [ruleEditId, setRuleEditId] = useState<string | null>(null)
+  const [ruleEditName, setRuleEditName] = useState('')
+  const [ruleEditCalcType, setRuleEditCalcType] = useState<CalculationType>('PER_ROUND')
+  const [ruleEditUnit, setRuleEditUnit] = useState('')
+  const [ruleDeleteConfirmId, setRuleDeleteConfirmId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setCategoryRules(loadCategoryRules())
+  }, [])
+
+  const handleRuleAdd = () => {
+    const name = ruleNewName.trim()
+    const unit = ruleNewUnit.trim()
+    if (!name) {
+      showToast('กรุณาระบุชื่อหมวดหมู่', 'ชื่อหมวดหมู่ต้องไม่ว่าง', 'ERROR')
+      return
+    }
+    if (!unit) {
+      showToast('กรุณาระบุหน่วยนับ', 'หน่วยนับต้องไม่ว่าง', 'ERROR')
+      return
+    }
+    const matched = CALCULATION_OPTIONS.find((c) => c.type === ruleNewCalcType)
+    const calculationLabel = matched?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+
+    const updated = addCategoryRule({
+      name,
+      calculationType: ruleNewCalcType,
+      calculationLabel,
+      unit,
+    })
+    setCategoryRules(updated)
+    setRuleNewName('')
+    setRuleNewUnit('')
+    setRuleNewCalcType('PER_ROUND')
+    showToast('เพิ่มชุดกฎสินค้าสำเร็จ', `เพิ่ม "${name}" (${unit}) เข้าระบบเรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleRuleUpdate = (id: string) => {
+    const name = ruleEditName.trim()
+    const unit = ruleEditUnit.trim()
+    if (!name || !unit) {
+      showToast('กรุณากรอกข้อมูลให้ครบ', 'ชื่อหมวดหมู่และหน่วยนับต้องไม่เป็นค่าว่าง', 'ERROR')
+      return
+    }
+    const matched = CALCULATION_OPTIONS.find((c) => c.type === ruleEditCalcType)
+    const calculationLabel = matched?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+
+    const updated = updateCategoryRule({
+      id,
+      name,
+      calculationType: ruleEditCalcType,
+      calculationLabel,
+      unit,
+    })
+    setCategoryRules(updated)
+    setRuleEditId(null)
+    setRuleEditName('')
+    setRuleEditUnit('')
+    showToast('แก้ไขสำเร็จ', `อัปเดต "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+  }
+
+  const handleRuleDelete = (id: string) => {
+    const updated = deleteCategoryRule(id)
+    setCategoryRules(updated)
+    setRuleDeleteConfirmId(null)
+    showToast('ลบชุดกฎสินค้าสำเร็จ', 'ลบข้อมูลออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
+  }
+
+  // Appointment Types CRUD in Settings
   interface MasterItem {
     id: string
     label: string
-    calculation?: string
-    calculationType?: string
   }
-  const [categories, setCategories] = useState<MasterItem[]>([])
-  const [rentalTypes, setRentalTypes] = useState<MasterItem[]>([])
-  const [units, setUnits] = useState<MasterItem[]>([])
   const [appointmentTypes, setAppointmentTypes] = useState<MasterItem[]>([])
-
   const masterData = {
-    categories,
-    rentalTypes,
-    units,
-    appointmentTypes,
-    addCategory: (label: string) => setCategories((prev) => [...prev, { id: `cat-${Date.now()}`, label }]),
-    updateCategory: (id: string, label: string) =>
-      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, label } : c))),
-    removeCategory: (id: string) => setCategories((prev) => prev.filter((c) => c.id !== id)),
-    addRentalType: (label: string, calculation?: string) =>
-      setRentalTypes((prev) => [...prev, { id: `rt-${Date.now()}`, label, calculation, calculationType: calculation }]),
-    updateRentalType: (id: string, label: string, calculation?: string) =>
-      setRentalTypes((prev) => prev.map((r) => (r.id === id ? { ...r, label, calculation, calculationType: calculation } : r))),
-    removeRentalType: (id: string) => setRentalTypes((prev) => prev.filter((r) => r.id !== id)),
-    addUnit: (label: string) => setUnits((prev) => [...prev, { id: `u-${Date.now()}`, label }]),
-    updateUnit: (id: string, label: string) =>
-      setUnits((prev) => prev.map((u) => (u.id === id ? { ...u, label } : u))),
-    removeUnit: (id: string) => setUnits((prev) => prev.filter((u) => u.id !== id)),
     addAppointmentType: (label: string) =>
       setAppointmentTypes((prev) => [...prev, { id: `apt-${Date.now()}`, label }]),
     updateAppointmentType: (id: string, label: string) =>
       setAppointmentTypes((prev) => prev.map((a) => (a.id === id ? { ...a, label } : a))),
     removeAppointmentType: (id: string) => setAppointmentTypes((prev) => prev.filter((a) => a.id !== id)),
-  }
-  type MDSection = 'categories' | 'rentalTypes' | 'units'
-  const [mdSection, setMdSection] = useState<MDSection>('categories')
-  const [mdNewLabel, setMdNewLabel] = useState('')
-  const [mdNewCalc, setMdNewCalc] = useState('')
-  const [mdEditId, setMdEditId] = useState<string | null>(null)
-  const [mdEditLabel, setMdEditLabel] = useState('')
-  const [mdEditCalc, setMdEditCalc] = useState('')
-  const [mdDeleteConfirmId, setMdDeleteConfirmId] = useState<string | null>(null)
-
-  const mdItems =
-    mdSection === 'categories'
-      ? masterData.categories
-      : mdSection === 'rentalTypes'
-      ? masterData.rentalTypes
-      : masterData.units
-
-  const handleMdAdd = () => {
-    const label = mdNewLabel.trim()
-    if (!label) return
-    if (mdSection === 'categories') masterData.addCategory(label)
-    else if (mdSection === 'rentalTypes') masterData.addRentalType(label, mdNewCalc.trim() || undefined)
-    else masterData.addUnit(label)
-    setMdNewLabel('')
-    setMdNewCalc('')
-    showToast('เพิ่มรายการสำเร็จ', `เพิ่ม "${label}" เข้าระบบเรียบร้อยแล้ว`, 'SUCCESS')
-  }
-
-  const handleMdUpdate = (id: string) => {
-    const label = mdEditLabel.trim()
-    if (!label) return
-    if (mdSection === 'categories') masterData.updateCategory(id, label)
-    else if (mdSection === 'rentalTypes') masterData.updateRentalType(id, label, mdEditCalc.trim() || undefined)
-    else masterData.updateUnit(id, label)
-    setMdEditId(null)
-    setMdEditLabel('')
-    setMdEditCalc('')
-    showToast('แก้ไขสำเร็จ', `อัปเดต "${label}" เรียบร้อยแล้ว`, 'SUCCESS')
-  }
-
-  const handleMdDelete = (id: string) => {
-    if (mdSection === 'categories') masterData.removeCategory(id)
-    else if (mdSection === 'rentalTypes') masterData.removeRentalType(id)
-    else masterData.removeUnit(id)
-    setMdDeleteConfirmId(null)
-    showToast('ลบรายการสำเร็จ', 'ลบข้อมูลออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
+    appointmentTypes,
   }
 
   // Appointment Types CRUD in Settings
@@ -1650,172 +1664,230 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Section A: Master Data CRUD */}
+                  {/* Section A: Category Rules (1 row = 1 Product Category Rule) */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-500" />
-                        <span>ข้อมูลหลัก (Master Data จากระบบกลาง)</span>
-                      </h4>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>ตั้งค่าเสริมสินค้า (ชุดกฎสินค้า: 1 แถว = หมวดหมู่ + การคำนวณ + หน่วยนับ)</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          เมื่อเลือกหมวดหมู่ตอนเพิ่มสินค้า ระบบจะดึงรูปแบบการคำนวณและหน่วยนับของชุดกฎนี้ไปใช้ทันที
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2.5 py-1 rounded-xl">
+                        ทั้งหมด {categoryRules.length} ชุดกฎ
+                      </span>
+                    </div>
 
-                      {/* Subtabs for Master Data */}
-                      <div className="flex gap-1.5">
-                        {(
-                          [
-                            { key: 'categories', label: 'หมวดหมู่สินค้า', count: masterData.categories.length },
-                            { key: 'rentalTypes', label: 'รูปแบบการเช่า', count: masterData.rentalTypes.length },
-                            { key: 'units', label: 'หน่วยนับ', count: masterData.units.length },
-                          ] as { key: MDSection; label: string; count: number }[]
-                        ).map((s) => (
-                          <button
-                            key={s.key}
-                            type="button"
-                            onClick={() => {
-                              setMdSection(s.key)
-                              setMdEditId(null)
-                              setMdDeleteConfirmId(null)
-                              setMdNewLabel('')
-                              setMdNewCalc('')
-                            }}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${
-                              mdSection === s.key
-                                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-500 shadow-xs'
-                                : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-800'
-                            }`}
-                          >
-                            {s.label} ({s.count})
-                          </button>
-                        ))}
+                    {/* Add Rule Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-2">
+                      <div className="sm:col-span-4">
+                        <input
+                          type="text"
+                          value={ruleNewName}
+                          onChange={(e) => setRuleNewName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
+                          placeholder="ชื่อหมวดหมู่ (เช่น แบบคาน, แบบเสา)..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-5">
+                        <CustomSelect
+                          value={ruleNewCalcType}
+                          onChange={(val) => setRuleNewCalcType(val as CalculationType)}
+                          options={CALCULATION_OPTIONS.map((opt) => ({
+                            value: opt.type,
+                            label: opt.label,
+                          }))}
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <input
+                          type="text"
+                          value={ruleNewUnit}
+                          onChange={(e) => setRuleNewUnit(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
+                          placeholder="หน่วยนับ (เช่น แผ่น, ชิ้น)..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-1">
+                        <button
+                          type="button"
+                          onClick={handleRuleAdd}
+                          disabled={!ruleNewName.trim() || !ruleNewUnit.trim()}
+                          className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer"
+                          title="เพิ่มชุดกฎ"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>เพิ่ม</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Add Item Row */}
-                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center pt-2">
-                      <input
-                        type="text"
-                        value={mdNewLabel}
-                        onChange={(e) => setMdNewLabel(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdAdd())}
-                        placeholder={
-                          mdSection === 'categories'
-                            ? 'ชื่อหมวดหมู่สินค้าใหม่...'
-                            : mdSection === 'rentalTypes'
-                            ? 'ชื่อรูปแบบการเช่าใหม่...'
-                            : 'ชื่อหน่วยนับใหม่...'
-                        }
-                        className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                      {mdSection === 'rentalTypes' && (
-                        <input
-                          type="text"
-                          value={mdNewCalc}
-                          onChange={(e) => setMdNewCalc(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdAdd())}
-                          placeholder="สูตรการคำนวณ (เช่น จำนวน × ราคา × วัน)..."
-                          className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleMdAdd}
-                        disabled={!mdNewLabel.trim()}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>เพิ่ม</span>
-                      </button>
-                    </div>
-
-                    {/* List Items */}
-                    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
-                      {mdItems.length === 0 ? (
-                        <div className="p-6 text-center text-slate-400 italic">ยังไม่มีรายการ</div>
-                      ) : (
-                        <div className="divide-y divide-slate-100 dark:divide-slate-700/60 max-h-48 overflow-y-auto">
-                          {mdItems.map((item) => (
-                            <div key={item.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                              {mdEditId === item.id ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={mdEditLabel}
-                                    onChange={(e) => setMdEditLabel(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleMdUpdate(item.id))}
-                                    className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-bold text-xs"
-                                    autoFocus
-                                  />
-                                  {mdSection === 'rentalTypes' && (
-                                    <input
-                                      type="text"
-                                      value={mdEditCalc}
-                                      onChange={(e) => setMdEditCalc(e.target.value)}
-                                      placeholder="สูตรคำนวณ..."
-                                      className="flex-1 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs"
-                                    />
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMdUpdate(item.id)}
-                                    className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => { setMdEditId(null); setMdEditLabel(''); setMdEditCalc('') }}
-                                    className="p-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </>
-                              ) : mdDeleteConfirmId === item.id ? (
-                                <>
-                                  <span className="flex-1 text-xs text-red-600 dark:text-red-400 font-bold">
-                                    ยืนยันลบ &quot;{item.label}&quot; ?
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMdDelete(item.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs"
-                                  >
-                                    ยืนยันลบ
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setMdDeleteConfirmId(null)}
-                                    className="px-2.5 py-1 rounded-lg border border-slate-300 font-semibold text-xs"
-                                  >
-                                    ยกเลิก
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="flex-1 font-semibold text-slate-800 dark:text-slate-100">{item.label}</span>
-                                  {item.calculation && (
-                                    <span className="text-[11px] text-slate-400 hidden sm:inline-block font-mono">({item.calculation})</span>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => { setMdEditId(item.id); setMdEditLabel(item.label); setMdEditCalc(item.calculation || ''); setMdDeleteConfirmId(null) }}
-                                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                    title="แก้ไข"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => { setMdDeleteConfirmId(item.id); setMdEditId(null) }}
-                                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                                    title="ลบ"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    {/* Category Rules Table: ลำดับ | ชื่อหมวดหมู่ | รูปแบบการคำนวณ | หน่วยนับ | จัดการ */}
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                            <th className="py-2.5 px-3 w-14 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
+                            <th className="py-2.5 px-3 w-40 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
+                            <th className="py-2.5 px-3 w-28 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
+                            <th className="py-2.5 px-2 w-24 text-center">จัดการ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                          {categoryRules.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="p-6 text-center text-slate-400 italic">
+                                ยังไม่มีชุดกฎสินค้าในระบบ
+                              </td>
+                            </tr>
+                          ) : (
+                            categoryRules.map((rule, idx) => (
+                              <tr
+                                key={rule.id}
+                                className="hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
+                              >
+                                {ruleEditId === rule.id ? (
+                                  <>
+                                    <td className="py-2 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                      {idx + 1}
+                                    </td>
+                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                      <input
+                                        type="text"
+                                        value={ruleEditName}
+                                        onChange={(e) => setRuleEditName(e.target.value)}
+                                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-bold text-xs"
+                                        autoFocus
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                      <CustomSelect
+                                        value={ruleEditCalcType}
+                                        onChange={(val) => setRuleEditCalcType(val as CalculationType)}
+                                        options={CALCULATION_OPTIONS.map((opt) => ({
+                                          value: opt.type,
+                                          label: opt.label,
+                                        }))}
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                      <input
+                                        type="text"
+                                        value={ruleEditUnit}
+                                        onChange={(e) => setRuleEditUnit(e.target.value)}
+                                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-center font-semibold"
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRuleUpdate(rule.id)}
+                                          className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 cursor-pointer"
+                                          title="บันทึก"
+                                        >
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setRuleEditId(null)
+                                            setRuleEditName('')
+                                            setRuleEditUnit('')
+                                          }}
+                                          className="p-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 cursor-pointer"
+                                          title="ยกเลิก"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </>
+                                ) : ruleDeleteConfirmId === rule.id ? (
+                                  <>
+                                    <td className="py-2 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                      {idx + 1}
+                                    </td>
+                                    <td colSpan={3} className="py-2 px-3 text-xs text-red-600 dark:text-red-400 font-bold">
+                                      ยืนยันลบชุดกฎ &quot;{rule.name}&quot; ({rule.unit}) หรือไม่?
+                                    </td>
+                                    <td className="py-2 px-2 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRuleDelete(rule.id)}
+                                          className="px-2 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-[11px] cursor-pointer"
+                                        >
+                                          ลบ
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setRuleDeleteConfirmId(null)}
+                                          className="px-2 py-1 rounded-lg border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                        >
+                                          ยกเลิก
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-2 px-3 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                                      {idx + 1}
+                                    </td>
+                                    <td className="py-2 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
+                                      {rule.name}
+                                    </td>
+                                    <td className="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                                      {rule.calculationLabel}
+                                    </td>
+                                    <td className="py-2 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                                      <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                        {rule.unit}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 px-2 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setRuleEditId(rule.id)
+                                            setRuleEditName(rule.name)
+                                            setRuleEditCalcType(rule.calculationType)
+                                            setRuleEditUnit(rule.unit)
+                                            setRuleDeleteConfirmId(null)
+                                          }}
+                                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                          title="แก้ไข"
+                                        >
+                                          <Edit2 className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setRuleDeleteConfirmId(rule.id)
+                                            setRuleEditId(null)
+                                          }}
+                                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                          title="ลบ"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
@@ -1914,11 +1986,11 @@ export default function SettingsPage() {
                           })
                         }
                         options={
-                          masterData.rentalTypes.length > 0
-                            ? masterData.rentalTypes.map((rt) => ({
-                                value: rt.label,
-                                label: rt.label,
-                                sublabel: rt.calculation,
+                          categoryRules.length > 0
+                            ? categoryRules.map((cr) => ({
+                                value: cr.name,
+                                label: cr.name,
+                                sublabel: cr.calculationLabel,
                               }))
                             : [
                                 { value: 'NORMAL', label: 'เช่าปกติ (ตามรอบสินค้า)' },

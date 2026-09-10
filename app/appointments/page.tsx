@@ -26,6 +26,13 @@ import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/compon
 import { useToast } from '@/components/common/Toast'
 import { logger } from '@/lib/utils/logger'
 import { AddAppointmentModal, DEFAULT_APPOINTMENT_TYPES } from '@/components/appointments/AddAppointmentModal'
+import {
+  loadAppointments,
+  addAppointment,
+  updateAppointment,
+  deleteAppointment,
+} from '@/lib/appointment-storage'
+import { loadCustomers } from '@/lib/customer-storage'
 
 const CalendarView = dynamic(
   () => import('@/components/appointments/CalendarView').then((mod) => mod.CalendarView),
@@ -82,7 +89,15 @@ export default function AppointmentsPage() {
 
   // Load Data
   const loadData = useCallback(async () => {
-    setIsLoading(false)
+    setIsLoading(true)
+    try {
+      const apts = loadAppointments()
+      const custs = loadCustomers()
+      setAppointments(apts)
+      setCustomers(custs)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -126,6 +141,7 @@ export default function AppointmentsPage() {
         ...editingApt,
         ...(editFormData as Appointment),
       }
+      updateAppointment(updated)
       setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
       if (selectedApt && selectedApt.id === updated.id) {
         setSelectedApt(updated)
@@ -144,6 +160,10 @@ export default function AppointmentsPage() {
   const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
     setUpdatingStatusId(id)
     try {
+      const target = appointments.find((a) => a.id === id)
+      if (target) {
+        updateAppointment({ ...target, status: newStatus })
+      }
       setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt)))
       if (selectedApt && selectedApt.id === id) {
         setSelectedApt({ ...selectedApt, status: newStatus })
@@ -168,6 +188,7 @@ export default function AppointmentsPage() {
     if (!deletingApt) return
     setIsDeleting(true)
     try {
+      deleteAppointment(deletingApt.id)
       setAppointments((prev) => prev.filter((a) => a.id !== deletingApt.id))
       if (selectedApt && selectedApt.id === deletingApt.id) {
         setSelectedApt(null)
@@ -651,6 +672,7 @@ export default function AppointmentsPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={(created) => {
+          addAppointment(created)
           setAppointments((prev) => [created, ...prev])
         }}
         customers={customers}

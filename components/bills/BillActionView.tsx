@@ -25,6 +25,8 @@ import { SplitTenderEditor, SplitPaymentTender, SplitTenderMethod } from '@/comp
 import { useToast } from '@/components/common/Toast'
 import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
 import { BusinessSettings } from '@/lib/types/rental-pos'
+import { returnProductStock } from '@/lib/product-storage'
+import { recordBillPayment } from '@/lib/finance-storage'
 
 interface ConfirmRentalReturnItemPayload {
   rental_bill_item_id: string
@@ -788,6 +790,13 @@ export function BillActionView({
       const returnNo = `RT-${Date.now().toString().slice(-6)}`
       setReturnRequestId(generateUUID())
 
+      inspectionItems.forEach((item) => {
+        const qty = getReturnedQty(item)
+        if (qty > 0 && item.productId) {
+          returnProductStock(item.productId, qty)
+        }
+      })
+
       setBills((prev) =>
         prev.map((b) =>
           b.id === activeBill.id
@@ -846,6 +855,15 @@ export function BillActionView({
       setPaymentRequestId(generateUUID())
 
       const newOutstanding = Math.max(0, (activeBill.outstandingAmount || 0) - totalPayment)
+      const primaryMethod = validTenders[0]?.paymentMethod === 'TRANSFER' ? 'TRANSFER' : validTenders[0]?.paymentMethod === 'QR' ? 'QR' : 'CASH'
+      recordBillPayment(
+        activeBill.id,
+        activeBill.billNo,
+        totalPayment,
+        primaryMethod,
+        activeBill.customerName
+      )
+
       setBills((prev) =>
         prev.map((b) =>
           b.id === activeBill.id

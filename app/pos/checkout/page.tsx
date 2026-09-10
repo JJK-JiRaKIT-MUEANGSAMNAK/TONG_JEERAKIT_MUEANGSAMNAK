@@ -16,6 +16,11 @@ import { PaymentDynamicContent } from '@/components/pos/payment/PaymentDynamicCo
 import { RentalBill, Customer, Product } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
+import { loadActiveCart, clearActiveCart } from '@/lib/cart-storage'
+import { addBill } from '@/lib/bill-storage'
+import { rentProductStock } from '@/lib/product-storage'
+import { recordBillPayment } from '@/lib/finance-storage'
+import { FullBill } from '@/lib/types/rental-return'
 
 const safeFormatDateStr = (d?: Date | string | null): string => {
   if (!d) return '-'
@@ -32,8 +37,8 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { showToast } = useToast()
 
-  const [customer] = useState<Customer | null>(null)
-  const [items] = useState<Array<{
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [items, setItems] = useState<Array<{
     product: Product
     quantity: number
     unitPrice: number
@@ -44,19 +49,42 @@ export default function CheckoutPage() {
     dailyEndDate?: Date | string | null
     lineTotal: number
   }>>([])
-  const [billDate] = useState<Date | null>(null)
-  const [headerRentalDate] = useState<Date | null>(null)
-  const [headerReturnDate] = useState<Date | null>(null)
-  const [discount] = useState<number>(0)
-  const [shippingFee] = useState<number>(0)
-  const [depositAmount] = useState<number>(0)
-  const [documentType] = useState<string>('บิลเช่า')
-  const [shippingAddress] = useState<string>('')
-  const [remark] = useState<string>('')
-  const [subtotal] = useState<number>(0)
-  const [tax] = useState<number>(0)
-  const [grandTotal] = useState<number>(0)
-  const clearCart = () => {}
+  const [billDate, setBillDate] = useState<Date | null>(new Date())
+  const [headerRentalDate, setHeaderRentalDate] = useState<Date | null>(new Date())
+  const [headerReturnDate, setHeaderReturnDate] = useState<Date | null>(null)
+  const [discount, setDiscount] = useState<number>(0)
+  const [shippingFee, setShippingFee] = useState<number>(0)
+  const [depositAmount, setDepositAmount] = useState<number>(0)
+  const [documentType, setDocumentType] = useState<string>('บิลเช่า')
+  const [shippingAddress, setShippingAddress] = useState<string>('')
+  const [remark, setRemark] = useState<string>('')
+  const [tax, setTax] = useState<number>(0)
+
+  useEffect(() => {
+    const cart = loadActiveCart()
+    if (cart) {
+      if (cart.customer) setCustomer(cart.customer)
+      if (cart.items && cart.items.length > 0) setItems(cart.items)
+      if (cart.discount !== undefined) setDiscount(cart.discount)
+      if (cart.shippingFee !== undefined) setShippingFee(cart.shippingFee)
+      if (cart.depositAmount !== undefined) setDepositAmount(cart.depositAmount)
+      if (cart.documentType) setDocumentType(cart.documentType)
+      if (cart.shippingAddress) setShippingAddress(cart.shippingAddress)
+      if (cart.remark) setRemark(cart.remark)
+      if (cart.headerRentalDate) setHeaderRentalDate(new Date(cart.headerRentalDate))
+      if (cart.headerReturnDate) setHeaderReturnDate(new Date(cart.headerReturnDate))
+      if (cart.tax !== undefined) setTax(cart.tax)
+    }
+  }, [])
+
+  const subtotal = items.reduce((sum, it) => sum + (it.lineTotal || 0), 0)
+  const grandTotal = Math.max(0, subtotal - (discount || 0) + (shippingFee || 0) + (depositAmount || 0) + (tax || 0))
+
+  const clearCart = () => {
+    clearActiveCart()
+    setItems([])
+    setCustomer(null)
+  }
 
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER' | 'QR' | 'UNPAID'>('CASH')
@@ -102,7 +130,7 @@ export default function CheckoutPage() {
     customerAddress: customer?.address,
     customerPhone: customer?.phone,
     customerTaxId: customer?.taxId,
-    billNo: 'INV-2026-00001 (ฉบับร่าง)',
+    billNo: `BILL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-DRAFT`,
     billDate: safeFormatDateStr(billDate),
     headerRentalDate: safeFormatDateStr(headerRentalDate),
     headerReturnDate: safeFormatDateStr(headerReturnDate),
@@ -133,14 +161,105 @@ export default function CheckoutPage() {
   }
 
   const handleConfirmBill = async () => {
+    if (items.length === 0) {
+      showToast('ไม่สามารถออกบิลได้', 'ไม่มีรายการสินค้าในตะกร้า', 'ERROR')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      showToast('บันทึกบิลเช่าสำเร็จ', 'บันทึกเรียบร้อยแล้ว', 'SUCCESS')
+      const now = new Date()
+      const billNo = `BILL-${now.toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
+      const isUnpaid = paymentMethod === 'UNPAID'
+      const paid = isUnpaid ? 0 : grandTotal
+      const outstanding = isUnpaid ? grandTotal : 0
+
+      const allItemsAreSale = items.length > 0 && items.every((it) => it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
+
+      const newFullBill: FullBill = {
+        id: 'bill-' + Date.now(),
+        billNo: billNo,
+        billDate: now.toISOString().split('T')[0],
+        customerId: customer?.id,
+        customerName: customer?.customerName || 'ลูกค้าทั่วไป',
+        customerPhone: customer?.phone || '-',
+        customerAddress: customer?.address || shippingAddress || '-',
+        rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
+        scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
+        heldDepositAmount: depositAmount,
+        paidDepositAmount: depositAmount,
+        deposits: depositAmount > 0 ? [{
+          id: `dep-${Date.now()}`,
+          amount: depositAmount,
+          refundAmount: 0,
+          appliedAmount: 0,
+          heldAmount: depositAmount,
+          status: 'HELD',
+          receivedDate: now.toISOString().split('T')[0],
+          paymentMethod: isUnpaid ? null : paymentMethod,
+          referenceNo: null,
+        }] : [],
+        subtotal: subtotal,
+        discountAmount: discount,
+        shippingFee: shippingFee,
+        taxAmount: tax,
+        grandTotal: grandTotal,
+        paidAmount: paid,
+        outstandingAmount: outstanding,
+        rentalStatus: allItemsAreSale ? 'CLOSED' : 'RENTING',
+        paymentStatus: isUnpaid ? 'UNPAID' : 'PAID',
+        remark: remark || undefined,
+        items: items.map((it, idx) => {
+          const isSale = it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          return {
+            rentalBillItemId: `item-${Date.now()}-${idx}`,
+            productId: it.product.id,
+            productCode: it.product.code,
+            productName: it.product.name,
+            quantity: it.quantity,
+            returnedQty: 0,
+            outstandingQty: isSale ? 0 : it.quantity,
+            dailyRate: it.unitPrice,
+            unit: it.product.unit || 'ชิ้น',
+            defaultRepairFee: it.product.defaultDamageFee || 0,
+            defaultReplacementFee: it.product.defaultLossFee || 0,
+            requiresReturn: isSale ? false : (it.product.requiresReturn ?? true),
+            rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
+            scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
+            rentalType: it.rentalType,
+            usageCount: it.usageCount,
+            lineTotal: it.lineTotal,
+            status: isSale ? ('COMPLETED' as const) : ('RENTING' as const),
+          }
+        }),
+      }
+
+      addBill(newFullBill)
+
+      items.forEach((it) => {
+        rentProductStock(it.product.id, it.quantity, it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
+      })
+
+      if (!isUnpaid && grandTotal > 0) {
+        recordBillPayment(newFullBill.id, newFullBill.billNo, grandTotal, paymentMethod, newFullBill.customerName)
+      }
+
+      clearCart()
+
+      const billTitle = allItemsAreSale ? 'บันทึกการขายสำเร็จ' : 'บันทึกบิลเช่าสำเร็จ'
+      const billDesc = allItemsAreSale
+        ? `บันทึกข้อมูลบิลขาย ${billNo} เรียบร้อยแล้ว\nต้องการพิมพ์ใบเสร็จรับเงิน / ใบส่งของหรือไม่?`
+        : `บันทึกข้อมูลบิลเช่า ${billNo} เรียบร้อยแล้ว\nต้องการพิมพ์สัญญาเช่า / ใบส่งของหรือไม่?`
+
+      showToast(billTitle, `เลขที่บิล: ${billNo}`, 'SUCCESS')
       setPostSavePrintModal({
         isOpen: true,
-        title: 'บันทึกบิลเช่าสำเร็จ',
-        description: 'บันทึกข้อมูลบิลเช่าเรียบร้อยแล้ว\nต้องการพิมพ์สัญญาเช่า / ใบส่งของหรือไม่?',
+        title: billTitle,
+        description: billDesc,
       })
+    } catch (err) {
+      console.error('Failed to confirm bill:', err)
+      showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกบิลได้', 'ERROR')
     } finally {
       setIsSubmitting(false)
     }

@@ -6,10 +6,11 @@ import { Clock, RefreshCw, AlertCircle, ShoppingCart } from 'lucide-react'
 
 interface ProductCardProps {
   product: Product
+  mode?: 'RENT' | 'SALE'
   onClick: (product: Product) => void
 }
 
-export function ProductCard({ product, onClick }: ProductCardProps) {
+export function ProductCard({ product, mode = 'RENT', onClick }: ProductCardProps) {
   const available = product.available_qty ?? product.availableQuantity ?? product.totalQuantity ?? 0
   const isOutOfStock = available <= 0
   const minQty = product.minimum_quantity ?? product.minimumStock ?? 0
@@ -22,29 +23,33 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
     borderStyle = 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 hover:border-amber-500 hover:shadow-md'
   }
 
-  const rentalType = product.rental_type ?? product.rentalType ?? 'NORMAL'
-  const price = rentalType === 'DAILY'
-    ? (product.daily_price ?? product.dailyPrice ?? 0)
-    : rentalType === 'SALE'
-      ? (product.sale_price ?? product.salePrice ?? 0)
-      : (product.normal_price ?? product.normalPrice ?? 0)
+  const isSaleMode = mode === 'SALE' || (mode !== 'RENT' && product.rentalType === 'SALE')
+  const isDaily = product.calculationType === 'PER_DAY' || product.rentalType === 'DAILY'
 
-  const typeBadge = rentalType === 'DAILY'
+  const price = isSaleMode
+    ? (product.salePrice ?? product.sale_price ?? 0)
+    : (product.rentPrice !== undefined && product.rentPrice !== null
+        ? product.rentPrice
+        : isDaily
+          ? (product.daily_price ?? product.dailyPrice ?? 0)
+          : (product.normal_price ?? product.normalPrice ?? 0))
+
+  const typeBadge = isSaleMode
     ? {
-        classes: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
-        icon: <Clock className="w-3 h-3" />,
-        label: 'รายวัน',
+        classes: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300',
+        icon: <ShoppingCart className="w-3 h-3" />,
+        label: 'ขาย',
       }
-    : rentalType === 'SALE'
+    : isDaily
       ? {
-          classes: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300',
-          icon: <ShoppingCart className="w-3 h-3" />,
-          label: 'ขาย',
+          classes: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
+          icon: <Clock className="w-3 h-3" />,
+          label: product.calculationLabel || 'รายวัน',
         }
       : {
           classes: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
           icon: <RefreshCw className="w-3 h-3" />,
-          label: 'รายรอบ',
+          label: product.calculationLabel || 'รายรอบ',
         }
 
   return (

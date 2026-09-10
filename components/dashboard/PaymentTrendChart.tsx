@@ -98,20 +98,20 @@ export function PaymentTrendChart({ data, isLoading, onRefresh }: PaymentTrendCh
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3 sm:space-y-4">
+    <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 md:p-3.5 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs space-y-2 sm:space-y-2.5 md:space-y-2.5 lg:space-y-4 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-        <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 sm:pb-2.5 lg:pb-3">
+        <h3 className="font-bold text-xs sm:text-sm md:text-sm lg:text-base text-slate-900 dark:text-slate-100 flex items-center gap-1.5 md:gap-2">
+          <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 lg:w-5 lg:h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>แนวโน้มรับชำระ 7 วันล่าสุด</span>
         </h3>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="text-right">
-            <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium block">
+            <span className="text-[9px] sm:text-[10px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-medium block">
               ยอดรับรวม 7 วัน
             </span>
-            <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs sm:text-sm md:text-xs lg:text-sm font-black text-emerald-600 dark:text-emerald-400">
               {formatCurrency(total7Days)}
             </span>
           </div>
@@ -121,7 +121,7 @@ export function PaymentTrendChart({ data, isLoading, onRefresh }: PaymentTrendCh
               onClick={onRefresh}
               type="button"
               disabled={isLoading}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               title="รีเฟรชข้อมูลแนวโน้ม"
               aria-label="รีเฟรชข้อมูลแนวโน้ม"
             >
@@ -131,13 +131,26 @@ export function PaymentTrendChart({ data, isLoading, onRefresh }: PaymentTrendCh
         </div>
       </div>
 
-      {/* Line Chart Area */}
-      <div className="relative w-full h-44 sm:h-48 md:h-52 select-none">
-        <svg
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-full overflow-visible"
-          preserveAspectRatio="none"
-        >
+      {/* Chart Area or Empty State */}
+      {total7Days === 0 ? (
+        <div className="w-full h-32 sm:h-36 md:h-36 lg:h-48 xl:h-52 flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-700/80 select-none min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1.5 sm:mb-2 shadow-2xs">
+            <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 lg:w-5 lg:h-5 opacity-70" />
+          </div>
+          <p className="text-xs md:text-xs lg:text-sm font-bold text-slate-700 dark:text-slate-300">
+            ยังไม่มีรายการรับชำระใน 7 วันนี้
+          </p>
+          <p className="text-[10px] md:text-[10px] lg:text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 sm:mt-1 max-w-xs">
+            กราฟแนวโน้มจะแสดงเมื่อมีการบันทึกการชำระเงินหรือรับคืนอุปกรณ์ในระบบ
+          </p>
+        </div>
+      ) : (
+        <div className="relative w-full h-32 sm:h-36 md:h-36 lg:h-48 xl:h-52 select-none overflow-hidden">
+          <svg
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            className="w-full h-full overflow-visible"
+            preserveAspectRatio="none"
+          >
           <defs>
             {/* Gradient fill underneath the trend line */}
             <linearGradient id="dashboardPaymentGradient" x1="0" y1="0" x2="0" y2="1">
@@ -339,6 +352,7 @@ export function PaymentTrendChart({ data, isLoading, onRefresh }: PaymentTrendCh
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

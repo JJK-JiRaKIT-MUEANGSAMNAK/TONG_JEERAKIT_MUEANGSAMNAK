@@ -26,6 +26,9 @@ import { DamagedRestoreModal } from '@/components/products/DamagedRestoreModal'
 import { DamagedTransformModal } from '@/components/products/DamagedTransformModal'
 import { logger } from '@/lib/utils/logger'
 import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
+import { loadCategoryRules, ProductCategoryRule } from '@/lib/category-rules-storage'
+import { NumericInput } from '@/components/common/NumericInput'
+import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
 
 export default function ProductsPage() {
   const { showToast } = useToast()
@@ -153,7 +156,85 @@ export default function ProductsPage() {
 
   const openProductHistory = (product: Product, initialTab: 'CURRENT' | 'HISTORY' | 'OVERVIEW' = 'CURRENT') => {
     setSelectedProduct(product)
+    setIsEditingInline(false)
     setActiveDrawerTab(initialTab)
+  }
+
+  // Category Rules from unified storage
+  const [categoryRules, setCategoryRules] = useState<ProductCategoryRule[]>([])
+
+  useEffect(() => {
+    setCategoryRules(loadCategoryRules())
+  }, [])
+
+  // Inline Edit State inside selectedProduct modal
+  const [isEditingInline, setIsEditingInline] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    categoryRuleId: '',
+    category: '',
+    calculationType: 'PER_ROUND' as string,
+    calculationLabel: '',
+    unit: '',
+    rentPrice: '' as string,
+    salePrice: '' as string,
+    createdAt: '',
+  })
+
+  const startInlineEdit = (p: Product) => {
+    const rules = loadCategoryRules()
+    setCategoryRules(rules)
+    const matched = rules.find((r) => r.id === p.categoryRuleId || r.name === p.category)
+    setEditForm({
+      name: p.name,
+      categoryRuleId: matched ? matched.id : p.categoryRuleId || '',
+      category: matched ? matched.name : p.category,
+      calculationType: matched ? matched.calculationType : (p.calculationType || (p.rentalType === 'DAILY' ? 'PER_DAY' : 'PER_ROUND')),
+      calculationLabel: matched ? matched.calculationLabel : (p.calculationLabel || (p.rentalType === 'DAILY' ? 'คำนวณตามวันใช้งานจริง' : 'คำนวณเหมาต่อรอบ/ครั้ง')),
+      unit: matched ? (matched.unit || matched.unitName || '') : p.unit,
+      rentPrice: p.rentPrice !== undefined && p.rentPrice !== null ? String(p.rentPrice) : '',
+      salePrice: p.salePrice !== undefined && p.salePrice !== null ? String(p.salePrice) : '',
+      createdAt: p.createdAt || (p as any).created_at || getLocalDateString(new Date()),
+    })
+    setIsEditingInline(true)
+  }
+
+  const handleSaveInlineEdit = () => {
+    if (!selectedProduct) return
+    if (!editForm.name.trim()) {
+      showToast('กรุณาระบุชื่อสินค้า', 'ชื่อสินค้าต้องไม่เว้นว่าง', 'ERROR')
+      return
+    }
+    if (!editForm.category.trim()) {
+      showToast('กรุณาเลือกหมวดหมู่', 'จำเป็นต้องระบุหมวดหมู่สินค้า', 'ERROR')
+      return
+    }
+
+    const rentVal = editForm.rentPrice !== '' ? Number(editForm.rentPrice) : null
+    const saleVal = editForm.salePrice !== '' ? Number(editForm.salePrice) : null
+
+    const updated: Product = {
+      ...selectedProduct,
+      name: editForm.name.trim(),
+      category: editForm.category,
+      categoryRuleId: editForm.categoryRuleId,
+      calculationType: editForm.calculationType,
+      calculationLabel: editForm.calculationLabel,
+      unit: editForm.unit || selectedProduct.unit,
+      rentPrice: rentVal,
+      salePrice: saleVal,
+      rentalType: editForm.calculationType === 'PER_DAY' ? 'DAILY' : 'NORMAL',
+      normalPrice: rentVal ?? selectedProduct.normalPrice,
+      dailyPrice: rentVal ?? selectedProduct.dailyPrice,
+      createdAt: editForm.createdAt,
+    }
+
+    const next = products.map((p) => (p.id === updated.id ? updated : p))
+    saveStorageProducts(next)
+    setProducts(next)
+    setSelectedProduct(updated)
+    setIsEditingInline(false)
+    showToast('บันทึกสำเร็จ', `อัปเดตข้อมูลสินค้า "${updated.name}" เรียบร้อยแล้ว`, 'SUCCESS')
   }
 
   return (
@@ -427,7 +508,13 @@ export default function ProductsPage() {
                           </span>
                         </td>
                         <td className="py-2 px-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                          ฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}
+                          {p.rentPrice !== undefined && p.rentPrice !== null ? (
+                            <span>฿{p.rentPrice.toLocaleString()}{p.calculationType === 'PER_DAY' || p.rentalType === 'DAILY' ? '/วัน' : '/รอบ'}</span>
+                          ) : p.salePrice !== undefined && p.salePrice !== null ? (
+                            <span className="text-violet-600 dark:text-violet-400">฿{p.salePrice.toLocaleString()} (ขาย)</span>
+                          ) : (
+                            <span>฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}</span>
+                          )}
                         </td>
                         <td className="py-2 px-2.5 text-right font-mono text-[11px] text-slate-500 whitespace-nowrap">
                           <span className="text-amber-600">฿{p.defaultDamageFee}</span> / <span className="text-red-600">฿{p.defaultLossFee}</span>
@@ -457,17 +544,9 @@ export default function ProductsPage() {
                               type="button"
                               onClick={() => openProductHistory(p, 'CURRENT')}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="ดูประวัติและสถานที่เช่า"
+                              title="ดูข้อมูลและประวัติการเช่า"
                             >
                               <History className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenManageProduct(p, 'EDIT_DETAILS')}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="แก้ไข / ปรับสต็อก"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
@@ -623,63 +702,199 @@ export default function ProductsPage() {
         {selectedProduct && (
           <>
             <AppModalHeader
-              onClose={() => setSelectedProduct(null)}
-              icon={<History className="w-5 h-5 text-blue-500" />}
-              title={selectedProduct.name}
-              headerActions={
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
-                    {selectedProduct.code}
-                  </span>
-                  <span className="text-xs font-bold text-slate-500">{selectedProduct.category}</span>
-                </div>
-              }
+              onClose={() => {
+                setSelectedProduct(null)
+                setIsEditingInline(false)
+              }}
+              title="ข้อมูลสินค้า"
             />
 
             <AppModalBody className="p-0 space-y-0">
-              {/* Quick Metrics Banner: เช่ากี่ครั้ง / ล่าสุดใครเช่า */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              {/* Paper-head style Product Info Card & Inline Edit Form */}
+              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80">
+                {!isEditingInline ? (
+                  /* Display Mode: Paper-head card */
+                  <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs relative">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                            {selectedProduct.code}
+                          </span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-lg">
+                            {selectedProduct.category}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            หน่วยนับ: <strong className="text-slate-800 dark:text-slate-200 font-bold">{selectedProduct.unit}</strong>
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 pt-0.5">
+                          {selectedProduct.name}
+                        </h3>
+                      </div>
 
-                {/* 1. ถูกเช่ากี่ครั้ง */}
-                <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                  <span className="text-slate-500 font-semibold text-[11px] flex items-center gap-1">
-                    <History className="w-3.5 h-3.5 text-blue-600" />
-                    <span>ถูกเช่ารวมทั้งหมด</span>
-                  </span>
-                  <p className="text-xl font-black text-blue-600 dark:text-blue-400">
-                    {selectedProduct.totalRentalCount || (selectedProduct.rentalHistory ? selectedProduct.rentalHistory.length : 0)} <span className="text-xs font-bold text-slate-500">ครั้ง</span>
-                  </p>
-                </div>
+                      {/* Edit Button (Pencil Icon) */}
+                      <button
+                        type="button"
+                        onClick={() => startInlineEdit(selectedProduct)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 hover:border-amber-300 transition-colors cursor-pointer shrink-0"
+                        title="แก้ไขข้อมูลสินค้า"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                {/* 2. ล่าสุดใครเช่า */}
-                <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 sm:col-span-2">
-                  <span className="text-slate-500 font-semibold text-[11px] flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-purple-600" />
-                    <span>ผู้เช่ารายล่าสุด (Most Recent Renter)</span>
-                  </span>
-                  {selectedProduct.lastRentedCustomer ? (
-                    <div>
-                      <p className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                        {selectedProduct.lastRentedCustomer.customerName}
-                        {selectedProduct.lastRentedCustomer.phone && ` (${selectedProduct.lastRentedCustomer.phone})`}
-                      </p>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        📅 {selectedProduct.lastRentedCustomer.date} | 🧾 บิล: {selectedProduct.lastRentedCustomer.billNo} ({selectedProduct.lastRentedCustomer.quantity} {selectedProduct.unit})
-                      </p>
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-4 sm:gap-6 text-xs">
+                      {/* ราคาเช่า */}
+                      {selectedProduct.rentPrice !== undefined && selectedProduct.rentPrice !== null && selectedProduct.rentPrice > 0 && (
+                        <div className="space-y-0.5">
+                          <span className="text-slate-400 block text-[11px] font-medium">ราคาเช่า</span>
+                          <span className="text-sm font-black text-blue-600 dark:text-blue-400 font-mono">
+                            ฿{selectedProduct.rentPrice.toLocaleString('th-TH')}
+                          </span>
+                        </div>
+                      )}
+                      {/* ราคาขาย */}
+                      {selectedProduct.salePrice !== undefined && selectedProduct.salePrice !== null && selectedProduct.salePrice > 0 && (
+                        <div className="space-y-0.5">
+                          <span className="text-slate-400 block text-[11px] font-medium">ราคาขาย</span>
+                          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                            ฿{selectedProduct.salePrice.toLocaleString('th-TH')}
+                          </span>
+                        </div>
+                      )}
+                      {/* วันที่เพิ่มสินค้า */}
+                      {(selectedProduct.createdAt || (selectedProduct as any).created_at) && (
+                        <div className="space-y-0.5">
+                          <span className="text-slate-400 block text-[11px] font-medium">วันที่เพิ่มสินค้า</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
+                            {selectedProduct.createdAt || (selectedProduct as any).created_at}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ) : selectedProduct.siteLocations && selectedProduct.siteLocations.length > 0 ? (
-                    <div>
-                      <p className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                        {selectedProduct.siteLocations[0].customerName}
-                      </p>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        🧾 บิล: {selectedProduct.siteLocations[0].billNo} ({selectedProduct.siteLocations[0].quantity} {selectedProduct.unit})
-                      </p>
+                  </div>
+                ) : (
+                  /* Edit Mode: Inline Form */
+                  <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border-2 border-amber-400 dark:border-amber-500 shadow-md space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                        <Edit className="w-4 h-4" />
+                        <span>แก้ไขข้อมูลสินค้า</span>
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">รหัส: {selectedProduct.code}</span>
                     </div>
-                  ) : (
-                    <p className="text-slate-400 italic">ยังไม่มีประวัติการเช่า</p>
-                  )}
-                </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      {/* รหัสสินค้า (Read-only) */}
+                      <div>
+                        <label className="text-slate-500 font-bold block mb-1">รหัสสินค้า (ห้ามแก้ไข)</label>
+                        <input
+                          type="text"
+                          value={selectedProduct.code}
+                          disabled
+                          readOnly
+                          className="w-full px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl border border-slate-200 dark:border-slate-700 font-mono text-xs cursor-not-allowed"
+                        />
+                      </div>
+
+                      {/* ชื่อสินค้า */}
+                      <div>
+                        <label className="text-slate-700 dark:text-slate-300 font-bold block mb-1">
+                          ชื่อสินค้า <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.name}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                          placeholder="ชื่อสินค้า..."
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+                        />
+                      </div>
+
+                      {/* หมวดหมู่ (Dropdown from Category Rules) */}
+                      <div>
+                        <label className="text-slate-700 dark:text-slate-300 font-bold block mb-1">
+                          หมวดหมู่ <span className="text-red-500">*</span>
+                        </label>
+                        <CustomSelect
+                          value={editForm.category}
+                          onChange={(val) => {
+                            const chosen = categoryRules.find((r) => r.name === val)
+                            if (chosen) {
+                              setEditForm((prev) => ({
+                                ...prev,
+                                categoryRuleId: chosen.id,
+                                category: chosen.name,
+                                calculationType: chosen.calculationType,
+                                calculationLabel: chosen.calculationLabel,
+                                unit: chosen.unit || chosen.unitName || '',
+                              }))
+                            } else {
+                              setEditForm((prev) => ({ ...prev, category: String(val) }))
+                            }
+                          }}
+                          options={categoryRules.map((r) => ({ value: r.name, label: r.name }))}
+                          placeholder="เลือกหมวดหมู่"
+                        />
+                      </div>
+
+                      {/* ราคาเช่า */}
+                      <div>
+                        <label className="text-slate-700 dark:text-slate-300 font-bold block mb-1">
+                          ราคาเช่า (฿) <span className="text-slate-400 font-normal">(เว้นว่างได้)</span>
+                        </label>
+                        <NumericInput
+                          value={editForm.rentPrice}
+                          onChange={(val) => setEditForm((prev) => ({ ...prev, rentPrice: val === '' ? '' : String(val) }))}
+                          placeholder="เว้นว่างได้ถ้าไม่ให้เช่า"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+                        />
+                      </div>
+
+                      {/* ราคาขาย */}
+                      <div>
+                        <label className="text-slate-700 dark:text-slate-300 font-bold block mb-1">
+                          ราคาขาย (฿) <span className="text-slate-400 font-normal">(เว้นว่างได้)</span>
+                        </label>
+                        <NumericInput
+                          value={editForm.salePrice}
+                          onChange={(val) => setEditForm((prev) => ({ ...prev, salePrice: val === '' ? '' : String(val) }))}
+                          placeholder="เว้นว่างได้ถ้าไม่ขาย"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+                        />
+                      </div>
+
+                      {/* วันที่เพิ่มสินค้า */}
+                      <div>
+                        <label className="text-slate-700 dark:text-slate-300 font-bold block mb-1">วันที่เพิ่มสินค้า</label>
+                        <CustomDatePicker
+                          value={parseLocalDate(editForm.createdAt)}
+                          onChange={(d) => setEditForm((prev) => ({ ...prev, createdAt: d ? getLocalDateString(d) : '' }))}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingInline(false)}
+                        className="px-4 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveInlineEdit}
+                        className="px-5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-sm transition-colors cursor-pointer"
+                      >
+                        บันทึก
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Navigation Tabs inside Drawer */}
@@ -875,8 +1090,14 @@ export default function ProductsPage() {
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                       <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">ข้อมูลราคาและค่าธรรมเนียม</span>
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <p className="text-slate-500">ราคาเช่าปกติ: <span className="font-bold text-blue-600">฿{selectedProduct.normalPrice.toLocaleString()}</span></p>
-                        <p className="text-slate-500">ราคาเช่ารายวัน: <span className="font-bold text-purple-600">฿{selectedProduct.dailyPrice.toLocaleString()}</span></p>
+                        {selectedProduct.rentPrice !== undefined && selectedProduct.rentPrice !== null ? (
+                          <p className="text-slate-500">ราคาเช่า: <span className="font-bold text-blue-600">฿{selectedProduct.rentPrice.toLocaleString()}</span></p>
+                        ) : (
+                          <p className="text-slate-500">ราคาเช่าปกติ: <span className="font-bold text-blue-600">฿{selectedProduct.normalPrice.toLocaleString()}</span></p>
+                        )}
+                        {selectedProduct.salePrice !== undefined && selectedProduct.salePrice !== null && (
+                          <p className="text-slate-500">ราคาขาย: <span className="font-bold text-emerald-600">฿{selectedProduct.salePrice.toLocaleString()}</span></p>
+                        )}
                         <p className="text-slate-500">ค่าชำรุดตั้งต้น: <span className="font-bold text-amber-600">฿{selectedProduct.defaultDamageFee.toLocaleString()}</span></p>
                         <p className="text-slate-500">ค่าสูญหายตั้งต้น: <span className="font-bold text-red-600">฿{selectedProduct.defaultLossFee.toLocaleString()}</span></p>
                       </div>
@@ -890,7 +1111,10 @@ export default function ProductsPage() {
             {/* Modal Footer */}
             <AppModalFooter>
               <button
-                onClick={() => setSelectedProduct(null)}
+                onClick={() => {
+                  setSelectedProduct(null)
+                  setIsEditingInline(false)
+                }}
                 className="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง

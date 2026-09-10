@@ -17,17 +17,9 @@ import { CalendarPanel } from '@/components/common/CustomDatePicker'
 import { CustomSelect, SelectOption } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomerUnifiedSelector } from '@/components/pos/CustomerUnifiedSelector'
+import { CartItem, saveActiveCart } from '@/lib/cart-storage'
 
-export interface CartItem {
-  id: string
-  product: Product
-  rentalType: 'NORMAL' | 'DAILY' | 'SALE'
-  quantity: number
-  unitPrice: number
-  usageCount: number
-  billableDays?: number
-  lineTotal: number
-}
+export type { CartItem }
 
 interface CartPanelProps {
   onCheckout: () => void
@@ -35,6 +27,10 @@ interface CartPanelProps {
   onAddCustomer?: (newCustomer: Customer) => void
   isQuotationMode?: boolean
   onSaveQuotation?: () => void
+  items?: CartItem[]
+  setItems?: React.Dispatch<React.SetStateAction<CartItem[]>>
+  customer?: Customer | null
+  setCustomer?: React.Dispatch<React.SetStateAction<Customer | null>>
 }
 
 export function CartPanel({
@@ -42,12 +38,23 @@ export function CartPanel({
   customers = [],
   onAddCustomer,
   isQuotationMode = false,
-  onSaveQuotation
+  onSaveQuotation,
+  items: externalItems,
+  setItems: setExternalItems,
+  customer: externalCustomer,
+  setCustomer: setExternalCustomer,
 }: CartPanelProps) {
   const { showToast } = useToast()
   
-  const [customer, setCustomer] = useState<Customer | null>(null)
-  const [items, setItems] = useState<CartItem[]>([])
+  const [internalCustomer, setInternalCustomer] = useState<Customer | null>(null)
+  const [internalItems, setInternalItems] = useState<CartItem[]>([])
+
+  const customer = externalCustomer !== undefined ? externalCustomer : internalCustomer
+  const setCustomer = setExternalCustomer || setInternalCustomer
+
+  const items = externalItems !== undefined ? externalItems : internalItems
+  const setItems = setExternalItems || setInternalItems
+
   const [discount, setDiscount] = useState<number>(0)
   const [shippingFee, setShippingFee] = useState<number>(0)
   const [depositAmount, setDepositAmount] = useState<number>(0)
@@ -217,7 +224,7 @@ export function CartPanel({
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                    {item.product.product_name}
+                    {item.productName || item.product.name || item.product.product_name}
                   </span>
                   <span className="font-extrabold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
                     ฿{item.lineTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -228,15 +235,15 @@ export function CartPanel({
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {item.rentalType === 'DAILY' ? (
                     <span className="text-blue-600 dark:text-blue-400">
-                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.product.unit_name || 'ชุด'} × {item.billableDays} วัน
+                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.unitName || item.product.unit || item.product.unit_name || 'ชิ้น'} × {item.billableDays} วัน
                     </span>
                   ) : item.rentalType === 'NORMAL' ? (
                     <span className="text-emerald-600 dark:text-emerald-400">
-                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.product.unit_name || 'ชิ้น'} × {item.usageCount} รอบ
+                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.unitName || item.product.unit || item.product.unit_name || 'ชิ้น'} × {item.usageCount} รอบ
                     </span>
                   ) : (
                     <span className="text-purple-600 dark:text-purple-400 font-bold">
-                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.product.unit_name || 'ชิ้น'} (ขายขาด)
+                      ฿{item.unitPrice.toLocaleString('th-TH')} × {item.quantity} {item.unitName || item.product.unit || item.product.unit_name || 'ชิ้น'} (ขาย)
                     </span>
                   )}
                 </div>
@@ -371,9 +378,27 @@ export function CartPanel({
             ) : (
               <button
                 type="button"
-                onClick={onCheckout}
+                onClick={() => {
+                  saveActiveCart({
+                    customer,
+                    items,
+                    discount: Number(discount) || 0,
+                    shippingFee: Number(shippingFee) || 0,
+                    depositAmount: Number(depositAmount) || 0,
+                    taxRate: Number(taxRate) || 0,
+                    shippingAddress,
+                    headerRentalDate: headerRentalDate ? headerRentalDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    headerReturnDate: headerReturnDate ? headerReturnDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    documentType,
+                    documentDate: documentDate ? documentDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    subtotal,
+                    tax,
+                    grandTotal,
+                  })
+                  onCheckout()
+                }}
                 disabled={items.length === 0}
-                className="w-full col-span-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-1.5 transition-all"
+                className="w-full col-span-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
                 <span>ชำระเงิน</span>
                 <ArrowRight className="w-4 h-4" />

@@ -37,6 +37,10 @@ import { NewCustomerModal } from '@/components/customers/NewCustomerModal'
 import { useToast } from '@/components/common/Toast'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { logger } from '@/lib/utils/logger'
+import { loadCustomers, addCustomer, updateCustomer, deleteCustomer } from '@/lib/customer-storage'
+import { loadRentalBills, deleteBill } from '@/lib/bill-storage'
+import { returnProductStock, restoreSaleProductStock } from '@/lib/product-storage'
+import { loadTransactions } from '@/lib/finance-storage'
 
 export default function CustomersPage() {
   const { showToast } = useToast()
@@ -82,8 +86,19 @@ export default function CustomersPage() {
   >('GENERAL')
 
   const loadData = React.useCallback(async () => {
-    setIsLoading(false)
-  }, [])
+    setIsLoading(true)
+    try {
+      const c = loadCustomers()
+      const b = loadRentalBills()
+      setCustomers(c)
+      setBills(b)
+      if (c.length > 0 && !selectedCustomerId) {
+        setSelectedCustomerId(c[0].id)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedCustomerId])
 
   useEffect(() => {
     loadData()
@@ -101,10 +116,61 @@ export default function CustomersPage() {
 
     const currentCustomer = customers.find((c) => c.id === selectedCustomerId)
     setCustomerNoteInput(currentCustomer?.note || '')
-    setCustomerPayments([])
-    setCustomerOutstandingItems([])
-    setCustomerReturnStats({ totalReturnedItemsWithDates: 0, onTimeReturnedItems: 0, onTimeRatePercent: null })
-  }, [selectedCustomerId, customers])
+
+    // Payments from finance transactions
+    const allTx = loadTransactions()
+    const matchingTx = allTx.filter(
+      (tx) => tx.customerName && currentCustomer && tx.customerName.toLowerCase() === currentCustomer.customerName.toLowerCase()
+    )
+    const payments: CustomerPaymentRecord[] = matchingTx.map((tx) => ({
+      id: tx.id,
+      paymentNo: tx.refNo,
+      paymentDate: tx.dateTime,
+      paymentMethod: tx.channel,
+      amount: tx.incomeAmount,
+      status: 'SUCCESS',
+      billNo: tx.refNo,
+    }))
+    setCustomerPayments(payments)
+
+    // Outstanding items from customerBills
+    const currentBills = bills.filter(
+      (b) => currentCustomer && (b.customerId === currentCustomer.id || b.customerName === currentCustomer.customerName)
+    )
+    const outstanding: CustomerOutstandingItemRecord[] = []
+    currentBills
+      .filter((b) => b.rentalStatus === 'RENTING')
+      .forEach((b) => {
+        b.items.forEach((item) => {
+          if (item.rentalType === 'SALE' || item.requiresReturn === false) return
+          const remaining = item.outstandingQuantity ?? (item.quantity - (item.returnedQuantity || 0))
+          if (remaining > 0) {
+            const isOverdue = b.rentalEndDate ? new Date(b.rentalEndDate) < new Date() : false
+            outstanding.push({
+              id: item.id || `out-${b.id}-${item.productId}`,
+              billId: b.id,
+              billNo: b.billNo,
+              billDate: b.billDate,
+              productId: item.productId,
+              productName: item.productName,
+              rentalType: item.rentalType,
+              totalQuantity: item.quantity,
+              returnedQuantity: item.returnedQuantity || 0,
+              damagedQuantity: item.damagedQuantity || 0,
+              lostQuantity: item.lostQuantity || 0,
+              outstandingQuantity: remaining,
+              unitName: item.unitName || 'ชิ้น',
+              unitPrice: item.unitPrice,
+              rentalStartDate: item.dailyStartDate || b.rentalStartDate,
+              scheduledReturnDate: item.dailyEndDate || b.rentalEndDate,
+              overdueDays: 0,
+              isOverdue,
+            })
+          }
+        })
+      })
+    setCustomerOutstandingItems(outstanding)
+  }, [selectedCustomerId, customers, bills])
 
   const selectedCustomer: Customer | undefined = customers.find((c) => c.id === selectedCustomerId)
 
@@ -139,6 +205,22 @@ export default function CustomersPage() {
     }
     setIsDeletingBill(true)
     try {
+      if (billToDelete.items) {
+        billToDelete.items.forEach((item) => {
+          const isSale = item.rentalType === 'SALE' || item.requiresReturn === false
+          if (isSale) {
+            if (item.productId && item.quantity > 0) {
+              restoreSaleProductStock(item.productId, item.quantity)
+            }
+            return
+          }
+          const remaining = item.outstandingQuantity ?? (item.quantity - (item.returnedQuantity || 0))
+          if (remaining > 0 && item.productId) {
+            returnProductStock(item.productId, remaining)
+          }
+        })
+      }
+      deleteBill(billToDelete.id)
       setBills((prev) => prev.filter((b) => b.id !== billToDelete.id))
       showToast(
         'ลบรายการบิลสำเร็จ',
@@ -186,6 +268,7 @@ export default function CustomersPage() {
 
     try {
       const updatedCustomer = { ...c, isSuspended: targetSuspend }
+      updateCustomer(updatedCustomer)
       setCustomers((prev) =>
         prev.map((item) => (item.id === updatedCustomer.id ? updatedCustomer : item))
       )
@@ -210,6 +293,7 @@ export default function CustomersPage() {
     }
 
     try {
+      deleteCustomer(customerToDelete.id)
       setCustomers((prev) => prev.filter((item) => item.id !== customerToDelete.id))
       if (selectedCustomerId === customerToDelete.id) {
         setSelectedCustomerId('')
@@ -234,10 +318,12 @@ export default function CustomersPage() {
         showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขข้อมูลลูกค้า', 'ERROR')
         return
       }
+      updateCustomer(updatedCustomer)
       setCustomers(customers.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c)))
       showToast('แก้ไขข้อมูลลูกค้าสำเร็จ', `ปรับปรุงข้อมูลของ ${updatedCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
     } else {
       const newCustomer = { ...updatedCustomer, id: updatedCustomer.id || `cust-${Date.now()}` }
+      addCustomer(newCustomer)
       setCustomers([newCustomer, ...customers])
       setSelectedCustomerId(newCustomer.id)
       showToast('เพิ่มลูกค้าใหม่สำเร็จ', `บันทึกข้อมูลลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
@@ -260,6 +346,7 @@ export default function CustomersPage() {
         ...selectedCustomer,
         note: customerNoteInput.trim() || undefined,
       }
+      updateCustomer(updated)
       setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
       showToast('บันทึกหมายเหตุสำเร็จ', `อัปเดตหมายเหตุของ ${updated.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
     } catch (err: any) {

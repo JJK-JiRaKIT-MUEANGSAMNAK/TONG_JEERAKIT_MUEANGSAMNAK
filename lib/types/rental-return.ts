@@ -20,7 +20,7 @@ export interface ReturnInspectionItem {
   rentalStartDate?: string
   scheduledReturnDate?: string
   actualReturnDate?: string
-  rentalType?: 'NORMAL' | 'DAILY'
+  rentalType?: 'NORMAL' | 'DAILY' | 'SALE'
   usageCount?: number
 }
 
@@ -114,7 +114,7 @@ export interface FullBillItem {
   rentalType?: 'NORMAL' | 'DAILY' | 'SALE'
   usageCount?: number
   lineTotal?: number
-  status: 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST'
+  status: 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST' | 'COMPLETED'
 }
 
 export interface FullBillDeposit {
