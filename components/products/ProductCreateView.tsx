@@ -186,37 +186,37 @@ export function ProductCreateView({
                 </th>
 
                 {/* 4. หมวดหมู่ */}
-                <th className="py-2 px-1 text-center w-[96px] whitespace-nowrap">
+                <th className="py-2 px-1 text-center w-[88px] min-w-[88px] max-w-[88px] whitespace-nowrap">
                   หมวดหมู่
                 </th>
 
                 {/* 5. หน่วย (หน่วยนับอุปกรณ์เสริม) */}
-                <th className="py-2 px-1 text-center w-[56px] whitespace-nowrap" title="หน่วยนับอุปกรณ์เสริม">
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap" title="หน่วยนับอุปกรณ์เสริม">
                   หน่วย
                 </th>
 
                 {/* 6. ราคา */}
-                <th className="py-2 px-1 text-center w-16 whitespace-nowrap text-blue-600 dark:text-blue-400">
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap text-blue-600 dark:text-blue-400">
                   ราคา
                 </th>
 
-                {/* 7. ต้นทุน/หน่วย */}
-                <th className="py-2 px-1 text-center w-[84px] whitespace-nowrap text-slate-600 dark:text-slate-300">
-                  ต้นทุน/หน่วย
+                {/* 7. ต้นทุน (ต้นทุน/หน่วย) */}
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap text-slate-600 dark:text-slate-300" title="ต้นทุน/หน่วย">
+                  ต้นทุน
                 </th>
 
                 {/* 8. ค่าชำรุด */}
-                <th className="py-2 px-1 text-center w-16 whitespace-nowrap text-amber-600 dark:text-amber-400">
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap text-amber-600 dark:text-amber-400">
                   ค่าชำรุด
                 </th>
 
                 {/* 9. ค่าสูญหาย */}
-                <th className="py-2 px-1 text-center w-[68px] whitespace-nowrap text-red-600 dark:text-red-400">
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap text-red-600 dark:text-red-400">
                   ค่าสูญหาย
                 </th>
 
                 {/* 10. จำนวนเพิ่ม */}
-                <th className="py-2 px-1 text-center w-[74px] whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                <th className="py-2 px-1 text-center w-20 min-w-20 max-w-20 whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                   จำนวนเพิ่ม
                 </th>
 
@@ -272,11 +272,12 @@ export function ProductCreateView({
                     </td>
 
                     {/* 4. หมวดหมู่ */}
-                    <td className="py-0.5 px-1 align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 align-middle whitespace-nowrap w-[88px] min-w-[88px] max-w-[88px]">
                       <CustomSelect
                         value={row.categoryId}
                         onChange={(val) => handleUpdateRow(row.id, 'categoryId', String(val))}
-                        buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-full text-center"
+                        className="w-full"
+                        buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-[80px] min-w-[80px] max-w-[80px] text-center"
                         options={
                           categoryRules.length > 0
                             ? categoryRules.map((cr) => ({
@@ -291,10 +292,10 @@ export function ProductCreateView({
                     </td>
 
                     {/* 5. หน่วย */}
-                    <td className="py-0.5 px-1 align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       {!row.isAccessory ? (
                         <div
-                          className="px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 text-center truncate select-none text-xs font-semibold min-h-[26px] flex items-center justify-center"
+                          className="w-full min-w-0 px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 text-center truncate select-none text-xs font-semibold min-h-[26px] flex items-center justify-center"
                           title={matchedRule ? `หน่วยนับตามหมวดหมู่: ${matchedRule.unit || '-'}` : ''}
                         >
                           {matchedRule?.unit || '\u00A0'}
@@ -303,7 +304,8 @@ export function ProductCreateView({
                         <CustomSelect
                           value={row.accessoryUnitId || ''}
                           onChange={(val) => handleUpdateRow(row.id, 'accessoryUnitId', String(val))}
-                          buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-full text-center"
+                          className="w-full min-w-0"
+                          buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-full min-w-0 text-center"
                           options={
                             activeUnits.length > 0
                               ? activeUnits.map((u) => ({
@@ -320,55 +322,55 @@ export function ProductCreateView({
                     </td>
 
                     {/* 6. ราคา */}
-                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       <NumericInput
                         value={row.price ?? ''}
                         placeholder=""
                         onChange={(val) => handleUpdateRow(row.id, 'price', val === '' ? null : val)}
                         min={0}
                         allowDecimals={true}
-                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full min-w-0 px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                       />
                     </td>
 
-                    {/* 7. ต้นทุน/หน่วย */}
-                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                    {/* 7. ต้นทุน */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       <NumericInput
                         value={row.costPrice ?? ''}
                         placeholder=""
                         onChange={(val) => handleUpdateRow(row.id, 'costPrice', val === '' ? null : val)}
                         min={0}
                         allowDecimals={true}
-                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-slate-400 focus:outline-none"
+                        className="w-full min-w-0 px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-slate-400 focus:outline-none"
                       />
                     </td>
 
                     {/* 8. ค่าชำรุด */}
-                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       <NumericInput
                         value={row.damageFee ?? ''}
                         placeholder=""
                         onChange={(val) => handleUpdateRow(row.id, 'damageFee', val === '' ? null : val)}
                         min={0}
                         allowDecimals={true}
-                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-amber-600 dark:text-amber-400 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                        className="w-full min-w-0 px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-amber-600 dark:text-amber-400 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                       />
                     </td>
 
                     {/* 9. ค่าสูญหาย */}
-                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       <NumericInput
                         value={row.lossFee ?? ''}
                         placeholder=""
                         onChange={(val) => handleUpdateRow(row.id, 'lossFee', val === '' ? null : val)}
                         min={0}
                         allowDecimals={true}
-                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-red-600 dark:text-red-400 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                        className="w-full min-w-0 px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-red-600 dark:text-red-400 focus:ring-1 focus:ring-red-500 focus:outline-none"
                       />
                     </td>
 
                     {/* 10. จำนวนเพิ่ม */}
-                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap w-20 min-w-20 max-w-20">
                       <NumericInput
                         value={row.quantityAdded ? row.quantityAdded : ''}
                         placeholder=""
@@ -377,7 +379,7 @@ export function ProductCreateView({
                         }
                         min={0}
                         allowDecimals={false}
-                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                        className="w-full min-w-0 px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                       />
                     </td>
 
