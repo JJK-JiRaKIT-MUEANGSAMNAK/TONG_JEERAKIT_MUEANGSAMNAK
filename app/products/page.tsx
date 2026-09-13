@@ -20,6 +20,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
+import { ActionButton } from '@/components/common/ActionButton'
 import { Product, Unit, RentalType } from '@/lib/types/rental-pos'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { useToast } from '@/components/common/Toast'
@@ -38,6 +39,7 @@ import { NumericInput } from '@/components/common/NumericInput'
 import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
+import { getDefaultMinimumStock } from '@/lib/settings-storage'
 
 export default function ProductsPage() {
   const { showToast } = useToast()
@@ -75,6 +77,14 @@ export default function ProductsPage() {
   useEffect(() => {
     setMasterUnits(loadUnits())
     setCategoryRules(loadCategoryRules())
+  }, [])
+
+  const [defaultMinStock, setDefaultMinStock] = useState<number>(() => getDefaultMinimumStock())
+
+  useEffect(() => {
+    const handleSettingsChanged = () => setDefaultMinStock(getDefaultMinimumStock())
+    window.addEventListener('app_settings_changed', handleSettingsChanged)
+    return () => window.removeEventListener('app_settings_changed', handleSettingsChanged)
   }, [])
 
   // Persistent Draft State for ADD Tab (Survives tab switches!)
@@ -175,7 +185,7 @@ export default function ProductsPage() {
         const costPriceNum = r.costPrice != null ? Number(r.costPrice) : 0
         const damageFeeNum = r.damageFee != null ? Number(r.damageFee) : 0
         const lossFeeNum = r.lossFee != null ? Number(r.lossFee) : 0
-        const minStockNum = r.minimumStock != null ? Number(r.minimumStock) : 3
+        const minStockNum = defaultMinStock
 
         const dateStr = r.addedDate
           ? r.addedDate.toISOString().slice(0, 10)
@@ -368,7 +378,7 @@ export default function ProductsPage() {
     const matchesCat = categoryFilter === 'ALL' || p.category === categoryFilter
     const matchesStatus =
       statusFilter === 'ALL' ||
-      (statusFilter === 'LOW_STOCK' && p.minimumStock > 0 && p.availableQuantity <= p.minimumStock) ||
+      (statusFilter === 'LOW_STOCK' && defaultMinStock > 0 && p.availableQuantity <= defaultMinStock) ||
       (statusFilter === 'OUT_OF_STOCK' && p.availableQuantity === 0) ||
       (statusFilter === 'ACTIVE' && p.status === 'ACTIVE')
     return matchesSearch && matchesCat && matchesStatus
@@ -395,7 +405,7 @@ export default function ProductsPage() {
   const totalRented = products.reduce((acc, p) => acc + p.rentedQuantity, 0)
   const totalDamaged = products.reduce((acc, p) => acc + p.damagedQuantity, 0)
   const totalLost = products.reduce((acc, p) => acc + p.lostQuantity, 0)
-  const lowStockCount = products.filter((p) => p.minimumStock > 0 && p.availableQuantity <= p.minimumStock).length
+  const lowStockCount = products.filter((p) => defaultMinStock > 0 && p.availableQuantity <= defaultMinStock).length
   const damagedProductsCount = products.filter((p) => p.damagedQuantity > 0).length
 
   // Handlers
@@ -568,62 +578,51 @@ export default function ProductsPage() {
       {/* Main 3 Tabs Navigation: [รายการสินค้า] [เพิ่มสินค้า] [ตั้งค่าเสริม] */}
       <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
-          <button
-            type="button"
+          <ActionButton
             onClick={() => setActiveMainTab('LIST')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeMainTab === 'LIST'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
+            icon={<Layers className="text-blue-600 dark:text-blue-400" />}
+            badge={
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
+                {products.length}
+              </span>
+            }
           >
-            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>รายการสินค้า</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
-              {products.length}
-            </span>
-          </button>
+            รายการสินค้า
+          </ActionButton>
 
-          <button
-            type="button"
+          <ActionButton
             onClick={() => setActiveMainTab('ADD')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeMainTab === 'ADD'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400'
-            }`}
+            variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
+            className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
+            icon={<PackagePlus />}
+            badge={
+              createDraftRows.some((r) => r.name.trim() !== '') ? (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
+              ) : undefined
+            }
           >
-            <PackagePlus className="w-4 h-4" />
-            <span>เพิ่มสินค้า</span>
-            {createDraftRows.some((r) => r.name.trim() !== '') && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
-            )}
-          </button>
+            เพิ่มสินค้า
+          </ActionButton>
 
-          <button
-            type="button"
+          <ActionButton
             onClick={() => setActiveMainTab('SETTINGS')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeMainTab === 'SETTINGS'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
+            icon={<Settings className="text-purple-600 dark:text-purple-400" />}
           >
-            <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span>ตั้งค่าเสริม</span>
-          </button>
+            ตั้งค่าเสริม
+          </ActionButton>
         </div>
 
         {/* Quick count stock button on right side */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <ActionButton
             onClick={handleOpenStockCount}
-            className="h-8 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs shadow-xs transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            variant="ghost"
+            icon={<ClipboardList className="text-slate-500 dark:text-slate-400" />}
           >
-            <ClipboardList className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-            <span>นับสต็อก</span>
-          </button>
+            นับสต็อก
+          </ActionButton>
         </div>
       </div>
 
@@ -648,6 +647,7 @@ export default function ProductsPage() {
           totalProducts={totalProducts}
           productsPerPage={productsPerPage}
           setCurrentPage={setCurrentPage}
+          defaultMinStock={defaultMinStock}
           onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
           onTransformDamaged={(p) => setTransformTargetProduct(p)}
           onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}

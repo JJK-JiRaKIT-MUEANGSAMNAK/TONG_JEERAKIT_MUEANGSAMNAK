@@ -217,118 +217,6 @@ export interface SystemConfig {
   }
 }
 
-const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
-  businessName: '',
-  address: '',
-  phone: '',
-  email: '',
-  taxId: '',
-  branchNo: '',
-  lineId: '',
-  authorizedPerson: '',
-  bankName: '',
-  bankAccountName: '',
-  bankAccountNumber: '',
-  promptPayValue: '',
-  promptPayType: 'PHONE',
-  logoDataUrl: '',
-  bankQrDataUrl: '',
-}
-
-const DEFAULT_PRODUCT_STOCK_SETTINGS: ProductStockSettings = {
-  defaultMinimumStock: 0,
-  allowZeroStock: false,
-  allowBackdatedStockAdjustment: false,
-  lowStockNotificationEnabled: false,
-}
-
-const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
-  defaultRentalType: '',
-  defaultRentalDays: 0,
-  rentalDayCalculation: '',
-  gracePeriodDays: 0,
-  lateFeeMode: 'NONE',
-  lateFeeValue: 0,
-  dailyOverdueChargeEnabled: false,
-  returnCutoffTime: '',
-  allowPartialReturn: false,
-  allowPartialPayment: false,
-  allowContinueAfterPaid: false,
-  reservationExpiryPolicy: 'UNTIL_START_DATE',
-  reservationExpiryDays: 3,
-}
-
-const DEFAULT_DOCUMENT_NUMBERING_SETTINGS: DocumentNumberingSettings = {
-  rentalBill: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
-  quotation: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
-  receipt: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
-  returnSlip: { prefix: '', runningDigits: 4, resetCycle: 'MONTHLY', yearMode: 'BE', includeDate: true, datePattern: 'YYYYMM' },
-}
-
-const DEFAULT_DOCUMENT_PRINTING_SETTINGS: DocumentPrintingSettings = {
-  defaultTemplates: {
-    rentalBill: '',
-    quotation: '',
-    receipt: '',
-    returnSlip: '',
-  },
-  paperSize: 'A4',
-  margins: { top: 0, right: 0, bottom: 0, left: 0 },
-  footerText: '',
-  showLogo: true,
-  showQRCode: true,
-  showAuthorizedPerson: true,
-  showSignature: true,
-  defaultCopies: 1,
-}
-
-const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
-  paymentMethods: {
-    cash: true,
-    bankTransfer: true,
-    promptPay: true,
-    credit: false,
-  },
-  defaultVatPercent: 0,
-  vatCalculationMode: 'EXCLUSIVE',
-  defaultWithholdingPercent: 0,
-  maximumDiscountPercent: 0,
-  defaultDepositPercent: 0,
-  autoCreateFinanceTransaction: false,
-  moneyPrecision: 2,
-  roundingMode: 'ROUND_HALF_UP',
-}
-
-const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-  deliveryReminder: { enabled: false, daysBefore: 0 },
-  returnReminder: { enabled: false, daysBefore: 0 },
-  paymentReminder: { enabled: false, daysBefore: 0 },
-  lowStockReminder: { enabled: false },
-  overdueReturnReminder: { enabled: false },
-}
-
-const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
-  systemName: '',
-  authBackgroundType: 'gradient',
-  authBackgroundImageUrl: null,
-  appLogoUrl: null,
-}
-
-const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  business: DEFAULT_BUSINESS_SETTINGS,
-  productStock: DEFAULT_PRODUCT_STOCK_SETTINGS,
-  rentalBilling: DEFAULT_RENTAL_BILLING_SETTINGS,
-  documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
-  documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS,
-  financePayment: DEFAULT_FINANCE_PAYMENT_SETTINGS,
-  notifications: DEFAULT_NOTIFICATION_SETTINGS,
-  branding: DEFAULT_BRANDING_SETTINGS,
-  appointmentsNotifications: {
-    lineNotifyToken: '',
-    lineOaSecret: '',
-  },
-}
-
 import { ManualBackupCard } from '@/components/settings/ManualBackupCard'
 
 // 9 Main Categories
@@ -346,6 +234,15 @@ export type SettingsTab =
 import {
   loadSystemSettings,
   saveSystemSettings,
+  DEFAULT_SYSTEM_CONFIG,
+  DEFAULT_BUSINESS_SETTINGS,
+  DEFAULT_PRODUCT_STOCK_SETTINGS,
+  DEFAULT_RENTAL_BILLING_SETTINGS,
+  DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
+  DEFAULT_DOCUMENT_PRINTING_SETTINGS,
+  DEFAULT_FINANCE_PAYMENT_SETTINGS,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_BRANDING_SETTINGS,
 } from '@/lib/settings-storage'
 
 export default function SettingsPage() {

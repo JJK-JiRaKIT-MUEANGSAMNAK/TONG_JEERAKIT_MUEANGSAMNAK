@@ -330,6 +330,13 @@ export function loadSystemSettings(): SystemConfig {
   return DEFAULT_SYSTEM_CONFIG
 }
 
+/**
+ * Helper to get current centralized default minimum stock threshold for runtime warnings.
+ */
+export function getDefaultMinimumStock(): number {
+  return loadSystemSettings().productStock.defaultMinimumStock ?? DEFAULT_PRODUCT_STOCK_SETTINGS.defaultMinimumStock
+}
+
 export interface ActorInfo {
   userId: string
   displayName: string

@@ -11,6 +11,7 @@ import { Product, RentalType } from '@/lib/types/rental-pos'
 import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
 import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
+import { DEFAULT_PRODUCT_STOCK_SETTINGS } from '@/lib/settings-storage'
 
 const STORAGE_KEY = 'app_product_storage'
 
@@ -51,7 +52,7 @@ function buildProduct(
     rentedQuantity: 0,
     damagedQuantity: 0,
     lostQuantity: 0,
-    minimumStock: 3,
+    minimumStock: DEFAULT_PRODUCT_STOCK_SETTINGS.defaultMinimumStock,
     status: 'ACTIVE',
     isAccessory,
     isChargeable: !isAccessory,

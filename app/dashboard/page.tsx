@@ -33,6 +33,7 @@ import {
   computeRentalOperationalSummary,
   computeFinancialSummary,
 } from '@/lib/report-summary-service'
+import { getDefaultMinimumStock } from '@/lib/settings-storage'
 
 export default function DashboardPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -107,17 +108,21 @@ export default function DashboardPage() {
   const totalDamagedQty = products.reduce((sum, p) => sum + (p.damagedQuantity || 0), 0)
   const totalLostQty = products.reduce((sum, p) => sum + (p.lostQuantity || 0), 0)
 
+  const [defaultMinStock, setDefaultMinStock] = useState<number>(() => getDefaultMinimumStock())
+  useEffect(() => {
+    const handleSettingsChanged = () => setDefaultMinStock(getDefaultMinimumStock())
+    window.addEventListener('app_settings_changed', handleSettingsChanged)
+    return () => window.removeEventListener('app_settings_changed', handleSettingsChanged)
+  }, [])
+
   // Low stock products: filtered and sorted by availableQuantity ascending (lowest/most urgent first)
   const lowStockProducts = useMemo(() => {
     return products
-      .filter((p) => p.minimumStock > 0 && (p.availableQuantity || 0) <= p.minimumStock)
+      .filter((p) => defaultMinStock > 0 && (p.availableQuantity || 0) <= defaultMinStock)
       .sort((a, b) => {
-        if ((a.availableQuantity || 0) !== (b.availableQuantity || 0)) {
-          return (a.availableQuantity || 0) - (b.availableQuantity || 0)
-        }
-        return ((a.availableQuantity || 0) - a.minimumStock) - ((b.availableQuantity || 0) - b.minimumStock)
+        return (a.availableQuantity || 0) - (b.availableQuantity || 0)
       })
-  }, [products])
+  }, [products, defaultMinStock])
 
   // Bill stats
   const billStats = useMemo(() => {
@@ -682,7 +687,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <span className="text-slate-500 dark:text-slate-400 text-[10px] md:text-[10px] lg:text-[11px] block mt-0.5">
-                      ขั้นต่ำ: {p.minimumStock} | คงเหลือพร้อมใช้:{' '}
+                      ขั้นต่ำ: {defaultMinStock} | คงเหลือพร้อมใช้:{' '}
                       <strong className="text-slate-800 dark:text-slate-200">
                         {p.availableQuantity || 0}
                       </strong>{' '}

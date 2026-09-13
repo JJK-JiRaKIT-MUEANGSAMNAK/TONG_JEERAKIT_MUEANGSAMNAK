@@ -7,6 +7,7 @@ import { CustomDatePicker } from '@/components/common/CustomDatePicker'
 import { NumericInput } from '@/components/common/NumericInput'
 import { ProductCategoryRule, CalculationType, CALCULATION_OPTIONS } from '@/lib/category-rules-storage'
 import { Unit } from '@/lib/unit-storage'
+import { ActionButton } from '@/components/common/ActionButton'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { ProductCreateDraftRow, createInitialDraftRows } from '@/lib/product-draft-types'
 export type { ProductCreateDraftRow }
@@ -167,290 +168,265 @@ export function ProductCreateView({
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <form onSubmit={onSubmit} className="flex flex-col h-full min-h-0">
-        {/* Table Area: Scrollable horizontally only inside this container */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-3">
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto shadow-xs bg-white dark:bg-slate-900">
-            <table className="w-full min-w-[1040px] text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs border-b border-slate-200 dark:border-slate-800 shadow-xs">
-                <tr>
-                  {/* 1. ลำดับ */}
-                  <th className="py-2 px-1 text-center w-9 shrink-0">
-                    ลำดับ
-                  </th>
+        {/* Table Area: Direct display without inner card nesting or overflow scroll */}
+        <div className="w-full">
+          <table className="w-full table-fixed text-left border-collapse text-xs">
+            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs border-b border-slate-200 dark:border-slate-800 shadow-xs">
+              <tr>
+                {/* 1. ลำดับ */}
+                <th className="py-2 px-1 text-center w-9 whitespace-nowrap">
+                  ลำดับ
+                </th>
 
-                  {/* 2. ชื่อสินค้า */}
-                  <th className="py-2 px-1.5 text-left min-w-[160px]">
-                    ชื่อสินค้า
-                  </th>
+                {/* 2. ชื่อสินค้า */}
+                <th className="py-2 px-1.5 text-center whitespace-nowrap">
+                  ชื่อสินค้า
+                </th>
 
-                  {/* 3. อุปกรณ์เสริม */}
-                  <th className="py-2 px-1 text-center w-14 whitespace-nowrap text-blue-600 dark:text-blue-400">
-                    อุปกรณ์เสริม
-                  </th>
+                {/* 3. อุปกรณ์เสริม */}
+                <th className="py-2 px-1 text-center w-14 whitespace-nowrap text-blue-600 dark:text-blue-400">
+                  อุปกรณ์เสริม
+                </th>
 
-                  {/* 4. หมวดหมู่ */}
-                  <th className="py-2 px-1 text-left w-36 min-w-[130px]">
-                    หมวดหมู่
-                  </th>
+                {/* 4. หมวดหมู่ */}
+                <th className="py-2 px-1 text-left w-36 whitespace-nowrap">
+                  หมวดหมู่
+                </th>
 
-                  {/* 5. หน่วยนับอุปกรณ์เสริม */}
-                  <th className="py-2 px-1 text-left w-28 min-w-[105px]">
-                    หน่วยนับอุปกรณ์เสริม
-                  </th>
+                {/* 5. หน่วย */}
+                <th className="py-2 px-1 text-left w-28 whitespace-nowrap">
+                  หน่วย
+                </th>
 
-                  {/* 6. ราคา */}
-                  <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-blue-600 dark:text-blue-400">
-                    ราคา
-                  </th>
+                {/* 6. ราคา */}
+                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-blue-600 dark:text-blue-400">
+                  ราคา
+                </th>
 
-                  {/* 7. ต้นทุน/หน่วย */}
-                  <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                    ต้นทุน/หน่วย
-                  </th>
+                {/* 7. ต้นทุน/หน่วย */}
+                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                  ต้นทุน/หน่วย
+                </th>
 
-                  {/* 8. ค่าชำรุด */}
-                  <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-amber-600 dark:text-amber-400">
-                    ค่าชำรุด
-                  </th>
+                {/* 8. ค่าชำรุด */}
+                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-amber-600 dark:text-amber-400">
+                  ค่าชำรุด
+                </th>
 
-                  {/* 9. ค่าสูญหาย */}
-                  <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-red-600 dark:text-red-400">
-                    ค่าสูญหาย
-                  </th>
+                {/* 9. ค่าสูญหาย */}
+                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-red-600 dark:text-red-400">
+                  ค่าสูญหาย
+                </th>
 
-                  {/* 10. จำนวนเพิ่ม */}
-                  <th className="py-2 px-1 text-center w-18 whitespace-nowrap text-emerald-600 dark:text-emerald-400">
-                    จำนวนเพิ่ม
-                  </th>
+                {/* 10. จำนวนเพิ่ม */}
+                <th className="py-2 px-1 text-center w-24 whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                  จำนวนเพิ่ม
+                </th>
 
-                  {/* 11. สต็อกขั้นต่ำ */}
-                  <th className="py-2 px-1 text-center w-18 whitespace-nowrap text-purple-600 dark:text-purple-400">
-                    สต็อกขั้นต่ำ
-                  </th>
+                {/* 11. วันที่ทำรายการ */}
+                <th className="py-2 px-1 text-center w-28 whitespace-nowrap">
+                  วันที่ทำรายการ
+                </th>
 
-                  {/* 12. วันที่ทำรายการ */}
-                  <th className="py-2 px-1 text-center w-24 whitespace-nowrap">
-                    วันที่ทำรายการ
-                  </th>
+                {/* 12. จัดการ */}
+                <th className="py-2 px-0.5 text-center w-8 whitespace-nowrap shrink-0">
+                  จัดการ
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+              {rows.map((row, idx) => {
+                const matchedRule = categoryRules.find((c) => c.id === row.categoryId)
+                const calcType = matchedRule?.calculationType || 'PER_ROUND'
 
-                  {/* 13. จัดการ */}
-                  <th className="py-2 px-0.5 text-center w-8 shrink-0">
-                    จัดการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
-                {rows.map((row, idx) => {
-                  const matchedRule = categoryRules.find((c) => c.id === row.categoryId)
-                  const calcType = matchedRule?.calculationType || 'PER_ROUND'
+                const pricePlaceholder =
+                  calcType === 'SALE'
+                    ? 'ราคาขาย'
+                    : calcType === 'PER_DAY'
+                    ? 'ราคา/วัน'
+                    : 'ราคา/รอบ'
 
-                  const pricePlaceholder =
-                    calcType === 'SALE'
-                      ? 'ราคาขาย'
-                      : calcType === 'PER_DAY'
-                      ? 'ราคา/วัน'
-                      : 'ราคา/รอบ'
+                return (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    {/* 1. ลำดับ */}
+                    <td className="py-0.5 px-1 text-center align-middle font-bold text-slate-400 text-xs">
+                      {idx + 1}
+                    </td>
 
-                  return (
-                    <tr
-                      key={row.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
-                      {/* 1. ลำดับ */}
-                      <td className="py-1 px-1 text-center align-middle font-bold text-slate-400 text-xs">
-                        {idx + 1}
-                      </td>
+                    {/* 2. ชื่อสินค้า */}
+                    <td className="py-0.5 px-1.5 align-middle">
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={(e) => handleUpdateRow(row.id, 'name', e.target.value)}
+                        placeholder="ระบุชื่อหรือขนาดสินค้า..."
+                        className="w-full px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </td>
 
-                      {/* 2. ชื่อสินค้า */}
-                      <td className="py-1 px-1.5 align-middle">
+                    {/* 3. อุปกรณ์เสริม (Checkbox รายแถว) */}
+                    <td className="py-0.5 px-1 text-center align-middle">
+                      <div className="flex items-center justify-center">
                         <input
-                          type="text"
-                          value={row.name}
-                          onChange={(e) => handleUpdateRow(row.id, 'name', e.target.value)}
-                          placeholder="ระบุชื่อหรือขนาดสินค้า..."
-                          className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          type="checkbox"
+                          checked={row.isAccessory}
+                          onChange={(e) => handleToggleAccessory(row.id, e.target.checked)}
+                          className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 cursor-pointer"
+                          title="ติ๊กเพื่อกำหนดเป็นอุปกรณ์เสริมและเปิดเลือกหน่วยนับเอง"
                         />
-                      </td>
+                      </div>
+                    </td>
 
-                      {/* 3. อุปกรณ์เสริม (Checkbox รายแถว) */}
-                      <td className="py-1 px-1 text-center align-middle">
-                        <div className="flex items-center justify-center">
-                          <input
-                            type="checkbox"
-                            checked={row.isAccessory}
-                            onChange={(e) => handleToggleAccessory(row.id, e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 cursor-pointer"
-                            title="ติ๊กเพื่อกำหนดเป็นอุปกรณ์เสริมและเปิดเลือกหน่วยนับเอง"
-                          />
+                    {/* 4. หมวดหมู่ */}
+                    <td className="py-0.5 px-1 align-middle">
+                      <CustomSelect
+                        value={row.categoryId}
+                        onChange={(val) => handleUpdateRow(row.id, 'categoryId', String(val))}
+                        buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-full"
+                        options={
+                          categoryRules.length > 0
+                            ? categoryRules.map((cr) => ({
+                                value: cr.id,
+                                label: cr.name,
+                              }))
+                            : [{ value: '', label: 'ยังไม่มีรายการ' }]
+                        }
+                        placeholder={categoryRules.length > 0 ? '-- เลือกหมวดหมู่ --' : 'ยังไม่มีรายการ'}
+                      />
+                    </td>
+
+                    {/* 5. หน่วย */}
+                    <td className="py-0.5 px-1 align-middle">
+                      {!row.isAccessory ? (
+                        <div
+                          className="px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 text-center truncate select-none text-xs font-semibold"
+                          title={`หน่วยนับตามหมวดหมู่: ${matchedRule?.unit || '-'}`}
+                        >
+                          {matchedRule?.unit || '-'}
                         </div>
-                      </td>
-
-                      {/* 4. หมวดหมู่ */}
-                      <td className="py-1 px-1 align-middle">
+                      ) : (
                         <CustomSelect
-                          value={row.categoryId}
-                          onChange={(val) => handleUpdateRow(row.id, 'categoryId', String(val))}
-                          buttonClassName="px-2 py-1 rounded-lg text-xs"
+                          value={row.accessoryUnitId || ''}
+                          onChange={(val) => handleUpdateRow(row.id, 'accessoryUnitId', String(val))}
+                          buttonClassName="px-1.5 py-0.5 rounded-lg text-xs w-full"
                           options={
-                            categoryRules.length > 0
-                              ? categoryRules.map((cr) => ({
-                                  value: cr.id,
-                                  label: cr.name,
-                                  sublabel:
-                                    cr.calculationType === 'SALE'
-                                      ? 'ขาย'
-                                      : cr.calculationType === 'PER_DAY'
-                                      ? 'เช่า/วัน'
-                                      : 'เช่า/รอบ',
+                            activeUnits.length > 0
+                              ? activeUnits.map((u) => ({
+                                  value: u.id,
+                                  label: u.name,
                                 }))
                               : [{ value: '', label: 'ยังไม่มีรายการ' }]
                           }
-                          placeholder={categoryRules.length > 0 ? '-- เลือกหมวดหมู่ --' : 'ยังไม่มีรายการ'}
+                          placeholder={activeUnits.length > 0 ? '-- เลือกหน่วยนับ --' : 'ยังไม่มีรายการ'}
+                          emptyText="ยังไม่มีรายการ"
                         />
-                      </td>
+                      )}
+                    </td>
 
-                      {/* 5. หน่วยนับอุปกรณ์เสริม */}
-                      <td className="py-1 px-1 align-middle">
-                        {!row.isAccessory ? (
-                          <div
-                            className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-center truncate select-none text-[11px]"
-                            title={`ใช้หน่วยนับหลักตามหมวดหมู่: ${matchedRule?.unit || '-'}`}
-                          >
-                            <span className="font-bold">{matchedRule?.unit || '-'}</span>
-                            <span className="text-[10px] text-slate-400 ml-1 font-normal">(ตามหมวด)</span>
-                          </div>
-                        ) : (
-                          <CustomSelect
-                            value={row.accessoryUnitId || ''}
-                            onChange={(val) => handleUpdateRow(row.id, 'accessoryUnitId', String(val))}
-                            buttonClassName="px-2 py-1 rounded-lg text-xs"
-                            options={
-                              activeUnits.length > 0
-                                ? activeUnits.map((u) => ({
-                                    value: u.id,
-                                    label: u.name,
-                                  }))
-                                : [{ value: '', label: 'ยังไม่มีรายการ' }]
-                            }
-                            placeholder={activeUnits.length > 0 ? '-- เลือกหน่วยนับ --' : 'ยังไม่มีรายการ'}
-                            emptyText="ยังไม่มีรายการ"
-                          />
-                        )}
-                      </td>
+                    {/* 6. ราคา (ช่องเดียว ปรับตามรูปแบบคิดเงิน) */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                      <NumericInput
+                        value={row.price ?? ''}
+                        placeholder={pricePlaceholder}
+                        onChange={(val) => handleUpdateRow(row.id, 'price', val === '' ? null : val)}
+                        min={0}
+                        allowDecimals={true}
+                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </td>
 
-                      {/* 6. ราคา (ช่องเดียว ปรับตามรูปแบบคิดเงิน) */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.price ?? ''}
-                          placeholder={pricePlaceholder}
-                          onChange={(val) => handleUpdateRow(row.id, 'price', val === '' ? null : val)}
-                          min={0}
-                          allowDecimals={true}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                      </td>
+                    {/* 7. ต้นทุน/หน่วย */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                      <NumericInput
+                        value={row.costPrice ?? ''}
+                        placeholder="0.00"
+                        onChange={(val) => handleUpdateRow(row.id, 'costPrice', val === '' ? null : val)}
+                        min={0}
+                        allowDecimals={true}
+                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-slate-400 focus:outline-none"
+                      />
+                    </td>
 
-                      {/* 7. ต้นทุน/หน่วย */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.costPrice ?? ''}
-                          placeholder="0.00"
-                          onChange={(val) => handleUpdateRow(row.id, 'costPrice', val === '' ? null : val)}
-                          min={0}
-                          allowDecimals={true}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-slate-400 focus:outline-none"
-                        />
-                      </td>
+                    {/* 8. ค่าชำรุด */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                      <NumericInput
+                        value={row.damageFee ?? ''}
+                        placeholder="0.00"
+                        onChange={(val) => handleUpdateRow(row.id, 'damageFee', val === '' ? null : val)}
+                        min={0}
+                        allowDecimals={true}
+                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-amber-600 dark:text-amber-400 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                      />
+                    </td>
 
-                      {/* 8. ค่าชำรุด */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.damageFee ?? ''}
-                          placeholder="0.00"
-                          onChange={(val) => handleUpdateRow(row.id, 'damageFee', val === '' ? null : val)}
-                          min={0}
-                          allowDecimals={true}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-amber-600 dark:text-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                        />
-                      </td>
+                    {/* 9. ค่าสูญหาย */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                      <NumericInput
+                        value={row.lossFee ?? ''}
+                        placeholder="0.00"
+                        onChange={(val) => handleUpdateRow(row.id, 'lossFee', val === '' ? null : val)}
+                        min={0}
+                        allowDecimals={true}
+                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-red-600 dark:text-red-400 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                      />
+                    </td>
 
-                      {/* 9. ค่าสูญหาย */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.lossFee ?? ''}
-                          placeholder="0.00"
-                          onChange={(val) => handleUpdateRow(row.id, 'lossFee', val === '' ? null : val)}
-                          min={0}
-                          allowDecimals={true}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-red-600 dark:text-red-400 focus:ring-2 focus:ring-red-500 focus:outline-none"
-                        />
-                      </td>
+                    {/* 10. จำนวนเพิ่ม */}
+                    <td className="py-0.5 px-1 text-center align-middle whitespace-nowrap">
+                      <NumericInput
+                        value={row.quantityAdded || ''}
+                        placeholder="0"
+                        onChange={(val) =>
+                          handleUpdateRow(row.id, 'quantityAdded', val === '' ? 0 : Number(val))
+                        }
+                        min={0}
+                        allowDecimals={false}
+                        className="w-full px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </td>
 
-                      {/* 10. จำนวนเพิ่ม */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.quantityAdded || ''}
-                          placeholder="0"
-                          onChange={(val) =>
-                            handleUpdateRow(row.id, 'quantityAdded', val === '' ? 0 : Number(val))
-                          }
-                          min={0}
-                          allowDecimals={false}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        />
-                      </td>
+                    {/* 11. วันที่ทำรายการ */}
+                    <td className="py-0.5 px-1 text-center align-middle">
+                      <CustomDatePicker
+                        value={row.addedDate}
+                        onChange={(val) => handleUpdateRow(row.id, 'addedDate', val)}
+                        className="w-full text-xs"
+                      />
+                    </td>
 
-                      {/* 11. สต็อกขั้นต่ำ */}
-                      <td className="py-1 px-1 text-center align-middle whitespace-nowrap">
-                        <NumericInput
-                          value={row.minimumStock ?? ''}
-                          placeholder="3"
-                          onChange={(val) => handleUpdateRow(row.id, 'minimumStock', val === '' ? null : val)}
-                          min={0}
-                          allowDecimals={false}
-                          className="w-full px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-purple-600 dark:text-purple-400 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                        />
-                      </td>
-
-                      {/* 12. วันที่ทำรายการ */}
-                      <td className="py-1 px-1 text-center align-middle">
-                        <CustomDatePicker
-                          value={row.addedDate}
-                          onChange={(val) => handleUpdateRow(row.id, 'addedDate', val)}
-                        />
-                      </td>
-
-                      {/* 13. จัดการ */}
-                      <td className="py-1 px-0.5 text-center align-middle">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRow(row.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors mx-auto flex items-center justify-center cursor-pointer"
-                          title="ลบแถว"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                    {/* 12. จัดการ */}
+                    <td className="py-0.5 px-0.5 text-center align-middle">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRow(row.id)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors mx-auto flex items-center justify-center cursor-pointer"
+                        title="ลบแถว"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
 
         {/* Footer Area */}
-        <div className="shrink-0 p-3 sm:p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="shrink-0 p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
           {/* ซ้าย: ปุ่ม "เพิ่มแถวสินค้า" และสรุปแถว */}
           <div className="flex items-center gap-3">
-            <button
+            <ActionButton
               type="button"
               onClick={handleAddRow}
-              className="px-3 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              variant="dashed"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มแถวสินค้า</span>
-            </button>
+              เพิ่มแถวสินค้า
+            </ActionButton>
             <span className="text-[11px] text-slate-400 font-medium">
               ทั้งหมด {rows.length} แถว (แถวที่ไม่มีชื่อสินค้าจะไม่ถูกบันทึก)
             </span>
@@ -458,21 +434,21 @@ export function ProductCreateView({
 
           {/* ขวา: [ล้างแบบร่าง] [บันทึกข้อมูลสินค้า] */}
           <div className="flex items-center gap-2">
-            <button
+            <ActionButton
               type="button"
               onClick={onClearDraft}
               disabled={isSubmitting}
-              className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              variant="outline"
             >
               ล้างแบบร่าง
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+              variant="primary"
             >
               {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกข้อมูลสินค้า'}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </form>
@@ -558,21 +534,21 @@ export function ProductCreateView({
             )}
           </AppModalBody>
           <AppModalFooter className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-850 flex items-center justify-end gap-2">
-            <button
+            <ActionButton
               type="button"
               onClick={() => setShowQuickAddCategoryModal(false)}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              variant="outline"
             >
               ยกเลิก
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="submit"
               disabled={!quickCatName.trim()}
-              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+              variant="primary"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>บันทึกและเลือกใช้ทันที</span>
-            </button>
+              บันทึกและเลือกใช้ทันที
+            </ActionButton>
           </AppModalFooter>
         </form>
       </AppModal>
@@ -624,21 +600,21 @@ export function ProductCreateView({
             )}
           </AppModalBody>
           <AppModalFooter className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-850 flex items-center justify-end gap-2">
-            <button
+            <ActionButton
               type="button"
               onClick={() => setShowQuickAddUnitModal(false)}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              variant="outline"
             >
               ยกเลิก
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="submit"
               disabled={!quickUnitName.trim()}
-              className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+              variant="primary"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>บันทึกและเลือกใช้ทันที</span>
-            </button>
+              บันทึกและเลือกใช้ทันที
+            </ActionButton>
           </AppModalFooter>
         </form>
       </AppModal>

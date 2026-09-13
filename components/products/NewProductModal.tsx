@@ -15,6 +15,7 @@ import { CustomDatePicker } from '@/components/common/CustomDatePicker'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { NumericInput } from '@/components/common/NumericInput'
 import { Product, RentalType } from '@/lib/types/rental-pos'
+import { DEFAULT_PRODUCT_STOCK_SETTINGS } from '@/lib/settings-storage'
 import {
   ProductCategoryRule,
   CalculationType,
@@ -293,7 +294,7 @@ export function NewProductModal({
           lostQuantity: isTarget ? (targetProduct.lostQuantity || 0) : 0,
           reservedQuantity: isTarget ? (targetProduct.reservedQuantity || 0) : 0,
           maintenanceQuantity: isTarget ? (targetProduct.maintenanceQuantity || 0) : 0,
-          minimumStock: isTarget ? targetProduct.minimumStock : 3,
+          minimumStock: isTarget ? targetProduct.minimumStock : DEFAULT_PRODUCT_STOCK_SETTINGS.defaultMinimumStock,
           status: isTarget ? targetProduct.status : 'ACTIVE',
           isAccessory: isAccessory,
           isChargeable: !isAccessory,
