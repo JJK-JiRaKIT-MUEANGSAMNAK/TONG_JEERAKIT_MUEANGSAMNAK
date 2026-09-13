@@ -6,7 +6,7 @@ export type CustomerStatus = 'ACTIVE' | 'INACTIVE'
 export type AppointmentType = 'DELIVERY' | 'RETURN' | 'PAYMENT' | 'CONTRACT' | 'QUOTATION' | 'INSPECTION' | 'GENERAL'
 export type AppointmentStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED'
 export type QuotationStatus = 'DRAFT' | 'SENT' | 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED' | 'CANCELLED'
-export type RentalStatus = 'DRAFT' | 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED'
+export type RentalStatus = 'DRAFT' | 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED' | 'VOID'
 export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | 'REFUNDED'
 export type PaymentMethod = 'CASH' | 'TRANSFER' | 'QR' | 'CHEQUE' | 'OTHER'
 export type DepositStatus = 'HELD' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
@@ -20,14 +20,37 @@ export interface StockAdjustment {
   reason: string
 }
 
+export type UserRole = 'OWNER' | 'USER'
+
 export interface Profile {
   id: string
+  username: string
   email: string
-  fullName?: string
-  avatarUrl?: string
+  firstName?: string
+  lastName?: string
+  fullName: string
+  role: UserRole
+  businessId?: string | null
+  avatarUrl?: string | null
+  emailVerified?: boolean
   createdAt: string
   updatedAt: string
 }
+
+export interface CurrentUser {
+  id: string
+  userId: string
+  username: string
+  email: string
+  firstName: string
+  fullName: string
+  displayName: string
+  role: UserRole
+  businessId: string | null
+  emailVerified: boolean
+  avatarUrl?: string | null
+}
+
 
 export interface BusinessSettings {
   id: string
@@ -125,7 +148,9 @@ export interface Product {
   rentedQuantity: number
   damagedQuantity: number
   lostQuantity: number
+  reservedQuantity?: number
   maintenanceQuantity?: number
+  inRepairQuantity?: number
   minimumStock: number
   status: 'ACTIVE' | 'INACTIVE'
   description?: string
@@ -292,6 +317,9 @@ export interface Quotation {
   grandTotal: number
   status: QuotationStatus
   remark?: string
+  cancelReason?: string
+  cancelledAt?: string
+  acceptedAt?: string
   reservationId?: string
   convertedBillId?: string
 }
@@ -357,6 +385,44 @@ export interface RentalBill {
   closedAt?: string
   cancelledAt?: string
   cancelReason?: string
+  dispatchStatus?: 'PENDING' | 'DISPATCHED'
+  refundDueAmount?: number
+  revisions?: BillRevisionRecord[]
+}
+
+export interface BillRevisionRecord {
+  id: string
+  revisionNo: number
+  timestamp: string
+  userId: string
+  displayName: string
+  reason: string
+  mode: 'CORRECTION' | 'EXTENSION' | string
+  before: {
+    grandTotal: number
+    subtotal?: number
+    paidAmount?: number
+    outstandingAmount?: number
+    items: any[]
+  }
+  after: {
+    grandTotal: number
+    subtotal?: number
+    paidAmount?: number
+    outstandingAmount?: number
+    items: any[]
+  }
+  stockDeltas?: Array<{
+    productId: string
+    productName: string
+    quantityDelta: number
+  }>
+  financialDelta?: {
+    grandTotalDelta: number
+    outstandingDelta: number
+    refundDueDelta?: number
+  }
+  correlationId: string
 }
 
 export interface FinancialTransaction {

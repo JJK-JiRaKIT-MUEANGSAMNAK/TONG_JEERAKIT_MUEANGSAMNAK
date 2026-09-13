@@ -8,6 +8,7 @@
  */
 
 import { FullBill, FullBillItem } from '@/lib/types/rental-return'
+export type { FullBill, FullBillItem }
 import { RentalBill, RentalBillItem, RentalType, RentalStatus, PaymentStatus } from '@/lib/types/rental-pos'
 
 const STORAGE_KEY = 'app_bill_storage'
@@ -61,6 +62,9 @@ export function fullBillToRentalBill(full: FullBill): RentalBill {
     closedAt: full.closedAt,
     cancelledAt: full.cancelledAt,
     cancelReason: full.cancelReason,
+    dispatchStatus: full.dispatchStatus,
+    refundDueAmount: full.refundDueAmount,
+    revisions: full.revisions,
     items,
   }
 }
@@ -84,6 +88,8 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
       quantity: item.quantity,
       returnedQty: item.returnedQuantity,
       outstandingQty: item.outstandingQuantity,
+      damagedQuantity: item.damagedQuantity || 0,
+      lostQuantity: item.lostQuantity || 0,
       dailyRate: item.unitPrice,
       unit: item.unitName || 'ชิ้น',
       defaultRepairFee: 0,
@@ -99,14 +105,18 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
   })
 
   let rentalStatus: FullBill['rentalStatus'] = 'RENTING'
-  if (rental.rentalStatus === 'CLOSED') rentalStatus = 'CLOSED'
+  if (rental.rentalStatus === 'DRAFT') rentalStatus = 'DRAFT'
+  else if (rental.rentalStatus === 'CLOSED') rentalStatus = 'CLOSED'
   else if (rental.rentalStatus === 'CANCELLED') rentalStatus = 'CANCELLED'
+  else if (rental.rentalStatus === 'VOID') rentalStatus = 'VOID'
   else if (rental.rentalStatus === 'RETURNED') rentalStatus = 'RETURNED'
   else if (rental.rentalStatus === 'PARTIAL_RETURNED') rentalStatus = 'PARTIAL_RETURNED'
 
   let paymentStatus: FullBill['paymentStatus'] = 'UNPAID'
   if (rental.paymentStatus === 'PAID') paymentStatus = 'PAID'
   else if (rental.paymentStatus === 'PARTIAL') paymentStatus = 'PARTIAL'
+  else if (rental.paymentStatus === 'REFUND_PARTIAL') paymentStatus = 'REFUND_PARTIAL'
+  else if (rental.paymentStatus === 'REFUNDED') paymentStatus = 'REFUNDED'
 
   return {
     id: rental.id,
@@ -131,6 +141,9 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
     outstandingAmount: rental.outstandingAmount,
     rentalStatus,
     paymentStatus,
+    dispatchStatus: rental.dispatchStatus,
+    refundDueAmount: rental.refundDueAmount,
+    revisions: rental.revisions,
     items,
     quotationId: rental.quotationId,
     reservationId: rental.reservationId,
@@ -183,8 +196,36 @@ export function updateBill(updated: FullBill): FullBill[] {
   return next
 }
 
+/** Check if a bill is strictly a draft with zero payment and zero stock movement */
+export function canHardDeleteBill(bill: FullBill | RentalBill): boolean {
+  if (bill.rentalStatus !== 'DRAFT') return false
+  if ((bill.paidAmount || 0) > 0) return false
+  const paidDep = 'paidDepositAmount' in bill ? bill.paidDepositAmount : (bill.depositAmount || 0)
+  if ((paidDep || 0) > 0) return false
+  if (bill.dispatchStatus === 'DISPATCHED') return false
+  const items = bill.items || []
+  const hasItemMovement = items.some(
+    (i: any) =>
+      (i.returnedQty || i.returnedQuantity || 0) > 0 ||
+      (i.damagedQuantity || 0) > 0 ||
+      (i.lostQuantity || 0) > 0
+  )
+  if (hasItemMovement) return false
+  return true
+}
+
+export function loadBillById(id: string): FullBill | undefined {
+  return loadBills().find((b) => b.id === id)
+}
+
 export function deleteBill(id: string): FullBill[] {
   const current = loadBills()
+  const target = current.find((b) => b.id === id)
+  if (target && !canHardDeleteBill(target)) {
+    throw new Error(
+      `Cannot hard delete confirmed or transactional bill ${target.billNo}. Confirmed bills must use VOID or CANCELLED lifecycle.`
+    )
+  }
   const next = current.filter((b) => b.id !== id)
   saveBills(next)
   return next

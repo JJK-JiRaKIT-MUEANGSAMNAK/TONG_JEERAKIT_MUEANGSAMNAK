@@ -17,8 +17,17 @@ import { useRouter } from 'next/navigation'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { Quotation } from '@/lib/types/rental-pos'
 import { logger } from '@/lib/utils/logger'
+import { useToast } from '@/components/common/Toast'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import {
+  loadQuotations as loadQuotationsFromStorage,
+  updateQuotationStatus,
+  confirmQuotationWorkflow,
+  cancelQuotationWorkflow,
+} from '@/lib/quotation-storage'
+import { checkAndExpireReservations } from '@/lib/bill-workflow-service'
 
-export interface ReservationFulfillmentResult {
+interface ReservationFulfillmentResult {
   hasShortage: boolean
   requestedQuantity: number
   reservedQuantity: number
@@ -32,6 +41,8 @@ export interface ReservationFulfillmentResult {
 
 export default function QuotationsPage() {
   const router = useRouter()
+  const { showToast } = useToast()
+  const { user } = useAuth()
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -75,14 +86,19 @@ export default function QuotationsPage() {
     setIsReleasing(true)
     setReleaseError('')
     try {
-      setQuotations((prev) =>
-        prev.map((q) => (q.id === quotationForRelease.id ? { ...q, status: releaseTargetStatus } : q))
-      )
+      const actor = {
+        userId: user?.userId || 'system',
+        displayName: user?.displayName || 'ระบบ',
+      }
+      cancelQuotationWorkflow(quotationForRelease.id, trimmedReason, actor)
+      const updatedList = loadQuotationsFromStorage()
+      setQuotations(updatedList)
       setQuotationForRelease(null)
       setReleaseReason('')
       if (selectedQuotationForConversion?.id === quotationForRelease.id) {
         closeActionModal()
       }
+      showToast('ยกเลิกใบเสนอราคาสำเร็จ', `ยกเลิก ${quotationForRelease.quotationNo} และปล่อยการจองสินค้าเรียบร้อยแล้ว`, 'SUCCESS')
     } catch (err: any) {
       setReleaseError(err?.message || 'ไม่สามารถปล่อยการจองได้')
     } finally {
@@ -91,7 +107,18 @@ export default function QuotationsPage() {
   }
 
   const loadQuotations = React.useCallback(async () => {
-    setIsLoading(false)
+    setIsLoading(true)
+    try {
+      try {
+        checkAndExpireReservations()
+      } catch {
+        // ignore on early boot
+      }
+      const data = loadQuotationsFromStorage()
+      setQuotations(data)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -135,8 +162,28 @@ export default function QuotationsPage() {
 
     setIsProcessing(true)
     setActionError('')
-    routeAcceptedQuotationToPos(targetQuotation.id)
-    setIsProcessing(false)
+    try {
+      if (targetQuotation.status !== 'ACCEPTED') {
+        const actor = {
+          userId: user?.userId || 'system',
+          displayName: user?.displayName || 'ระบบ',
+        }
+        const res = confirmQuotationWorkflow(targetQuotation.id, actor)
+        const updated = loadQuotationsFromStorage()
+        setQuotations(updated)
+        closeActionModal()
+        const backorderMsg = res.backorders.length > 0
+          ? ` (มี Backorder ${res.backorders.length} รายการเนื่องจากสต็อกไม่พอ)`
+          : ''
+        showToast('ตอบรับใบเสนอราคาสำเร็จ', `ปรับสถานะ ${targetQuotation.quotationNo} เป็น ตอบรับ / จองสินค้าแล้ว${backorderMsg}`, 'SUCCESS')
+      } else {
+        routeAcceptedQuotationToPos(targetQuotation.id)
+      }
+    } catch (err: any) {
+      setActionError(err?.message || 'ไม่สามารถดำเนินการได้')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   return (

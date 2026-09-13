@@ -18,19 +18,45 @@ import { CustomSelect, SelectOption } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomerUnifiedSelector } from '@/components/pos/CustomerUnifiedSelector'
 import { CartItem, saveActiveCart } from '@/lib/cart-storage'
+import { calculateBillTotals } from '@/lib/calculation-service'
+import { loadSystemSettings } from '@/lib/settings-storage'
 
 export type { CartItem }
+
+export interface CartPanelQuotationData {
+  discount: number
+  shippingFee: number
+  depositAmount: number
+  taxRate: number
+  tax: number
+  subtotal: number
+  grandTotal: number
+  shippingAddress: string
+  rentalStartDate?: string
+  rentalEndDate?: string
+  documentDate?: string
+}
 
 interface CartPanelProps {
   onCheckout: () => void
   customers?: Customer[]
   onAddCustomer?: (newCustomer: Customer) => void
   isQuotationMode?: boolean
-  onSaveQuotation?: () => void
+  onSaveQuotation?: (data?: CartPanelQuotationData) => void
   items?: CartItem[]
   setItems?: React.Dispatch<React.SetStateAction<CartItem[]>>
   customer?: Customer | null
   setCustomer?: React.Dispatch<React.SetStateAction<Customer | null>>
+  quotationId?: string
+  quotationNo?: string
+  draftBillId?: string
+  initialDiscount?: number
+  initialShippingFee?: number
+  initialDepositAmount?: number
+  initialTaxRate?: number
+  initialShippingAddress?: string
+  initialRentalStartDate?: string
+  initialRentalEndDate?: string
 }
 
 export function CartPanel({
@@ -43,6 +69,16 @@ export function CartPanel({
   setItems: setExternalItems,
   customer: externalCustomer,
   setCustomer: setExternalCustomer,
+  quotationId,
+  quotationNo,
+  draftBillId,
+  initialDiscount,
+  initialShippingFee,
+  initialDepositAmount,
+  initialTaxRate,
+  initialShippingAddress,
+  initialRentalStartDate,
+  initialRentalEndDate,
 }: CartPanelProps) {
   const { showToast } = useToast()
   
@@ -73,9 +109,16 @@ export function CartPanel({
     setCustomer(null)
   }
 
-  const subtotal = items.reduce((sum, item) => sum + (Number(item.lineTotal) || 0), 0)
-  const tax = subtotal * (taxRate || 0)
-  const grandTotal = Math.max(0, subtotal - (discount || 0) + (shippingFee || 0) + (depositAmount || 0) + tax)
+  const totals = calculateBillTotals({
+    items,
+    discount: Number(discount) || 0,
+    shippingFee: Number(shippingFee) || 0,
+    depositAmount: Number(depositAmount) || 0,
+    taxRate: Number(taxRate) || 0,
+  })
+  const subtotal = totals.subtotal
+  const tax = totals.vatAmount
+  const grandTotal = totals.grandTotal
 
   const [customerList, setCustomerList] = useState<Customer[]>(customers)
   
@@ -93,14 +136,57 @@ export function CartPanel({
     }
   }, [customers])
 
+  useEffect(() => {
+    if (initialDiscount !== undefined) setDiscount(initialDiscount)
+  }, [initialDiscount])
+
+  useEffect(() => {
+    if (initialShippingFee !== undefined) setShippingFee(initialShippingFee)
+  }, [initialShippingFee])
+
+  useEffect(() => {
+    if (initialDepositAmount !== undefined) setDepositAmount(initialDepositAmount)
+  }, [initialDepositAmount])
+
+  useEffect(() => {
+    if (initialTaxRate !== undefined) setTaxRate(initialTaxRate)
+  }, [initialTaxRate])
+
+  useEffect(() => {
+    if (initialShippingAddress !== undefined) setShippingAddress(initialShippingAddress)
+  }, [initialShippingAddress])
+
+  useEffect(() => {
+    if (initialRentalStartDate) setHeaderRentalDate(new Date(initialRentalStartDate))
+  }, [initialRentalStartDate])
+
+  useEffect(() => {
+    if (initialRentalEndDate) setHeaderReturnDate(new Date(initialRentalEndDate))
+  }, [initialRentalEndDate])
+
   const handleOpenAddCustomerModal = () => {
     setShowAddCustomerModal(true)
   }
 
-  const vatOptions: SelectOption[] = [
-    { value: 0, label: 'ไม่มี VAT (0%)' },
-    { value: 0.07, label: 'VAT 7%' },
-  ]
+  const defaultVatPercent = React.useMemo(() => {
+    try {
+      return loadSystemSettings().financePayment?.defaultVatPercent ?? 7
+    } catch {
+      return 7
+    }
+  }, [])
+
+  const vatOptions: SelectOption[] = React.useMemo(() => {
+    const defaultRate = defaultVatPercent / 100
+    const opts: SelectOption[] = [
+      { value: 0, label: 'ไม่มี VAT (0%)' },
+      { value: defaultRate, label: `VAT ${defaultVatPercent}%` },
+    ]
+    if (taxRate > 0 && taxRate !== defaultRate) {
+      opts.push({ value: taxRate, label: `VAT ${(taxRate * 100).toFixed(0)}%` })
+    }
+    return opts
+  }, [defaultVatPercent, taxRate])
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
@@ -367,7 +453,21 @@ export function CartPanel({
             {isQuotationMode ? (
               <button
                 type="button"
-                onClick={onSaveQuotation}
+                onClick={() => {
+                  onSaveQuotation?.({
+                    discount: Number(discount) || 0,
+                    shippingFee: Number(shippingFee) || 0,
+                    depositAmount: Number(depositAmount) || 0,
+                    taxRate: Number(taxRate) || 0,
+                    tax,
+                    subtotal,
+                    grandTotal,
+                    shippingAddress,
+                    rentalStartDate: headerRentalDate ? headerRentalDate.toISOString().slice(0, 10) : undefined,
+                    rentalEndDate: headerReturnDate ? headerReturnDate.toISOString().slice(0, 10) : undefined,
+                    documentDate: documentDate ? documentDate.toISOString().slice(0, 10) : undefined,
+                  })
+                }}
                 disabled={items.length === 0}
                 className="w-full col-span-2 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 transition-all"
               >
@@ -394,6 +494,9 @@ export function CartPanel({
                     subtotal,
                     tax,
                     grandTotal,
+                    quotationId: quotationId || undefined,
+                    quotationNo: quotationNo || undefined,
+                    draftBillId: draftBillId || undefined,
                   })
                   onCheckout()
                 }}

@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Store, User, Mail, Lock, ShieldCheck, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { registerUser } from '@/app/actions/auth'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -24,6 +25,39 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    if (password !== confirmPassword) {
+      setError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const result = await registerUser({
+        firstName,
+        lastName,
+        email,
+        username,
+        password,
+      })
+
+      if (!result.success) {
+        setError(result.error || 'เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง')
+        setIsLoading(false)
+        return
+      }
+
+      router.push('/login?registered=1')
+    } catch {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง')
+      setIsLoading(false)
+    }
   }
 
   return (

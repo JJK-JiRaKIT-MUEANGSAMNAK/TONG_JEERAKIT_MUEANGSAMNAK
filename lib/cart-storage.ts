@@ -44,6 +44,9 @@ export interface ActiveCartData {
   tax: number
   grandTotal: number
   remark?: string
+  quotationId?: string
+  quotationNo?: string
+  draftBillId?: string
 }
 
 export function loadActiveCart(): ActiveCartData | null {

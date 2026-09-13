@@ -28,6 +28,11 @@ import { loadBills } from '@/lib/bill-storage'
 import { loadAppointments, addAppointment } from '@/lib/appointment-storage'
 import { getTodayFinance, getMonthlyFinance, getDailyPaymentTrends } from '@/lib/finance-storage'
 import { addCustomer } from '@/lib/customer-storage'
+import {
+  computeStockSummary,
+  computeRentalOperationalSummary,
+  computeFinancialSummary,
+} from '@/lib/report-summary-service'
 
 export default function DashboardPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -38,6 +43,11 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [todayFinance, setTodayFinance] = useState({ income: 0, expense: 0, outstanding: 0 })
   const [monthlyFinance, setMonthlyFinance] = useState({ income: 0, expense: 0 })
+  // Extra KPIs from central summary service
+  const [reservedQty, setReservedQty] = useState(0)
+  const [backorderCount, setBackorderCount] = useState(0)
+  const [depositHeld, setDepositHeld] = useState(0)
+  const [pendingDispatch, setPendingDispatch] = useState(0)
 
   // Modal states
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false)
@@ -57,6 +67,16 @@ export default function DashboardPage() {
       setAppointments(a)
       setTodayFinance(tf)
       setMonthlyFinance(mf)
+
+      // Extra KPIs via central report service
+      const stock = computeStockSummary()
+      const ops = computeRentalOperationalSummary()
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const todayFin = computeFinancialSummary({ startDate: todayStr, endDate: todayStr })
+      setReservedQty(stock.reserved)
+      setBackorderCount(ops.backorderPending)
+      setDepositHeld(todayFin.depositHeld)
+      setPendingDispatch(ops.pendingDispatch)
     } finally {
       setIsLoading(false)
     }
@@ -331,6 +351,51 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Row 1b: Extra KPI Cards — Reserved / Backorder / Deposit / Pending Dispatch */}
+      {!isLoading && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 md:gap-1.5 lg:gap-2.5 xl:gap-3">
+          {/* Reserved Stock */}
+          <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+              สินค้าจอง
+            </span>
+            <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 truncate">
+              {reservedQty.toLocaleString()} หน่วย
+            </h3>
+          </div>
+
+          {/* Backorder Pending */}
+          <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+              Backorder รอดำเนินการ
+            </span>
+            <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5 truncate">
+              {backorderCount.toLocaleString()} รายการ
+            </h3>
+          </div>
+
+          {/* Deposit Held Today */}
+          <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+              มัดจำค้างอยู่วันนี้
+            </span>
+            <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-teal-600 dark:text-teal-400 mt-0.5 truncate">
+              ฿{depositHeld.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h3>
+          </div>
+
+          {/* Pending Dispatch */}
+          <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+              รอจัดส่ง
+            </span>
+            <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
+              {pendingDispatch.toLocaleString()} บิล
+            </h3>
+          </div>
+        </div>
+      )}
+
       {/* Row 2: Payment Trend | Inventory Status Donut */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 md:gap-3 lg:gap-5 xl:gap-6">
         <PaymentTrendChart
@@ -341,6 +406,7 @@ export default function DashboardPage() {
         <StockDonutChart
           available={totalAvailableQty}
           rented={totalRentedQty}
+          reserved={reservedQty}
           damaged={totalDamagedQty}
           lost={totalLostQty}
           totalProducts={products.length}
@@ -614,9 +680,6 @@ export default function DashboardPage() {
                       <span className="font-bold text-xs md:text-xs lg:text-sm text-slate-900 dark:text-slate-100 truncate">
                         {p.name}
                       </span>
-                      {p.code && (
-                        <span className="text-[9px] md:text-[9px] lg:text-[10px] text-slate-400 font-mono">({p.code})</span>
-                      )}
                     </div>
                     <span className="text-slate-500 dark:text-slate-400 text-[10px] md:text-[10px] lg:text-[11px] block mt-0.5">
                       ขั้นต่ำ: {p.minimumStock} | คงเหลือพร้อมใช้:{' '}

@@ -3,6 +3,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AppModal, AppModalBody, AppModalFooter, AppModalHeader } from '@/components/common/AppModal'
 import { NumericInput } from '@/components/common/NumericInput'
+import { getBillFinanceSummary } from '@/lib/finance-storage'
+import { loadBillById } from '@/lib/bill-storage'
+import { processPaymentRefundWorkflow } from '@/lib/bill-workflow-service'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export type RefundMethod = 'CASH' | 'TRANSFER' | 'QR' | 'CHEQUE' | 'OTHER'
 
@@ -27,6 +31,7 @@ interface PaymentRefundModalProps {
 const today = () => new Date().toISOString().slice(0, 10)
 
 export function PaymentRefundModal({ isOpen, rentalBillId, billNo, onClose, onSuccess }: PaymentRefundModalProps) {
+  const { user } = useAuth()
   const [payments, setPayments] = useState<RefundablePayment[]>([])
   const [paymentId, setPaymentId] = useState('')
   const [amount, setAmount] = useState(0)
@@ -42,9 +47,70 @@ export function PaymentRefundModal({ isOpen, rentalBillId, billNo, onClose, onSu
 
   useEffect(() => {
     if (!isOpen || !rentalBillId) return
-    setLoading(false)
+    setLoading(true)
     setError('')
-    setPayments([])
+    try {
+      const summary = getBillFinanceSummary(rentalBillId)
+      const incomeTxs = summary.transactions.filter(
+        (t) => t.type === 'INCOME' && !t.isDeposit && t.category !== 'เงินมัดจำ'
+      )
+      const refundTxs = summary.transactions.filter(
+        (t) => t.type === 'EXPENSE' && !t.isDeposit
+      )
+
+      let list: RefundablePayment[] = incomeTxs
+        .map((tx) => {
+          const refundedForThis = refundTxs
+            .filter((r) => r.originalTxId === tx.id)
+            .reduce((s, r) => s + (r.expenseAmount || 0), 0)
+          const refundable = Math.max(0, (tx.incomeAmount || 0) - refundedForThis)
+          return {
+            id: tx.id,
+            paymentNo: tx.refNo || tx.id.slice(0, 8),
+            paymentMethod: tx.channel,
+            paidAmount: tx.incomeAmount || 0,
+            refundableAmount: refundable,
+            paymentDate: tx.dateTime ? tx.dateTime.slice(0, 10) : today(),
+            referenceNo: tx.refNo,
+          }
+        })
+        .filter((p) => p.refundableAmount > 0)
+
+      if (list.length === 0) {
+        const bill = loadBillById(rentalBillId)
+        if (bill && (bill.paidAmount || 0) > 0) {
+          const refundable = Math.max(0, (bill.paidAmount || 0) - summary.totalRefunded)
+          if (refundable > 0) {
+            list = [
+              {
+                id: 'bill-paid',
+                paymentNo: 'ยอดชำระตามบิล',
+                paymentMethod: 'CASH',
+                paidAmount: bill.paidAmount || 0,
+                refundableAmount: refundable,
+                paymentDate: bill.billDate || today(),
+              },
+            ]
+          }
+        }
+      }
+
+      setPayments(list)
+      if (list.length > 0) {
+        setPaymentId(list[0].id)
+        setAmount(list[0].refundableAmount)
+        if (['CASH', 'TRANSFER', 'QR', 'CHEQUE', 'OTHER'].includes(list[0].paymentMethod)) {
+          setRefundMethod(list[0].paymentMethod as RefundMethod)
+        }
+      } else {
+        setPaymentId('')
+        setAmount(0)
+      }
+    } catch (e: any) {
+      setError(e?.message || 'ไม่สามารถโหลดรายการรับชำระได้')
+    } finally {
+      setLoading(false)
+    }
   }, [isOpen, rentalBillId])
 
   const choosePayment = (id: string) => {
@@ -66,8 +132,22 @@ export function PaymentRefundModal({ isOpen, rentalBillId, billNo, onClose, onSu
     setSaving(true)
     setError('')
     try {
+      processPaymentRefundWorkflow({
+        billId: rentalBillId,
+        amount,
+        channel: refundMethod,
+        reason,
+        referenceNo,
+        originalTxId: selected.id !== 'bill-paid' ? selected.id : undefined,
+        actor: {
+          userId: user?.userId || 'system',
+          displayName: user?.displayName || 'ระบบ',
+        },
+      })
       await onSuccess(`คืนเงินจำนวน ฿${amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} สำเร็จ`)
       onClose()
+    } catch (e: any) {
+      setError(e?.message || 'เกิดข้อผิดพลาดในการคืนเงิน')
     } finally {
       setSaving(false)
     }

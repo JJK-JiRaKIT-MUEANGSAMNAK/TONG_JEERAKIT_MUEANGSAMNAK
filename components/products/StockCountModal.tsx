@@ -8,6 +8,8 @@ import { CustomSelect } from '@/components/common/CustomSelect'
 import { Product } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { getLocalDateString } from '@/components/common/CustomDatePicker'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { applyStockCountAdjustment, loadProducts } from '@/lib/product-storage'
 
 interface StockCountRowState {
   productId: string
@@ -38,6 +40,7 @@ export function StockCountModal({
   onSuccess,
 }: StockCountModalProps) {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const [countItems, setCountItems] = useState<StockCountRowState[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -115,8 +118,44 @@ export function StockCountModal({
   const handleConfirmStockCount = async () => {
     setIsSubmitting(true)
     try {
-      showToast('ตรวจนับสต็อกสำเร็จ', 'บันทึกข้อมูลผลตรวจนับเรียบร้อยแล้ว', 'SUCCESS')
+      const actor = {
+        userId: user?.userId || 'system',
+        displayName: user?.displayName || 'ระบบ',
+      }
+
+      const modifiedItems = countItems.filter(
+        (i) => i.normalQty !== '' || i.damagedQty !== '' || i.lostQty !== '' || i.soldQty !== ''
+      )
+
+      if (modifiedItems.length === 0) {
+        showToast('ไม่มีรายการแก้ไข', 'ไม่มีรายการที่กรอกผลการตรวจนับ', 'INFO')
+        onClose()
+        return
+      }
+
+      let updatedList = loadProducts()
+      for (const item of modifiedItems) {
+        updatedList = applyStockCountAdjustment(
+          item.productId,
+          {
+            normalQty: item.normalQty === '' ? undefined : Number(item.normalQty),
+            damagedQty: item.damagedQty === '' ? undefined : Number(item.damagedQty),
+            lostQty: item.lostQty === '' ? undefined : Number(item.lostQty),
+            soldQty: item.soldQty === '' ? undefined : Number(item.soldQty),
+          },
+          item.note || 'ตรวจนับสต็อกจากหน้างาน',
+          actor
+        )
+      }
+
+      if (onSuccess) {
+        onSuccess(updatedList)
+      }
+
+      showToast('ตรวจนับสต็อกสำเร็จ', `บันทึกผลตรวจนับ ${modifiedItems.length} รายการ และบันทึกประวัติ Audit แล้ว`, 'SUCCESS')
       onClose()
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกผลตรวจนับได้', 'ERROR')
     } finally {
       setIsSubmitting(false)
     }

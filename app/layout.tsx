@@ -8,6 +8,8 @@ import { ToastProvider } from '@/components/common/Toast'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 import { DynamicFavicon } from '@/components/common/DynamicFavicon'
 import { RouteContainer } from '@/components/common/RouteContainer'
+import { AuthProvider } from '@/lib/contexts/AuthContext'
+import { SystemSettingsProvider } from '@/lib/contexts/SystemSettingsContext'
 
 const promptFont = Prompt({
   subsets: ['thai', 'latin'],
@@ -56,15 +58,19 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <DynamicFavicon />
-            <AuthShell>
-              <Sidebar />
-              <main className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden">
-                <TopHeader />
-                <RouteContainer>
-                  {children}
-                </RouteContainer>
-              </main>
-            </AuthShell>
+            <SystemSettingsProvider>
+              <AuthProvider>
+                <AuthShell>
+                  <Sidebar />
+                  <main className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden">
+                    <TopHeader />
+                    <RouteContainer>
+                      {children}
+                    </RouteContainer>
+                  </main>
+                </AuthShell>
+              </AuthProvider>
+            </SystemSettingsProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>

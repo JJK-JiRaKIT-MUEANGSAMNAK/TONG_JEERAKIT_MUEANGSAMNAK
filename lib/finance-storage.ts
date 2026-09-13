@@ -22,6 +22,11 @@ export interface StatementTransaction {
   expenseAmount: number
   runningBalance: number
   channel: string
+  billId?: string
+  billNo?: string
+  originalTxId?: string
+  correlationId?: string
+  isDeposit?: boolean
 }
 
 export function loadTransactions(): StatementTransaction[] {
@@ -37,6 +42,8 @@ export function loadTransactions(): StatementTransaction[] {
     return []
   }
 }
+
+export const loadStatementTransactions = loadTransactions
 
 export function saveTransactions(txs: StatementTransaction[]): void {
   if (typeof window === 'undefined') return
@@ -75,38 +82,54 @@ export function deleteTransaction(id: string): StatementTransaction[] {
   return next
 }
 
+export interface RecordBillPaymentParams {
+  billId?: string
+  billNo: string
+  amount: number
+  customerName?: string
+  channel?: string
+  date?: string
+  category?: string
+  description?: string
+  refNo?: string
+  correlationId?: string
+  isDeposit?: boolean
+}
+
 /** Record a payment from bill checkout, return fee, or manual payment */
 export function recordBillPayment(
-  billIdOrParams:
-    | string
-    | {
-        billNo: string
-        amount: number
-        customerName?: string
-        channel?: string
-        date?: string
-        category?: string
-      },
+  billIdOrParams: string | RecordBillPaymentParams,
   billNo?: string | number,
   amount?: number | string,
   channel?: string,
   customerName?: string
 ): StatementTransaction {
+  let finalBillId: string | undefined
   let finalBillNo = ''
   let finalAmount = 0
   let finalCustomerName: string | undefined
   let finalChannel = 'โอนเงิน'
   let finalDate: string | undefined
   let finalCategory = 'ค่าเช่าอุปกรณ์'
+  let finalDescription: string | undefined
+  let finalRefNo: string | undefined
+  let finalCorrelationId: string | undefined
+  let finalIsDeposit = false
 
   if (typeof billIdOrParams === 'object') {
+    finalBillId = billIdOrParams.billId
     finalBillNo = billIdOrParams.billNo
     finalAmount = billIdOrParams.amount
     finalCustomerName = billIdOrParams.customerName
     finalChannel = billIdOrParams.channel || 'โอนเงิน'
     finalDate = billIdOrParams.date
-    finalCategory = billIdOrParams.category || 'ค่าเช่าอุปกรณ์'
+    finalCategory = billIdOrParams.category || (billIdOrParams.isDeposit ? 'เงินมัดจำ' : 'ค่าเช่าอุปกรณ์')
+    finalDescription = billIdOrParams.description
+    finalRefNo = billIdOrParams.refNo
+    finalCorrelationId = billIdOrParams.correlationId
+    finalIsDeposit = !!billIdOrParams.isDeposit
   } else {
+    finalBillId = typeof billIdOrParams === 'string' ? billIdOrParams : undefined
     if (typeof amount === 'number') {
       finalBillNo = typeof billNo === 'string' ? billNo : billIdOrParams
       finalAmount = amount
@@ -126,33 +149,42 @@ export function recordBillPayment(
   const tx: StatementTransaction = {
     id: `tx-pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     dateTime,
-    refNo: `TX-${finalBillNo}`,
+    refNo: finalRefNo || `TX-${finalBillNo}-${Date.now().toString().slice(-4)}`,
     type: 'INCOME',
     category: finalCategory,
-    description: `รับชำระเงิน บิลเลขที่ ${finalBillNo}`,
+    description: finalDescription || (finalIsDeposit ? `รับเงินมัดจำ บิลเลขที่ ${finalBillNo}` : `รับชำระเงิน บิลเลขที่ ${finalBillNo}`),
     customerName: finalCustomerName,
     incomeAmount: Math.max(0, finalAmount),
     expenseAmount: 0,
     runningBalance: 0,
     channel: finalChannel,
+    billId: finalBillId,
+    billNo: finalBillNo,
+    correlationId: finalCorrelationId,
+    isDeposit: finalIsDeposit,
   }
   addTransaction(tx)
   return tx
 }
 
+export interface RecordExpenseParams {
+  refNo: string
+  amount: number
+  customerName?: string
+  channel?: string
+  date?: string
+  category?: string
+  description?: string
+  billId?: string
+  billNo?: string
+  originalTxId?: string
+  correlationId?: string
+  isDeposit?: boolean
+}
+
 /** Record an expense, deposit refund, or payment refund */
 export function recordExpense(
-  refNoOrParams:
-    | string
-    | {
-        refNo: string
-        amount: number
-        customerName?: string
-        channel?: string
-        date?: string
-        category?: string
-        description?: string
-      },
+  refNoOrParams: string | RecordExpenseParams,
   amount?: number,
   description?: string,
   category?: string,
@@ -165,6 +197,11 @@ export function recordExpense(
   let finalDate: string | undefined
   let finalCategory = 'คืนเงินมัดจำ'
   let finalDescription = ''
+  let finalBillId: string | undefined
+  let finalBillNo: string | undefined
+  let finalOriginalTxId: string | undefined
+  let finalCorrelationId: string | undefined
+  let finalIsDeposit = false
 
   if (typeof refNoOrParams === 'object') {
     finalRefNo = refNoOrParams.refNo
@@ -172,8 +209,13 @@ export function recordExpense(
     finalCustomerName = refNoOrParams.customerName
     finalChannel = refNoOrParams.channel || 'โอนเงิน'
     finalDate = refNoOrParams.date
-    finalCategory = refNoOrParams.category || 'คืนเงินมัดจำ'
+    finalCategory = refNoOrParams.category || (refNoOrParams.isDeposit ? 'คืนเงินมัดจำ' : 'คืนเงินลูกค้า')
     finalDescription = refNoOrParams.description || `คืนเงิน อ้างอิง ${refNoOrParams.refNo}`
+    finalBillId = refNoOrParams.billId
+    finalBillNo = refNoOrParams.billNo
+    finalOriginalTxId = refNoOrParams.originalTxId
+    finalCorrelationId = refNoOrParams.correlationId
+    finalIsDeposit = !!refNoOrParams.isDeposit
   } else {
     finalRefNo = refNoOrParams
     finalAmount = amount || 0
@@ -195,12 +237,61 @@ export function recordExpense(
     expenseAmount: Math.max(0, finalAmount),
     runningBalance: 0,
     channel: finalChannel,
+    billId: finalBillId,
+    billNo: finalBillNo,
+    originalTxId: finalOriginalTxId,
+    correlationId: finalCorrelationId,
+    isDeposit: finalIsDeposit,
   }
   addTransaction(tx)
   return tx
 }
 
-/** Get today's real income, expense, and total outstanding debt */
+/** Get transactions associated with a bill */
+export function getTransactionsForBill(billId: string, billNo?: string): StatementTransaction[] {
+  const all = loadTransactions()
+  return all.filter((t) => (t.billId && t.billId === billId) || (billNo && (t.billNo === billNo || t.refNo?.includes(billNo))))
+}
+
+/** Get summary of actual money received vs refunded for a bill */
+export function getBillFinanceSummary(billId: string, billNo?: string): {
+  totalPaid: number
+  totalRefunded: number
+  netPaid: number
+  depositReceived: number
+  depositRefunded: number
+  netDepositHeld: number
+  transactions: StatementTransaction[]
+} {
+  const txs = getTransactionsForBill(billId, billNo)
+  let totalPaid = 0
+  let totalRefunded = 0
+  let depositReceived = 0
+  let depositRefunded = 0
+
+  for (const t of txs) {
+    const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
+    if (isDep) {
+      if (t.type === 'INCOME') depositReceived += t.incomeAmount || 0
+      if (t.type === 'EXPENSE') depositRefunded += t.expenseAmount || 0
+    } else {
+      if (t.type === 'INCOME') totalPaid += t.incomeAmount || 0
+      if (t.type === 'EXPENSE') totalRefunded += t.expenseAmount || 0
+    }
+  }
+
+  return {
+    totalPaid,
+    totalRefunded,
+    netPaid: Math.max(0, totalPaid - totalRefunded),
+    depositReceived,
+    depositRefunded,
+    netDepositHeld: Math.max(0, depositReceived - depositRefunded),
+    transactions: txs,
+  }
+}
+
+/** Get today's real income, expense, and total outstanding debt (excluding deposits from revenue) */
 export function getTodayFinance(): { income: number; expense: number; outstanding: number } {
   const todayStr = new Date().toISOString().slice(0, 10)
   const txs = loadTransactions()
@@ -209,22 +300,25 @@ export function getTodayFinance(): { income: number; expense: number; outstandin
 
   for (const t of txs) {
     if (t.dateTime.slice(0, 10) === todayStr) {
-      if (t.type === 'INCOME') income += t.incomeAmount || 0
-      if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
+      const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
+      if (!isDep) {
+        if (t.type === 'INCOME') income += t.incomeAmount || 0
+        if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
+      }
     }
   }
 
   // Calculate real outstanding amount from active bills
   const bills = loadBills()
   const outstanding = bills.reduce((sum, b) => {
-    if (b.rentalStatus === 'CLOSED' || b.rentalStatus === 'CANCELLED') return sum
+    if (b.rentalStatus === 'CLOSED' || b.rentalStatus === 'CANCELLED' || b.rentalStatus === 'VOID') return sum
     return sum + (b.outstandingAmount || 0)
   }, 0)
 
   return { income, expense, outstanding }
 }
 
-/** Get this month's real income and expense */
+/** Get this month's real income and expense (excluding deposits from revenue) */
 export function getMonthlyFinance(): { income: number; expense: number } {
   const thisMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
   const txs = loadTransactions()
@@ -233,8 +327,11 @@ export function getMonthlyFinance(): { income: number; expense: number } {
 
   for (const t of txs) {
     if (t.dateTime.slice(0, 7) === thisMonth) {
-      if (t.type === 'INCOME') income += t.incomeAmount || 0
-      if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
+      const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
+      if (!isDep) {
+        if (t.type === 'INCOME') income += t.incomeAmount || 0
+        if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
+      }
     }
   }
 
@@ -244,9 +341,9 @@ export function getMonthlyFinance(): { income: number; expense: number } {
 const THAI_DAY_LABELS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
 const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
-/** Get 7-day payment trend from real income transactions */
+/** Get 7-day payment trend from real income transactions (excluding deposits) */
 export function getDailyPaymentTrends(days: number = 7): DailyPaymentTrend[] {
-  const txs = loadTransactions().filter((t) => t.type === 'INCOME')
+  const txs = loadTransactions().filter((t) => t.type === 'INCOME' && !t.isDeposit && t.category !== 'เงินมัดจำ')
   const result: DailyPaymentTrend[] = []
 
   const now = new Date()

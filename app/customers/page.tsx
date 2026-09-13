@@ -38,12 +38,16 @@ import { useToast } from '@/components/common/Toast'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { logger } from '@/lib/utils/logger'
 import { loadCustomers, addCustomer, updateCustomer, deleteCustomer } from '@/lib/customer-storage'
-import { loadRentalBills, deleteBill } from '@/lib/bill-storage'
+import { loadRentalBills, deleteBill, canHardDeleteBill } from '@/lib/bill-storage'
 import { returnProductStock, restoreSaleProductStock } from '@/lib/product-storage'
 import { loadTransactions } from '@/lib/finance-storage'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
+import { cancelOrVoidBillWorkflow } from '@/lib/bill-workflow-service'
 
 export default function CustomersPage() {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [bills, setBills] = useState<RentalBill[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -205,33 +209,43 @@ export default function CustomersPage() {
     }
     setIsDeletingBill(true)
     try {
-      if (billToDelete.items) {
-        billToDelete.items.forEach((item) => {
-          const isSale = item.rentalType === 'SALE' || item.requiresReturn === false
-          if (isSale) {
-            if (item.productId && item.quantity > 0) {
-              restoreSaleProductStock(item.productId, item.quantity)
-            }
-            return
-          }
-          const remaining = item.outstandingQuantity ?? (item.quantity - (item.returnedQuantity || 0))
-          if (remaining > 0 && item.productId) {
-            returnProductStock(item.productId, remaining)
-          }
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
+
+      if (canHardDeleteBill(billToDelete)) {
+        // Only draft bills with no transactions can be hard deleted
+        deleteBill(billToDelete.id)
+        setBills((prev) => prev.filter((b) => b.id !== billToDelete.id))
+        showToast(
+          'ลบรายการบิลฉบับร่างสำเร็จ',
+          `ลบรายการบิลฉบับร่าง ${billToDelete.billNo} ออกจากระบบเรียบร้อยแล้ว`,
+          'SUCCESS'
+        )
+      } else {
+        // Confirmed or transactional bills must NOT be hard deleted; transition to VOID via lifecycle workflow
+        cancelOrVoidBillWorkflow({
+          billId: billToDelete.id,
+          reason,
+          actor: {
+            userId: actorUserId,
+            displayName: actorDisplayName,
+          },
+          actionType: 'VOID',
         })
+        const updatedBills = loadRentalBills()
+        setBills(updatedBills)
+        showToast(
+          'โมฆะบิลสำเร็จ',
+          `บิล ${billToDelete.billNo} มีธุรกรรมแล้ว ระบบได้เปลี่ยนสถานะเป็น VOID เพื่อรักษาประวัติการเงินและสต็อก`,
+          'SUCCESS'
+        )
       }
-      deleteBill(billToDelete.id)
-      setBills((prev) => prev.filter((b) => b.id !== billToDelete.id))
-      showToast(
-        'ลบรายการบิลสำเร็จ',
-        `ลบรายการบิล ${billToDelete.billNo} ออกจากระบบและคืนสต็อกสินค้าเรียบร้อยแล้ว`,
-        'SUCCESS'
-      )
+
       setBillToDelete(null)
       setDeleteBillReason('')
     } catch (err: any) {
-      logger.error('Failed to delete bill:', err)
-      showToast('ลบรายการบิลไม่สำเร็จ', err?.message || 'เกิดข้อผิดพลาดในการลบบิล', 'ERROR')
+      logger.error('Failed to delete/void bill:', err)
+      showToast('ดำเนินการไม่สำเร็จ', err?.message || 'เกิดข้อผิดพลาดในการดำเนินการกับบิล', 'ERROR')
     } finally {
       setIsDeletingBill(false)
     }
@@ -1588,9 +1602,15 @@ export default function CustomersPage() {
             />
           </div>
 
-          <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
-            * การลบบิลเช่าจะบันทึกประวัติ Audit Log และ Before Snapshot อัตโนมัติ พร้อมคืนสต็อกสินค้า
-          </div>
+          {billToDelete && canHardDeleteBill(billToDelete) ? (
+            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl text-blue-800 dark:text-blue-300 text-[11px] leading-relaxed">
+              * บิลนี้เป็นแบบร่างที่ยังไม่มีธุรกรรม/การเคลื่อนไหว จะถูกลบออกจากระบบอย่างถาวร
+            </div>
+          ) : (
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+              * บิลนี้มีรายการธุรกรรม/ยืนยันแล้ว ระบบจะเปลี่ยนสถานะเป็น VOID พร้อมบันทึกประวัติ Audit Log เพื่อความถูกต้องของบัญชีและสต็อก
+            </div>
+          )}
         </AppModalBody>
         <AppModalFooter
           onCancel={() => {
@@ -1599,7 +1619,7 @@ export default function CustomersPage() {
           }}
           cancelText="ยกเลิก"
           onConfirm={handleConfirmDeleteBill}
-          confirmText="ยืนยันลบ"
+          confirmText={billToDelete && canHardDeleteBill(billToDelete) ? 'ยืนยันลบฉบับร่าง' : 'ยืนยันยกเลิก/VOID'}
           confirmButtonColor="red"
           isConfirmDisabled={isDeletingBill || !deleteBillReason.trim()}
           isConfirmLoading={isDeletingBill}

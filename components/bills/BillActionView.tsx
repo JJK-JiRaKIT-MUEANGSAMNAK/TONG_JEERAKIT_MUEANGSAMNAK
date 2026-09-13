@@ -25,8 +25,9 @@ import { SplitTenderEditor, SplitPaymentTender, SplitTenderMethod } from '@/comp
 import { useToast } from '@/components/common/Toast'
 import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
 import { BusinessSettings } from '@/lib/types/rental-pos'
-import { returnProductStock } from '@/lib/product-storage'
-import { recordBillPayment } from '@/lib/finance-storage'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { generateCorrelationId } from '@/lib/audit-storage'
+import { processReturnWorkflow, processSplitPaymentWorkflow } from '@/lib/bill-workflow-service'
 
 interface ConfirmRentalReturnItemPayload {
   rental_bill_item_id: string
@@ -148,6 +149,7 @@ export function BillActionView({
   onClose,
 }: BillActionViewProps) {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const business: Partial<BusinessSettings> = {}
 
   const printDocuments = async (_docs: React.ReactNode[], _options?: { title?: string }) => {
@@ -787,22 +789,32 @@ export function BillActionView({
     setIsSubmitting(true)
 
     try {
-      const returnNo = `RT-${Date.now().toString().slice(-6)}`
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
       setReturnRequestId(generateUUID())
 
-      inspectionItems.forEach((item) => {
-        const qty = getReturnedQty(item)
-        if (qty > 0 && item.productId) {
-          returnProductStock(item.productId, qty)
-        }
+      const { bill: updatedBill, returnNo } = processReturnWorkflow({
+        billId: activeBill.id,
+        items: returnedItems.map((item) => ({
+          rentalBillItemId: item.rentalBillItemId,
+          productId: item.productId,
+          normalQty: Number(item.normalQty || 0),
+          damagedQty: Number(item.damagedQty || 0),
+          lostQty: Number(item.lostQty || 0),
+          repairFeePerUnit: item.repairFeePerUnit,
+          replacementFeePerUnit: item.replacementFeePerUnit,
+          note: item.note,
+        })),
+        collectedAmount: userCollectedAmount,
+        paymentMethod: paymentChannel,
+        actor: {
+          userId: actorUserId,
+          displayName: actorDisplayName,
+        },
       })
 
       setBills((prev) =>
-        prev.map((b) =>
-          b.id === activeBill.id
-            ? { ...b, rentalStatus: 'RETURNED' }
-            : b
-        )
+        prev.map((b) => (b.id === updatedBill.id ? updatedBill : b))
       )
 
       showToast(
@@ -850,31 +862,30 @@ export function BillActionView({
     setIsSubmitting(true)
 
     try {
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
+
       const paymentBatchId = `PAY-${Date.now().toString().slice(-6)}`
       const receiptNo = `RC-${Date.now().toString().slice(-6)}`
       setPaymentRequestId(generateUUID())
 
-      const newOutstanding = Math.max(0, (activeBill.outstandingAmount || 0) - totalPayment)
-      const primaryMethod = validTenders[0]?.paymentMethod === 'TRANSFER' ? 'TRANSFER' : validTenders[0]?.paymentMethod === 'QR' ? 'QR' : 'CASH'
-      recordBillPayment(
-        activeBill.id,
-        activeBill.billNo,
-        totalPayment,
-        primaryMethod,
-        activeBill.customerName
-      )
+      const { bill: updatedBill } = processSplitPaymentWorkflow({
+        billId: activeBill.id,
+        tenders: validTenders.map((t) => ({
+          paymentMethod: t.paymentMethod,
+          amount: Number(t.amount || 0),
+          referenceNo: t.referenceNo,
+          cashReceived: t.cashReceived,
+        })),
+        paymentDate: paymentDate || undefined,
+        actor: {
+          userId: actorUserId,
+          displayName: actorDisplayName,
+        },
+      })
 
       setBills((prev) =>
-        prev.map((b) =>
-          b.id === activeBill.id
-            ? {
-                ...b,
-                paidAmount: (b.paidAmount || 0) + totalPayment,
-                outstandingAmount: newOutstanding,
-                paymentStatus: newOutstanding <= 0 ? 'PAID' : 'PARTIAL',
-              }
-            : b
-        )
+        prev.map((b) => (b.id === updatedBill.id ? updatedBill : b))
       )
 
       showToast(
@@ -887,7 +898,7 @@ export function BillActionView({
         paymentNo: paymentBatchId,
         receiptNo,
       })
-      const isPartial = newOutstanding > 0
+      const isPartial = updatedBill.outstandingAmount > 0
       setPostSavePrintModal({
         isOpen: true,
         title: 'บันทึกรายการสำเร็จ',

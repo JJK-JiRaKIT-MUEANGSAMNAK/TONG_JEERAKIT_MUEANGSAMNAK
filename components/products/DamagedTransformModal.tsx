@@ -41,7 +41,7 @@ export function DamagedTransformModal({
       .filter((p) => p.id !== sourceProduct.id)
       .map((p) => ({
         value: p.id,
-        label: `${p.code} - ${p.name} (พร้อมใช้: ${p.availableQuantity} ${p.unit})`,
+        label: `${p.name} (พร้อมใช้: ${p.availableQuantity} ${p.unit})`,
       }))
   }, [allProducts, sourceProduct])
 
@@ -125,8 +125,8 @@ export function DamagedTransformModal({
           <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
             ดัดแปลงสินค้าชำรุดเป็นสินค้าอื่น
           </h3>
-          <p className="text-xs text-slate-500 font-mono">
-            สินค้าต้นทาง: {sourceProduct.code} | {sourceProduct.name}
+          <p className="text-xs text-slate-500 font-medium">
+            สินค้าต้นทาง: {sourceProduct.name}
           </p>
         </div>
       </AppModalHeader>
@@ -146,7 +146,7 @@ export function DamagedTransformModal({
                   ชำรุด: {sourceProduct.damagedQuantity} {sourceProduct.unit}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-mono">รหัส: {sourceProduct.code} | หมวดหมู่: {sourceProduct.category}</p>
+              <p className="text-[11px] text-slate-500 font-medium">หมวดหมู่: {sourceProduct.category}</p>
             </div>
 
             {/* Target Product Selection */}

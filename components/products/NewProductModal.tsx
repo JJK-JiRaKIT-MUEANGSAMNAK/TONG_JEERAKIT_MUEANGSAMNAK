@@ -249,6 +249,15 @@ export function NewProductModal({
         const totalQty = Number(r.quantityAdded) || 0
         const isTarget = targetProduct && validRows.length === 1
 
+        // When editing existing product, preserve stock counts!
+        let finalTotalQuantity = totalQty
+        let finalAvailableQuantity = totalQty
+        if (isTarget) {
+          const qtyDelta = totalQty - (targetProduct.totalQuantity || 0)
+          finalTotalQuantity = totalQty
+          finalAvailableQuantity = Math.max(0, (targetProduct.availableQuantity || 0) + qtyDelta)
+        }
+
         let rentalTypeVal: RentalType = 'NORMAL'
         if (rentPriceNum != null) {
           rentalTypeVal = calcType === 'PER_DAY' ? 'DAILY' : 'NORMAL'
@@ -278,11 +287,13 @@ export function NewProductModal({
           costPrice: isTarget ? targetProduct.costPrice : 0,
           defaultDamageFee: isTarget ? targetProduct.defaultDamageFee : 0,
           defaultLossFee: isTarget ? targetProduct.defaultLossFee : 0,
-          totalQuantity: totalQty,
-          availableQuantity: totalQty,
-          rentedQuantity: isTarget ? targetProduct.rentedQuantity : 0,
-          damagedQuantity: isTarget ? targetProduct.damagedQuantity : 0,
-          lostQuantity: isTarget ? targetProduct.lostQuantity : 0,
+          totalQuantity: finalTotalQuantity,
+          availableQuantity: finalAvailableQuantity,
+          rentedQuantity: isTarget ? (targetProduct.rentedQuantity || 0) : 0,
+          damagedQuantity: isTarget ? (targetProduct.damagedQuantity || 0) : 0,
+          lostQuantity: isTarget ? (targetProduct.lostQuantity || 0) : 0,
+          reservedQuantity: isTarget ? (targetProduct.reservedQuantity || 0) : 0,
+          maintenanceQuantity: isTarget ? (targetProduct.maintenanceQuantity || 0) : 0,
           minimumStock: isTarget ? targetProduct.minimumStock : 3,
           status: isTarget ? targetProduct.status : 'ACTIVE',
           isAccessory: isAccessory,
@@ -319,7 +330,7 @@ export function NewProductModal({
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      size="2xl"
+      size="lg"
     >
       {/* Modal Header */}
       <AppModalHeader
@@ -408,16 +419,17 @@ export function NewProductModal({
 
           {/* Category Rules Table: ลำดับ | ชื่อหมวดหมู่ | รูปแบบการคำนวณ | หน่วยนับ | จัดการ */}
           <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-3 w-14 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
-                  <th className="py-2 px-3 w-36 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
-                  <th className="py-2 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
-                  <th className="py-2 px-3 w-24 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
-                  <th className="py-2 px-2 w-24 text-center">จัดการ</th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto max-h-[50vh]">
+              <table className="w-full text-left text-xs border-collapse min-w-[520px]">
+                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-xs">
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="py-2.5 px-3 w-12 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
+                    <th className="py-2.5 px-3 w-36 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
+                    <th className="py-2.5 px-3 w-20 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
+                    <th className="py-2.5 px-2 w-20 text-center">จัดการ</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {categoryRules.length === 0 ? (
                   <tr>
@@ -564,6 +576,7 @@ export function NewProductModal({
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </AppModalBody>
       ) : (
@@ -572,29 +585,29 @@ export function NewProductModal({
           <AppModalBody className="p-3 sm:p-4 space-y-3">
             {/* ตารางกรอกสินค้าใหม่: ลำดับ | ชื่อสินค้า | หมวดหมู่ | ราคาเช่า | ราคาขาย | จำนวนที่เพิ่ม | วันที่เพิ่ม | จัดการ */}
             <div className="border border-slate-200 dark:border-slate-700/80 rounded-2xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[760px] text-xs">
+              <div className="overflow-x-auto max-h-[60vh]">
+                <table className="w-full text-left border-collapse min-w-[700px] text-xs">
                   <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-xs">
                     <tr>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-12">
+                      <th className="px-3 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-12">
                         ลำดับ
                       </th>
-                      <th className="px-3 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 min-w-[200px]">
+                      <th className="px-3 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 min-w-[180px]">
                         ชื่อสินค้า
                       </th>
-                      <th className="px-2 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 w-36 sm:w-40">
+                      <th className="px-2 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 w-36">
                         หมวดหมู่
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 sm:w-28 text-blue-600 dark:text-blue-400">
+                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-blue-600 dark:text-blue-400">
                         ราคาเช่า
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 sm:w-28 text-violet-600 dark:text-violet-400">
+                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-violet-600 dark:text-violet-400">
                         ราคาขาย
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 sm:w-28 text-emerald-600 dark:text-emerald-400">
+                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-emerald-600 dark:text-emerald-400">
                         จำนวนที่เพิ่ม
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-32 sm:w-36">
+                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-32">
                         วันที่เพิ่ม
                       </th>
                       <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-12">

@@ -22,9 +22,9 @@ import {
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
-export type ActivityLogCategory = 'BILL' | 'STOCK' | 'SYSTEM' | 'CUSTOMER' | 'MEMBER' | 'FINANCE'
+type ActivityLogCategory = 'BILL' | 'STOCK' | 'SYSTEM' | 'CUSTOMER' | 'MEMBER' | 'FINANCE'
 
-export interface BusinessMemberUser {
+interface BusinessMemberUser {
   id: string
   userId?: string
   businessId?: string
@@ -41,7 +41,7 @@ export interface BusinessMemberUser {
   }
 }
 
-export interface UserActivityLog {
+interface UserActivityLog {
   id: string
   actorId?: string
   actorName?: string
@@ -52,7 +52,7 @@ export interface UserActivityLog {
   metadata?: Record<string, unknown>
 }
 
-export const PERMISSION_MODULE_LABELS: Record<string, string> = {
+const PERMISSION_MODULE_LABELS: Record<string, string> = {
   pos: 'หน้าร้าน POS',
   billing: 'บิลเช่า',
   stock: 'สต็อกและสินค้า',
@@ -66,7 +66,7 @@ export const PERMISSION_MODULE_LABELS: Record<string, string> = {
   documents: 'เอกสาร',
 }
 
-export const PERMISSIONS_CATALOG: Array<{ code: string; label: string; module: string; description: string }> = [
+const PERMISSIONS_CATALOG: Array<{ code: string; label: string; module: string; description: string }> = [
   { code: 'pos.access', label: 'เข้าถึงระบบขายหน้าร้าน', module: 'pos', description: 'เปิดหน้าร้าน POS ได้' },
   { code: 'billing.view', label: 'ดูบิลเช่า', module: 'billing', description: 'ดูรายการบิลเช่าได้' },
   { code: 'billing.manage', label: 'จัดการบิลเช่า', module: 'billing', description: 'สร้าง/แก้ไข/รับคืนบิลเช่า' },

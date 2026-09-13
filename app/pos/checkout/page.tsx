@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { RentalBillTemplate, BillTemplateData } from '@/templates/rental-bill/RentalBillTemplate'
@@ -17,10 +17,14 @@ import { RentalBill, Customer, Product } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
 import { loadActiveCart, clearActiveCart } from '@/lib/cart-storage'
-import { addBill } from '@/lib/bill-storage'
-import { rentProductStock } from '@/lib/product-storage'
-import { recordBillPayment } from '@/lib/finance-storage'
 import { FullBill } from '@/lib/types/rental-return'
+import { updateQuotationConverted } from '@/lib/quotation-storage'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { generateCorrelationId } from '@/lib/audit-storage'
+import { createBillWorkflow, saveDraftBillWorkflow, confirmDraftBillWorkflow } from '@/lib/bill-workflow-service'
+import { loadBillById } from '@/lib/bill-storage'
+import { calculateBillTotals } from '@/lib/calculation-service'
+import { loadSystemSettings } from '@/lib/settings-storage'
 
 const safeFormatDateStr = (d?: Date | string | null): string => {
   if (!d) return '-'
@@ -36,6 +40,7 @@ const safeFormatDateStr = (d?: Date | string | null): string => {
 export default function CheckoutPage() {
   const router = useRouter()
   const { showToast } = useToast()
+  const { user } = useAuth()
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [items, setItems] = useState<Array<{
@@ -59,6 +64,10 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState<string>('')
   const [remark, setRemark] = useState<string>('')
   const [tax, setTax] = useState<number>(0)
+  const [quotationId, setQuotationId] = useState<string | null>(null)
+  const [quotationNo, setQuotationNo] = useState<string | null>(null)
+  const [draftBillId, setDraftBillId] = useState<string | null>(null)
+  const [cartTaxRate, setCartTaxRate] = useState<number | null>(null)
 
   useEffect(() => {
     const cart = loadActiveCart()
@@ -74,11 +83,32 @@ export default function CheckoutPage() {
       if (cart.headerRentalDate) setHeaderRentalDate(new Date(cart.headerRentalDate))
       if (cart.headerReturnDate) setHeaderReturnDate(new Date(cart.headerReturnDate))
       if (cart.tax !== undefined) setTax(cart.tax)
+      if (cart.taxRate !== undefined) setCartTaxRate(cart.taxRate)
+      if (cart.quotationId) setQuotationId(cart.quotationId)
+      if (cart.quotationNo) setQuotationNo(cart.quotationNo)
+      if (cart.draftBillId) setDraftBillId(cart.draftBillId)
     }
   }, [])
 
-  const subtotal = items.reduce((sum, it) => sum + (it.lineTotal || 0), 0)
-  const grandTotal = Math.max(0, subtotal - (discount || 0) + (shippingFee || 0) + (depositAmount || 0) + (tax || 0))
+  const defaultVat = useMemo(() => {
+    try {
+      return (loadSystemSettings().financePayment?.defaultVatPercent ?? 7) / 100
+    } catch {
+      return 0.07
+    }
+  }, [])
+
+  const effectiveTaxRate = cartTaxRate !== null ? cartTaxRate : (tax > 0 ? defaultVat : 0)
+
+  const totals = calculateBillTotals({
+    items,
+    discount,
+    shippingFee,
+    depositAmount,
+    taxRate: effectiveTaxRate,
+  })
+  const subtotal = totals.subtotal
+  const grandTotal = totals.grandTotal
 
   const clearCart = () => {
     clearActiveCart()
@@ -168,8 +198,14 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true)
     try {
+      const correlationId = generateCorrelationId()
+      const actorUserId = user?.userId || user?.id || 'system'
+      const actorDisplayName = user?.displayName || user?.fullName || 'ระบบ'
+
       const now = new Date()
-      const billNo = `BILL-${now.toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
+      const existingDraft = draftBillId ? loadBillById(draftBillId) : null
+      const billId = draftBillId || ('bill-' + Date.now())
+      const billNo = existingDraft?.billNo || `BILL-${now.toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
       const isUnpaid = paymentMethod === 'UNPAID'
       const paid = isUnpaid ? 0 : grandTotal
       const outstanding = isUnpaid ? grandTotal : 0
@@ -177,7 +213,7 @@ export default function CheckoutPage() {
       const allItemsAreSale = items.length > 0 && items.every((it) => it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
 
       const newFullBill: FullBill = {
-        id: 'bill-' + Date.now(),
+        id: billId,
         billNo: billNo,
         billDate: now.toISOString().split('T')[0],
         customerId: customer?.id,
@@ -209,6 +245,8 @@ export default function CheckoutPage() {
         rentalStatus: allItemsAreSale ? 'CLOSED' : 'RENTING',
         paymentStatus: isUnpaid ? 'UNPAID' : 'PAID',
         remark: remark || undefined,
+        quotationId: quotationId || undefined,
+        quotationNo: quotationNo || undefined,
         items: items.map((it, idx) => {
           const isSale = it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
           return {
@@ -234,14 +272,48 @@ export default function CheckoutPage() {
         }),
       }
 
-      addBill(newFullBill)
+      if (draftBillId) {
+        confirmDraftBillWorkflow({
+          billId: draftBillId,
+          splitTenders: isUnpaid
+            ? []
+            : [
+                {
+                  paymentMethod,
+                  amount: Math.max(0, grandTotal - (depositAmount || 0)),
+                  referenceNo: bankRef || undefined,
+                },
+              ],
+          depositAmount,
+          depositChannel: paymentMethod,
+          actor: {
+            userId: actorUserId,
+            displayName: actorDisplayName,
+          },
+          correlationId,
+        })
+      } else {
+        createBillWorkflow({
+          bill: newFullBill,
+          splitTenders: isUnpaid
+            ? []
+            : [
+                {
+                  paymentMethod,
+                  amount: Math.max(0, grandTotal - (depositAmount || 0)),
+                  referenceNo: bankRef || undefined,
+                },
+              ],
+          actor: {
+            userId: actorUserId,
+            displayName: actorDisplayName,
+          },
+          correlationId,
+        })
+      }
 
-      items.forEach((it) => {
-        rentProductStock(it.product.id, it.quantity, it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
-      })
-
-      if (!isUnpaid && grandTotal > 0) {
-        recordBillPayment(newFullBill.id, newFullBill.billNo, grandTotal, paymentMethod, newFullBill.customerName)
+      if (quotationId) {
+        updateQuotationConverted(quotationId, billId)
       }
 
       clearCart()
@@ -257,9 +329,95 @@ export default function CheckoutPage() {
         title: billTitle,
         description: billDesc,
       })
-    } catch (err) {
-      console.error('Failed to confirm bill:', err)
-      showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกบิลได้', 'ERROR')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาดในการบันทึกบิล', err?.message || 'โปรดตรวจสอบข้อมูลอีกครั้ง', 'ERROR')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSaveDraft = () => {
+    if (items.length === 0) {
+      showToast('ไม่สามารถบันทึกแบบร่างได้', 'ไม่มีรายการสินค้าในตะกร้า', 'ERROR')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const correlationId = generateCorrelationId()
+      const actorUserId = user?.userId || user?.id || 'system'
+      const actorDisplayName = user?.displayName || user?.fullName || 'ระบบ'
+
+      const now = new Date()
+      const existingDraft = draftBillId ? loadBillById(draftBillId) : null
+      const billId = draftBillId || `bill-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      const billNo = existingDraft?.billNo || `BILL-${now.toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
+
+      const draftBill: FullBill = {
+        id: billId,
+        billNo,
+        billDate: now.toISOString().split('T')[0],
+        customerId: customer?.id,
+        customerName: customer?.customerName || 'ลูกค้าทั่วไป',
+        customerPhone: customer?.phone || '-',
+        customerAddress: customer?.address || shippingAddress || '-',
+        rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
+        scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
+        heldDepositAmount: depositAmount,
+        paidDepositAmount: 0,
+        deposits: [],
+        subtotal,
+        discountAmount: discount,
+        shippingFee,
+        taxAmount: tax,
+        grandTotal,
+        paidAmount: 0,
+        outstandingAmount: grandTotal,
+        rentalStatus: 'DRAFT',
+        paymentStatus: 'UNPAID',
+        dispatchStatus: 'PENDING',
+        remark: remark || undefined,
+        quotationId: quotationId || undefined,
+        quotationNo: quotationNo || undefined,
+        items: items.map((it, idx) => {
+          const isSale = it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          return {
+            rentalBillItemId: `item-${Date.now()}-${idx}`,
+            productId: it.product.id,
+            productCode: it.product.code,
+            productName: it.product.name,
+            quantity: it.quantity,
+            returnedQty: 0,
+            outstandingQty: it.quantity,
+            dailyRate: it.unitPrice,
+            unit: it.product.unit || 'ชิ้น',
+            defaultRepairFee: it.product.defaultDamageFee || 0,
+            defaultReplacementFee: it.product.defaultLossFee || 0,
+            requiresReturn: !isSale,
+            rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
+            scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
+            rentalType: it.rentalType,
+            usageCount: it.usageCount,
+            lineTotal: it.lineTotal,
+            status: 'RENTING' as const,
+          }
+        }),
+      }
+
+      saveDraftBillWorkflow({
+        bill: draftBill,
+        actor: {
+          userId: actorUserId,
+          displayName: actorDisplayName,
+        },
+        correlationId,
+      })
+
+      clearCart()
+      showToast('บันทึกแบบร่างสำเร็จ', `บันทึกแบบร่างบิล ${billNo} เรียบร้อยแล้ว`, 'SUCCESS')
+      router.push('/bills?status=DRAFT')
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาดในการบันทึกแบบร่าง', err?.message || 'โปรดตรวจสอบข้อมูลอีกครั้ง', 'ERROR')
     } finally {
       setIsSubmitting(false)
     }
@@ -371,7 +529,7 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {/* Action Buttons Group (Confirm, Cancel) */}
+        {/* Action Buttons Group (Confirm, Save Draft, Cancel) */}
         <div className="flex shrink-0 flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
           <button
             type="button"
@@ -380,7 +538,19 @@ export default function CheckoutPage() {
             className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 sm:py-3 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-50 min-h-[44px] cursor-pointer"
           >
             <FileCheck className="w-5 h-5 shrink-0" />
-            <span className="whitespace-nowrap">{isSubmitting ? 'กำลังบันทึกบิล...' : 'ยืนยันออกบิลเช่า'}</span>
+            <span className="whitespace-nowrap">
+              {isSubmitting ? 'กำลังบันทึกบิล...' : draftBillId ? 'ยืนยันออกบิลจากแบบร่าง' : 'ยืนยันออกบิลเช่า'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={isSubmitting}
+            className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 px-3 py-2.5 shadow-md shadow-amber-500/20 transition-all disabled:opacity-50 min-h-[38px] cursor-pointer"
+          >
+            <FileText className="w-4 h-4 shrink-0" />
+            <span className="whitespace-nowrap">บันทึกแบบร่าง (Save Draft)</span>
           </button>
 
           <button

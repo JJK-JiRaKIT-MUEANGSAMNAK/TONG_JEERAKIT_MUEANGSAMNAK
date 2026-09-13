@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 interface MenuItem {
   name: string
@@ -47,12 +48,38 @@ const MENU_ITEMS: MenuItem[] = [
   { name: 'จัดการสิทธิ์ & รายงาน', href: '/owner-permissions', icon: ShieldCheck },
 ]
 
+const PAGE_NAME_MAP: Record<string, string> = {
+  '/dashboard': 'แดชบอร์ด',
+  '/products': 'สินค้า / สต็อก',
+  '/customers': 'ลูกค้า',
+  '/reports': 'รายงาน',
+  '/appointments': 'ปฏิทินนัดหมาย',
+  '/pos': 'หน้าร้าน POS',
+  '/bills': 'จัดการบิลเช่า',
+  '/documents': 'จัดการเอกสาร',
+  '/quotations': 'ใบเสนอราคา',
+  '/finance': 'การเงิน',
+  '/settings': 'ตั้งค่าระบบ',
+  '/owner-permissions': 'จัดการสิทธิ์ & รายงาน',
+}
+
+function getPageName(pathname: string): string {
+  for (const [prefix, name] of Object.entries(PAGE_NAME_MAP)) {
+    if (pathname === prefix || pathname.startsWith(prefix + '/')) {
+      return name
+    }
+  }
+  return 'ระบบ'
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   const logoUrl = ''
   const systemDisplayName = 'JJK_JeeRaKiT'
+  const pageName = getPageName(pathname || '')
 
   // Auto-collapse sidebar when route/pathname changes
   useEffect(() => {
@@ -72,15 +99,18 @@ export function Sidebar() {
     <>
       {/* Mobile & Tablet Header Bar (Visible on screens < xl) */}
       <header className="xl:hidden sticky top-0 z-30 bg-[#0b1627] text-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[#263954] shadow-md shrink-0 relative flex items-center justify-between min-h-[56px]">
-        {/* Left: Hamburger menu toggle button */}
-        <div className="flex items-center z-10 shrink-0">
+        {/* Left: Hamburger menu toggle button + Current menu name */}
+        <div className="flex items-center gap-2 z-10 shrink-0 max-w-[40%] min-w-0">
           <button
             onClick={() => setIsMobileOpen((prev) => !prev)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0"
             aria-label="เปิด/ปิด เมนู"
           >
             {isMobileOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
           </button>
+          <span className="font-extrabold text-xs sm:text-sm text-slate-100 truncate" title={pageName}>
+            {pageName}
+          </span>
         </div>
 
         {/* Center: True Center Logo + System Name */}
@@ -129,27 +159,16 @@ export function Sidebar() {
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand Header (Desktop & Drawer Top-Left) */}
-        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-800/80 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 overflow-hidden shrink-0">
-              {logoUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <Store className="w-6 h-6" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-black text-lg text-white tracking-tight leading-none truncate">
-                {systemDisplayName}
-              </h1>
-            </div>
-          </div>
+        {/* Drawer Header (Close button only on mobile, clean header with no duplicate logo/system name) */}
+        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+          <span className="text-xs font-extrabold tracking-wider uppercase text-slate-400">
+            เมนูหลัก
+          </span>
 
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="xl:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="xl:hidden p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            aria-label="ปิดเมนู"
           >
             <X className="w-5 h-5" />
           </button>
@@ -188,24 +207,33 @@ export function Sidebar() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-400 font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden">
-                US
+                {user?.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={user.avatarUrl} alt={user.displayName || user.fullName || user.username} className="w-full h-full object-cover" />
+                ) : (
+                  (user?.displayName || user?.fullName || user?.username || 'US').slice(0, 2).toUpperCase()
+                )}
               </div>
               <div className="flex-1 truncate">
                 <p className="text-xs font-bold text-slate-200 truncate">
-                  ผู้จัดการร้าน
+                  {user?.displayName || user?.fullName || user?.username || 'ผู้ใช้งาน'}
                 </p>
                 <p className="text-[10px] text-slate-400 truncate flex items-center gap-1">
-                  <span className="text-indigo-400 font-bold">💻 พนักงาน</span>
+                  <span className="text-indigo-400 font-bold">
+                    {user?.role === 'OWNER' ? '👑 เจ้าของร้าน' : '💻 พนักงาน'}
+                  </span>
                 </p>
               </div>
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
                 setIsMobileOpen(false)
+                await signOut()
               }}
-              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors"
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
               title="ออกจากระบบ"
+              aria-label="ออกจากระบบ"
             >
               <LogOut className="w-4 h-4" />
             </button>

@@ -8,6 +8,9 @@
  */
 
 import { Product, RentalType } from '@/lib/types/rental-pos'
+import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
+import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
+import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
 
 const STORAGE_KEY = 'app_product_storage'
 
@@ -143,8 +146,13 @@ export function loadProducts(): Product[] {
             }
           }
 
+          const totalQty = p.totalQuantity ?? (p as any).stock_qty ?? (p as any).stock ?? 0
+          const availQty = p.availableQuantity ?? (p as any).available_stock ?? totalQty
+
           return {
             ...p,
+            totalQuantity: totalQty,
+            availableQuantity: availQty,
             rentPrice: rentPrice !== undefined ? rentPrice : null,
             salePrice: salePrice !== undefined ? salePrice : null,
           }
@@ -307,6 +315,260 @@ export function restoreSaleProductStock(
       totalQuantity: (p.totalQuantity || 0) + qty,
       availableQuantity: (p.availableQuantity || 0) + qty,
     }
+  })
+  saveProducts(next)
+  return next
+}
+
+/**
+ * Adjust product stock by a delta (positive means more rented/sold; negative means less rented/sold).
+ * Used by Bill Revision to sync inventory changes.
+ */
+export function adjustProductStockDelta(
+  productId: string,
+  quantityDelta: number,
+  isSale?: boolean
+): Product[] {
+  if (quantityDelta === 0) return loadProducts()
+  const current = loadProducts()
+  const next = current.map((p) => {
+    if (p.id !== productId) return p
+    const isProductSale = isSale || p.rentalType === 'SALE'
+    if (isProductSale) {
+      return {
+        ...p,
+        totalQuantity: Math.max(0, (p.totalQuantity || 0) - quantityDelta),
+        availableQuantity: Math.max(0, (p.availableQuantity || 0) - quantityDelta),
+      }
+    }
+    return {
+      ...p,
+      availableQuantity: Math.max(0, (p.availableQuantity || 0) - quantityDelta),
+      rentedQuantity: Math.max(0, (p.rentedQuantity || 0) + quantityDelta),
+    }
+  })
+  saveProducts(next)
+  return next
+}
+
+export interface ProductAvailabilityResult {
+  total: number
+  usable: number
+  available: number
+  availableForRange: number
+  reserved: number
+  rented: number
+  damaged: number
+  lost: number
+  inRepair: number
+}
+
+/**
+ * Calculate dated availability for a product taking into account physical stock,
+ * damaged, lost, in-repair, currently rented, and peak concurrent reservations within the date range.
+ * Invariant: availableForRange >= 0.
+ */
+export function getProductAvailability(
+  productId: string,
+  startDate?: string,
+  endDate?: string
+): ProductAvailabilityResult {
+  const products = loadProducts()
+  const p = products.find((prod) => prod.id === productId)
+  if (!p) {
+    return {
+      total: 0,
+      usable: 0,
+      available: 0,
+      availableForRange: 0,
+      reserved: 0,
+      rented: 0,
+      damaged: 0,
+      lost: 0,
+      inRepair: 0,
+    }
+  }
+
+  const damaged = p.damagedQuantity || 0
+  const lost = p.lostQuantity || 0
+  const inRepair = p.maintenanceQuantity || p.inRepairQuantity || 0
+  const rented = p.rentedQuantity || 0
+  const total = p.totalQuantity || 0
+  const usable = Math.max(0, total - damaged - lost - inRepair)
+  const peakReserved = getPeakReservedQuantity(productId, startDate, endDate)
+  const availableForRange = Math.max(0, usable - rented - peakReserved)
+  const available = Math.max(0, p.availableQuantity || 0)
+
+  return {
+    total,
+    usable,
+    available,
+    availableForRange,
+    reserved: peakReserved,
+    rented,
+    damaged,
+    lost,
+    inRepair,
+  }
+}
+
+/**
+ * Safe product master update.
+ * Guarantees that editing master data (code, name, category, unit, prices, etc.)
+ * NEVER changes, resets, or corrupts current stock counts.
+ */
+export function updateProductMaster(
+  updated: Product,
+  actor?: { userId: string; displayName: string },
+  correlationId?: string
+): Product[] {
+  const current = loadProducts()
+  const existing = current.find((p) => p.id === updated.id)
+  if (!existing) {
+    return updateProduct(updated)
+  }
+
+  // Preserve all inventory counts exactly
+  const preservedProduct: Product = {
+    ...updated,
+    totalQuantity: existing.totalQuantity,
+    availableQuantity: existing.availableQuantity,
+    rentedQuantity: existing.rentedQuantity,
+    damagedQuantity: existing.damagedQuantity,
+    lostQuantity: existing.lostQuantity,
+    reservedQuantity: existing.reservedQuantity,
+    maintenanceQuantity: existing.maintenanceQuantity,
+    inRepairQuantity: existing.inRepairQuantity,
+  }
+
+  const next = current.map((p) => (p.id === updated.id ? preservedProduct : p))
+  saveProducts(next)
+
+  if (actor) {
+    const corrId = correlationId || generateCorrelationId()
+    recordAuditLog({
+      userId: actor.userId,
+      displayName: actor.displayName,
+      action: 'PRODUCT_MASTER_UPDATE',
+      entityType: 'PRODUCT',
+      entityId: updated.id,
+      before: {
+        code: existing.code,
+        name: existing.name,
+        category: existing.category,
+        unit: existing.unit,
+        rentalType: existing.rentalType,
+        normalPrice: existing.normalPrice,
+        salePrice: existing.salePrice,
+      },
+      after: {
+        code: updated.code,
+        name: updated.name,
+        category: updated.category,
+        unit: updated.unit,
+        rentalType: updated.rentalType,
+        normalPrice: updated.normalPrice,
+        salePrice: updated.salePrice,
+      },
+      correlationId: corrId,
+    })
+  }
+
+  return next
+}
+
+export interface StockCountAdjustmentInput {
+  normalQty?: number
+  damagedQty?: number
+  lostQty?: number
+  soldQty?: number
+}
+
+/**
+ * Apply stock count adjustment from physical count/audit.
+ * Persists actual stock, records before/after in audit log with mandatory reason,
+ * and if available stock increased, notifies pending backorders FIFO without auto-allocating.
+ */
+export function applyStockCountAdjustment(
+  productId: string,
+  counts: StockCountAdjustmentInput,
+  reason: string,
+  actor: { userId: string; displayName: string },
+  correlationId?: string
+): Product[] {
+  const current = loadProducts()
+  const p = current.find((prod) => prod.id === productId)
+  if (!p) return current
+
+  const trimmedReason = reason.trim() || 'ตรวจนับสต็อกประจำงวด'
+  const corrId = correlationId || generateCorrelationId()
+
+  const before = {
+    totalQuantity: p.totalQuantity || 0,
+    availableQuantity: p.availableQuantity || 0,
+    rentedQuantity: p.rentedQuantity || 0,
+    damagedQuantity: p.damagedQuantity || 0,
+    lostQuantity: p.lostQuantity || 0,
+  }
+
+  const newAvailable = counts.normalQty !== undefined ? Math.max(0, counts.normalQty) : (p.availableQuantity || 0)
+  const newDamaged = counts.damagedQty !== undefined ? Math.max(0, counts.damagedQty) : (p.damagedQuantity || 0)
+  const newLost = counts.lostQty !== undefined ? Math.max(0, counts.lostQty) : (p.lostQuantity || 0)
+  const rented = p.rentedQuantity || 0
+  const newTotal = newAvailable + rented + newDamaged + newLost
+
+  const after = {
+    totalQuantity: newTotal,
+    availableQuantity: newAvailable,
+    rentedQuantity: rented,
+    damagedQuantity: newDamaged,
+    lostQuantity: newLost,
+  }
+
+  const updatedProduct: Product = {
+    ...p,
+    ...after,
+  }
+
+  const next = current.map((prod) => (prod.id === productId ? updatedProduct : prod))
+  saveProducts(next)
+
+  recordAuditLog({
+    userId: actor.userId,
+    displayName: actor.displayName,
+    action: 'STOCK_COUNT_ADJUSTMENT',
+    entityType: 'STOCK',
+    entityId: productId,
+    before: { ...before, productCode: p.code },
+    after: { ...after, productCode: p.code },
+    reason: trimmedReason,
+    correlationId: corrId,
+  })
+
+  // If available stock increased, trigger actionable backorder check
+  if (newAvailable > before.availableQuantity) {
+    checkBackordersOnStockIncrease(productId, newAvailable, actor, corrId)
+  }
+
+  return next
+}
+
+/**
+ * Synchronize product's reservedQuantity with active reservations.
+ */
+export function syncProductReservedStock(productId: string): Product[] {
+  const current = loadProducts()
+  const activeReservations = getActiveReservationsForProduct(productId)
+  const totalReserved = activeReservations.reduce((sum, r) => sum + r.quantity, 0)
+
+  const next = current.map((p) => {
+    if (p.id === productId) {
+      return {
+        ...p,
+        reservedQuantity: totalReserved,
+      }
+    }
+    return p
   })
   saveProducts(next)
   return next

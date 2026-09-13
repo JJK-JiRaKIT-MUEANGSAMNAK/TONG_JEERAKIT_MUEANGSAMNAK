@@ -121,6 +121,8 @@ export interface RentalBillingSettings {
   allowPartialReturn: boolean
   allowPartialPayment: boolean
   allowContinueAfterPaid: boolean
+  reservationExpiryPolicy: 'UNTIL_START_DATE' | 'MANUAL' | 'DAYS_LIMIT'
+  reservationExpiryDays: number
 }
 
 export interface DocNumberFormat {
@@ -171,10 +173,13 @@ export interface FinancePaymentSettings {
     credit: boolean
   }
   defaultVatPercent: number
+  vatCalculationMode: 'EXCLUSIVE' | 'INCLUSIVE'
   defaultWithholdingPercent: number
   maximumDiscountPercent: number
   defaultDepositPercent: number
   autoCreateFinanceTransaction: boolean
+  moneyPrecision: number
+  roundingMode: 'ROUND_HALF_UP' | 'ROUND_UP' | 'ROUND_DOWN'
 }
 
 export interface NotificationItemSettings {
@@ -249,6 +254,8 @@ const DEFAULT_RENTAL_BILLING_SETTINGS: RentalBillingSettings = {
   allowPartialReturn: false,
   allowPartialPayment: false,
   allowContinueAfterPaid: false,
+  reservationExpiryPolicy: 'UNTIL_START_DATE',
+  reservationExpiryDays: 3,
 }
 
 const DEFAULT_DOCUMENT_NUMBERING_SETTINGS: DocumentNumberingSettings = {
@@ -283,10 +290,13 @@ const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
     credit: false,
   },
   defaultVatPercent: 0,
+  vatCalculationMode: 'EXCLUSIVE',
   defaultWithholdingPercent: 0,
   maximumDiscountPercent: 0,
   defaultDepositPercent: 0,
   autoCreateFinanceTransaction: false,
+  moneyPrecision: 2,
+  roundingMode: 'ROUND_HALF_UP',
 }
 
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -333,10 +343,27 @@ export type SettingsTab =
   | 'ACCOUNT_SECURITY'
   | 'PROFILE_BRANDING'
 
+import {
+  loadSystemSettings,
+  saveSystemSettings,
+} from '@/lib/settings-storage'
+
 export default function SettingsPage() {
   const { showToast } = useToast()
   const [config, setConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG)
-  const saveConfig = async (_cfg: SystemConfig, _businessId?: string, _reason?: string) => {}
+
+  useEffect(() => {
+    setConfig(loadSystemSettings())
+  }, [])
+
+  const saveConfig = async (cfg: SystemConfig, _businessId?: string, reason?: string) => {
+    const actor = {
+      userId: user?.id || 'system',
+      displayName: user?.fullName || user?.username || 'ผู้ดูแลระบบ',
+    }
+    const saved = saveSystemSettings(cfg, actor, reason)
+    setConfig(saved)
+  }
   const resetConfig = () => setConfig(DEFAULT_SYSTEM_CONFIG)
   const resetBusinessSettings = () => setConfig((prev) => ({ ...prev, business: DEFAULT_BUSINESS_SETTINGS }))
   const resetBrandingSettings = () => setConfig((prev) => ({ ...prev, branding: DEFAULT_BRANDING_SETTINGS }))
@@ -1094,10 +1121,10 @@ export default function SettingsPage() {
       await saveConfig(toSave, businessId, trimmedReason)
       setConfig(toSave)
       setIsSaved(true)
-      showToast('บันทึกการตั้งค่าสำเร็จ', 'บันทึกการตั้งค่าลง Cloud Database เรียบร้อยแล้ว', 'SUCCESS')
+      showToast('บันทึกการตั้งค่าสำเร็จ', 'บันทึกการตั้งค่าเรียบร้อยแล้ว', 'SUCCESS')
       setTimeout(() => setIsSaved(false), 2000)
     } catch (err: any) {
-      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกการตั้งค่าลง Cloud Database ได้', 'ERROR')
+      showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถบันทึกการตั้งค่าได้', 'ERROR')
     }
   }
 
@@ -2275,13 +2302,68 @@ export default function SettingsPage() {
                       />
                       <div>
                         <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                          อนุญาตให้เช่าต่อหลังชำระครบ (Continue After Paid)
+                          อนุญาตให้ทำรายการต่อหลังชำระเงินครบแล้ว
                         </span>
                         <span className="text-[11px] text-slate-400">
-                          เมื่อชำระเงินครบแล้วแต่ยังมีสินค้าค้างคืน จะยังคงสถานะค้างคืนและอนุญาตให้เช่าต่อได้
+                          เมื่อเปิดใช้งาน ระบบจะอนุญาตให้ส่งคืนสินค้าหรือแก้ไขรายการแม้ว่าบิลจะชำระครบแล้ว
                         </span>
                       </div>
                     </label>
+
+                    {/* Reservation Expiry Policy */}
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 pt-3">
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-emerald-500" />
+                        <span>นโยบายการหมดอายุการจองสต็อก (Reservation Expiry Policy)</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            กฎการหมดอายุการจอง
+                          </label>
+                          <CustomSelect
+                            value={config.rentalBilling.reservationExpiryPolicy || 'UNTIL_START_DATE'}
+                            onChange={(val) =>
+                              setConfig({
+                                ...config,
+                                rentalBilling: {
+                                  ...config.rentalBilling,
+                                  reservationExpiryPolicy: val as any,
+                                },
+                              })
+                            }
+                            options={[
+                              { value: 'UNTIL_START_DATE', label: 'คงไว้จนถึงวันเริ่มเช่า / วันรับสินค้า' },
+                              { value: 'MANUAL', label: 'คงไว้จนกว่าผู้ใช้จะยกเลิกเอง' },
+                              { value: 'DAYS_LIMIT', label: 'หมดอายุหลังจำนวนวันที่กำหนด' },
+                            ]}
+                          />
+                        </div>
+                        {config.rentalBilling.reservationExpiryPolicy === 'DAYS_LIMIT' && (
+                          <div>
+                            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              จำนวนวันที่ให้จองสินค้าได้ (วัน)
+                            </label>
+                            <NumericInput
+                              value={config.rentalBilling.reservationExpiryDays ?? 7}
+                              onChange={(val) =>
+                                setConfig({
+                                  ...config,
+                                  rentalBilling: {
+                                    ...config.rentalBilling,
+                                    reservationExpiryDays: val === '' ? 1 : Math.max(1, Number(val)),
+                                  },
+                                })
+                              }
+                              defaultValueOnBlur={7}
+                              min={1}
+                              allowDecimals={false}
+                              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3080,6 +3162,74 @@ export default function SettingsPage() {
                           max={100}
                           allowDecimals={false}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          วิธีคิดภาษีมูลค่าเพิ่ม (VAT Mode)
+                        </label>
+                        <CustomSelect
+                          value={config.financePayment.vatCalculationMode || 'EXCLUSIVE'}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                vatCalculationMode: val as any,
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'EXCLUSIVE', label: 'แยกภาษี (Exclusive / เพิ่มจากยอดสินค้า)' },
+                            { value: 'INCLUSIVE', label: 'รวมภาษีในราคาสินค้า (Inclusive)' },
+                          ]}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          จำนวนทศนิยมยอดเงิน (Money Precision)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.moneyPrecision ?? 2}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                moneyPrecision: val === '' ? 2 : Math.max(0, Math.min(4, Number(val))),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={2}
+                          min={0}
+                          max={4}
+                          allowDecimals={false}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          กฎการปัดเศษทศนิยม (Rounding Mode)
+                        </label>
+                        <CustomSelect
+                          value={config.financePayment.roundingMode || 'ROUND_HALF_UP'}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                roundingMode: val as any,
+                              },
+                            })
+                          }
+                          options={[
+                            { value: 'ROUND_HALF_UP', label: 'ปัดเศษมาตรฐาน (Half Up)' },
+                            { value: 'ROUND_UP', label: 'ปัดขึ้นเสมอ (Round Up)' },
+                            { value: 'ROUND_DOWN', label: 'ปัดลง / ตัดทศนิยม (Round Down)' },
+                          ]}
                         />
                       </div>
                     </div>

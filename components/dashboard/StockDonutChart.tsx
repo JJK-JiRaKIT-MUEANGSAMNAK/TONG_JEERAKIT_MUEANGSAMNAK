@@ -7,6 +7,7 @@ import { Layers, ArrowRight } from 'lucide-react'
 export interface StockDonutChartProps {
   available: number
   rented: number
+  reserved?: number
   damaged: number
   lost: number
   totalProducts?: number
@@ -27,11 +28,12 @@ interface Segment {
 export function StockDonutChart({
   available,
   rented,
+  reserved = 0,
   damaged,
   lost,
   totalProducts = 0,
 }: StockDonutChartProps) {
-  const totalStock = available + rented + damaged + lost
+  const totalStock = available + reserved + rented + damaged + lost
 
   const segments = useMemo<Segment[]>(() => {
     if (totalStock === 0) return []
@@ -56,6 +58,14 @@ export function StockDonutChart({
         color: '#3b82f6', // blue-500
         bgColor: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900',
         textColor: 'text-blue-700 dark:text-blue-300',
+      },
+      {
+        key: 'reserved',
+        label: 'จอง',
+        value: reserved,
+        color: '#a855f7', // purple-500
+        bgColor: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900',
+        textColor: 'text-purple-700 dark:text-purple-300',
       },
       {
         key: 'damaged',
@@ -88,7 +98,7 @@ export function StockDonutChart({
       accumulatedOffset += strokeLen
       return segment
     })
-  }, [available, rented, damaged, lost, totalStock])
+  }, [available, reserved, rented, damaged, lost, totalStock])
 
   return (
     <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 md:p-3.5 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs space-y-2 sm:space-y-2.5 md:space-y-2.5 lg:space-y-4 min-w-0">

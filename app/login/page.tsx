@@ -2,11 +2,15 @@
 
 import React, { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Store, AlertCircle, Lock, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { loginWithUsername } from '@/app/actions/auth'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 function LoginForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const { refreshUser } = useAuth()
   const isRegistered = searchParams.get('registered') === '1'
   const sessionExpired = searchParams.get('reason') === 'session-expired'
   const isPendingApproval = searchParams.get('reason') === 'pending-approval'
@@ -20,6 +24,22 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsLoading(true)
+
+    try {
+      const result = await loginWithUsername({ username, password })
+      if (!result.success) {
+        setError(result.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+        setIsLoading(false)
+        return
+      }
+
+      await refreshUser()
+      window.location.href = '/pos'
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+      setIsLoading(false)
+    }
   }
 
   return (

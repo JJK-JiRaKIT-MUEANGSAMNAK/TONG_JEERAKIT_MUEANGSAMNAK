@@ -5,6 +5,8 @@ import { RotateCcw } from 'lucide-react'
 import { AppModal, AppModalBody, AppModalFooter, AppModalHeader } from '@/components/common/AppModal'
 import { FullBill } from '@/lib/types/rental-return'
 import { useToast } from '@/components/common/Toast'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { processDepositRefundWorkflow } from '@/lib/bill-workflow-service'
 
 interface DepositRefundModalProps {
   isOpen: boolean
@@ -15,6 +17,7 @@ interface DepositRefundModalProps {
 
 export function DepositRefundModal({ isOpen, bill, onClose, onSaved }: DepositRefundModalProps) {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const refundableDeposits = useMemo(
     () => (bill?.deposits || []).filter((deposit) => deposit.heldAmount > 0),
     [bill]
@@ -53,9 +56,23 @@ export function DepositRefundModal({ isOpen, bill, onClose, onSaved }: DepositRe
 
     setIsSaving(true)
     try {
+      processDepositRefundWorkflow({
+        billId: bill.id,
+        amount,
+        channel: method,
+        referenceNo,
+        note,
+        depositId: selectedDeposit.id,
+        actor: {
+          userId: user?.userId || 'system',
+          displayName: user?.displayName || 'ระบบ',
+        },
+      })
       showToast('คืนเงินมัดจำสำเร็จ', `คืนเงิน ฿${amount.toLocaleString('th-TH')} เรียบร้อยแล้ว`, 'SUCCESS')
       await onSaved()
       onClose()
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาดในการคืนเงินมัดจำ', err?.message || 'ไม่สามารถคืนเงินมัดจำได้', 'ERROR')
     } finally {
       setIsSaving(false)
     }

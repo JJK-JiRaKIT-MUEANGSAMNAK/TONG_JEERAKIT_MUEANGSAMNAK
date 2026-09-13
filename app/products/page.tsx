@@ -29,9 +29,12 @@ import { loadProducts as loadStorageProducts, saveProducts as saveStorageProduct
 import { loadCategoryRules, ProductCategoryRule } from '@/lib/category-rules-storage'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
 
 export default function ProductsPage() {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean))).map((c) => ({ id: c, label: c }))
   const [isLoading, setIsLoading] = useState(false)
@@ -82,8 +85,32 @@ export default function ProductsPage() {
 
     setIsDeleting(true)
     try {
+      const correlationId = generateCorrelationId()
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
+
       const updated = deleteStorageProduct(productToDelete.id)
       setProducts(updated)
+
+      recordAuditLog({
+        userId: actorUserId,
+        displayName: actorDisplayName,
+        action: 'PRODUCT_DELETE',
+        entityType: 'PRODUCT',
+        entityId: productToDelete.id,
+        before: {
+          code: productToDelete.code,
+          name: productToDelete.name,
+          category: productToDelete.category,
+          totalQuantity: productToDelete.totalQuantity,
+          availableQuantity: productToDelete.availableQuantity,
+          rentedQuantity: productToDelete.rentedQuantity,
+        },
+        after: null,
+        reason: trimmedReason,
+        correlationId,
+      })
+
       showToast('ลบสินค้าสำเร็จ', `ลบรายการ "${productToDelete.name}" เรียบร้อยแล้ว`, 'SUCCESS')
       setDeleteReason('')
       setProductToDelete(null)
@@ -95,14 +122,12 @@ export default function ProductsPage() {
     }
   }
 
-  // Filtered Products
+  // Filtered Products (Search by product name only, no product code)
   const filteredProducts = products.filter((p) => {
     if (activeViewTab === 'DAMAGED' && p.damagedQuantity <= 0) {
       return false
     }
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.code.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCat = categoryFilter === 'ALL' || p.category === categoryFilter
     const matchesStatus =
       statusFilter === 'ALL' ||
@@ -234,6 +259,34 @@ export default function ProductsPage() {
     setProducts(next)
     setSelectedProduct(updated)
     setIsEditingInline(false)
+
+    const correlationId = generateCorrelationId()
+    const actorUserId = user?.userId || 'system'
+    const actorDisplayName = user?.displayName || 'ระบบ'
+
+    recordAuditLog({
+      userId: actorUserId,
+      displayName: actorDisplayName,
+      action: 'PRODUCT_UPDATE',
+      entityType: 'PRODUCT',
+      entityId: updated.id,
+      before: {
+        name: selectedProduct.name,
+        category: selectedProduct.category,
+        rentPrice: selectedProduct.rentPrice,
+        salePrice: selectedProduct.salePrice,
+        unit: selectedProduct.unit,
+      },
+      after: {
+        name: updated.name,
+        category: updated.category,
+        rentPrice: updated.rentPrice,
+        salePrice: updated.salePrice,
+        unit: updated.unit,
+      },
+      correlationId,
+    })
+
     showToast('บันทึกสำเร็จ', `อัปเดตข้อมูลสินค้า "${updated.name}" เรียบร้อยแล้ว`, 'SUCCESS')
   }
 
@@ -281,10 +334,10 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Filter / Search & Action Bar (Responsive: 2-Row on iPad Portrait, 1-Row on iPad Landscape & Desktop) */}
-      <div className="shrink-0 p-2 sm:p-2.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row gap-2 sm:gap-2.5 items-center justify-between">
-        {/* ROW 1 on Tablet Portrait / Left group on Landscape & Desktop */}
-        <div className="flex w-full lg:flex-1 min-w-0 items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap">
+      {/* Filter / Search & Action Bar */}
+      <div className="shrink-0 p-2 sm:p-2.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 sm:gap-2.5">
+        {/* Left / Center Group: Tabs, Search, and Category/Status Filters */}
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 min-w-0 items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
           {/* View Mode Tabs: สินค้าทั้งหมด / สินค้าชำรุด */}
           <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
             <button
@@ -328,12 +381,12 @@ export default function ProductsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={activeViewTab === 'DAMAGED' ? 'ค้นหาชื่อสินค้า, รหัสสินค้าชำรุด...' : 'ค้นหาชื่อสินค้า, รหัสสินค้า...'}
+              placeholder={activeViewTab === 'DAMAGED' ? 'ค้นหาชื่อสินค้าชำรุด...' : 'ค้นหาชื่อสินค้า...'}
               className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
 
-          <div className="w-32 sm:w-36 md:w-40 shrink-0">
+          <div className="w-28 sm:w-32 md:w-36 shrink-0">
             <CustomSelect
               value={categoryFilter}
               onChange={(val) => setCategoryFilter(String(val))}
@@ -345,7 +398,7 @@ export default function ProductsPage() {
           </div>
 
           {activeViewTab === 'ALL' && (
-            <div className="w-32 sm:w-36 md:w-40 shrink-0">
+            <div className="w-28 sm:w-32 md:w-36 shrink-0">
               <CustomSelect
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(String(val))}
@@ -360,8 +413,8 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* ROW 2 on Tablet Portrait / Right group on Landscape & Desktop */}
-        <div className="flex items-center justify-end gap-2 w-full lg:w-auto shrink-0">
+        {/* Right Group: Count Stock & Add Product Buttons */}
+        <div className="flex items-center justify-end gap-2 shrink-0 ml-auto lg:ml-0">
           <button
             type="button"
             onClick={handleOpenStockCount}
@@ -385,51 +438,44 @@ export default function ProductsPage() {
       {/* Products Table Area */}
       <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-auto">
-          <table className="w-full min-w-[700px] md:min-w-full table-fixed text-xs text-left">
+          <table className="w-full min-w-[800px] table-auto text-xs text-left border-collapse">
             {activeViewTab === 'DAMAGED' ? (
               <>
-                <colgroup>
-                  <col className="w-[150px]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[180px]" />
-                </colgroup>
                 <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs">
                   <tr>
-                    <th className="py-2.5 px-3 truncate bg-slate-800 dark:bg-slate-900 text-white w-[150px] max-w-[150px]">รหัส / ชื่อสินค้า</th>
-                    <th className="py-2.5 px-2.5 truncate bg-slate-800 dark:bg-slate-900 text-white">หมวดหมู่</th>
-                    <th className="py-2.5 px-2.5 text-center truncate bg-amber-900/80 text-amber-200 font-black">จำนวนชำรุด</th>
-                    <th className="py-2.5 px-2.5 text-center truncate bg-slate-800 dark:bg-slate-900 text-white">พร้อมใช้</th>
-                    <th className="py-2.5 px-2.5 text-center truncate bg-slate-800 dark:bg-slate-900 text-white">กำลังเช่า</th>
-                    <th className="py-2.5 px-2.5 text-center truncate bg-slate-800 dark:bg-slate-900 text-white">การจัดการ</th>
+                    <th className="py-2.5 px-3 min-w-[200px] text-left">ชื่อสินค้า</th>
+                    <th className="py-2.5 px-3 w-36 text-left">หมวดหมู่</th>
+                    <th className="py-2.5 px-3 w-28 text-center bg-amber-900/80 text-amber-200 font-black">จำนวนชำรุด</th>
+                    <th className="py-2.5 px-3 w-28 text-center">พร้อมใช้</th>
+                    <th className="py-2.5 px-3 w-28 text-center">กำลังเช่า</th>
+                    <th className="py-2.5 px-3 w-44 text-center">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {paginatedProducts.map((p) => (
                     <tr key={p.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors">
-                      <td className="py-2.5 px-3 w-[150px] max-w-[150px] overflow-hidden">
-                        <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>{p.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono truncate">{p.code}</div>
+                      <td className="py-2.5 px-3 min-w-[200px]">
+                        <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
+                          {p.name}
+                        </div>
                       </td>
-                      <td className="py-2.5 px-2.5 truncate">
+                      <td className="py-2.5 px-3 w-36">
                         <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                           {p.category}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-28 text-center whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-black text-xs border border-amber-300 dark:border-amber-800">
                           {p.damagedQuantity} {p.unit}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2.5 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-28 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {p.availableQuantity} {p.unit}
                       </td>
-                      <td className="py-2.5 px-2.5 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-28 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         {p.rentedQuantity} {p.unit}
                       </td>
-                      <td className="py-2.5 px-2.5 text-center">
+                      <td className="py-2.5 px-3 w-44 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -473,24 +519,17 @@ export default function ProductsPage() {
               </>
             ) : (
               <>
-                <colgroup>
-                  <col className="w-[150px]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[100px]" />
-                </colgroup>
                 <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800 shadow-xs">
                   <tr>
-                    <th className="py-2.5 px-3 truncate w-[150px] max-w-[150px]">รหัส / ชื่อสินค้า</th>
-                    <th className="py-2.5 px-2.5 truncate">หมวดหมู่</th>
-                    <th className="py-2.5 px-2.5 text-right truncate">ราคาเช่า</th>
-                    <th className="py-2.5 px-2.5 text-right truncate">ค่าชำรุด/สูญหาย</th>
-                    <th className="py-2.5 px-2.5 text-center truncate">คงเหลือ / ทั้งหมด</th>
-                    <th className="py-2.5 px-2.5 text-center truncate">สถานะ</th>
-                    <th className="py-2.5 px-2.5 text-center truncate w-[100px]">การจัดการ</th>
+                    <th className="py-2.5 px-3 min-w-[180px] text-left">ชื่อสินค้า</th>
+                    <th className="py-2.5 px-2.5 w-32 text-left">หมวดหมู่</th>
+                    <th className="py-2.5 px-2.5 w-28 text-right">ราคาเช่า</th>
+                    <th className="py-2.5 px-2.5 w-24 text-right">ค่าชำรุด</th>
+                    <th className="py-2.5 px-2.5 w-24 text-right">ค่าสูญหาย</th>
+                    <th className="py-2.5 px-2.5 w-24 text-center">พร้อมใช้</th>
+                    <th className="py-2.5 px-2.5 w-24 text-center">ทั้งหมด</th>
+                    <th className="py-2.5 px-2.5 w-28 text-center">สถานะ</th>
+                    <th className="py-2.5 px-2.5 w-20 text-center">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -498,16 +537,17 @@ export default function ProductsPage() {
                     const isLow = p.availableQuantity <= p.minimumStock
                     return (
                       <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-2 px-3 w-[150px] max-w-[150px] overflow-hidden">
-                          <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>{p.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono truncate">{p.code}</div>
+                        <td className="py-2.5 px-3 min-w-[180px]">
+                          <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
+                            {p.name}
+                          </div>
                         </td>
-                        <td className="py-2 px-2.5 truncate">
+                        <td className="py-2.5 px-2.5 w-32">
                           <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                             {p.category}
                           </span>
                         </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <td className="py-2.5 px-2.5 w-28 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                           {p.rentPrice !== undefined && p.rentPrice !== null ? (
                             <span>฿{p.rentPrice.toLocaleString()}{p.calculationType === 'PER_DAY' || p.rentalType === 'DAILY' ? '/วัน' : '/รอบ'}</span>
                           ) : p.salePrice !== undefined && p.salePrice !== null ? (
@@ -516,16 +556,21 @@ export default function ProductsPage() {
                             <span>฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}</span>
                           )}
                         </td>
-                        <td className="py-2 px-2.5 text-right font-mono text-[11px] text-slate-500 whitespace-nowrap">
-                          <span className="text-amber-600">฿{p.defaultDamageFee}</span> / <span className="text-red-600">฿{p.defaultLossFee}</span>
+                        <td className="py-2.5 px-2.5 w-24 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
+                          ฿{p.defaultDamageFee.toLocaleString()}
                         </td>
-                        <td className="py-2 px-2.5 text-center font-mono whitespace-nowrap">
-                          <span className={`font-extrabold ${p.availableQuantity === 0 ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-emerald-600'}`}>
-                            {p.availableQuantity}
+                        <td className="py-2.5 px-2.5 w-24 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
+                          ฿{p.defaultLossFee.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-2.5 w-24 text-center font-mono whitespace-nowrap">
+                          <span className={`font-extrabold ${p.availableQuantity === 0 ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {p.availableQuantity} {p.unit}
                           </span>
-                          <span className="text-slate-400"> / {p.totalQuantity} {p.unit}</span>
                         </td>
-                        <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                        <td className="py-2.5 px-2.5 w-24 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          <span>{p.totalQuantity} {p.unit}</span>
+                        </td>
+                        <td className="py-2.5 px-2.5 w-28 text-center whitespace-nowrap">
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                               p.availableQuantity === 0
@@ -538,7 +583,7 @@ export default function ProductsPage() {
                             {p.availableQuantity === 0 ? 'สินค้าหมด' : isLow ? 'สต็อกใกล้หมด' : 'พร้อมใช้'}
                           </span>
                         </td>
-                        <td className="py-2 px-2.5 text-center w-[100px]">
+                        <td className="py-2.5 px-2.5 w-20 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
@@ -563,7 +608,7 @@ export default function ProductsPage() {
                   })}
                   {isLoading ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-12 text-slate-400 text-xs">
+                      <td colSpan={9} className="text-center py-12 text-slate-400 text-xs">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                           <span>กำลังโหลดข้อมูลสินค้าจากฐานข้อมูล...</span>
@@ -572,7 +617,7 @@ export default function ProductsPage() {
                     </tr>
                   ) : paginatedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-10 text-slate-400 text-xs italic">
+                      <td colSpan={9} className="text-center py-10 text-slate-400 text-xs italic">
                         ไม่พบรายการสินค้าที่ตรงกับเงื่อนไขการค้นหา
                       </td>
                     </tr>
@@ -620,12 +665,28 @@ export default function ProductsPage() {
         targetProduct={targetManageProduct}
         initialTab={activeManageTab}
         onSave={(saved) => {
+          const correlationId = generateCorrelationId()
+          const actorUserId = user?.userId || 'system'
+          const actorDisplayName = user?.displayName || 'ระบบ'
+
           if (Array.isArray(saved)) {
             setProducts((prev) => {
               const savedIds = new Set(saved.map((s) => s.id))
               const next = [...saved, ...prev.filter((p) => !savedIds.has(p.id))]
               saveStorageProducts(next)
               return next
+            })
+            saved.forEach((item) => {
+              recordAuditLog({
+                userId: actorUserId,
+                displayName: actorDisplayName,
+                action: 'PRODUCT_CREATE',
+                entityType: 'PRODUCT',
+                entityId: item.id,
+                before: null,
+                after: { code: item.code, name: item.name, totalQuantity: item.totalQuantity },
+                correlationId,
+              })
             })
           } else {
             setProducts((prev) => {
@@ -640,6 +701,16 @@ export default function ProductsPage() {
               return next
             })
             setSelectedProduct((prev) => (prev && prev.id === saved.id ? saved : prev))
+            recordAuditLog({
+              userId: actorUserId,
+              displayName: actorDisplayName,
+              action: 'PRODUCT_UPDATE',
+              entityType: 'PRODUCT',
+              entityId: saved.id,
+              before: targetManageProduct ? { name: targetManageProduct.name, totalQuantity: targetManageProduct.totalQuantity } : null,
+              after: { name: saved.name, totalQuantity: saved.totalQuantity },
+              correlationId,
+            })
           }
         }}
         onShowToast={(title, msg, type) => showToast(title, msg, type)}
@@ -650,7 +721,23 @@ export default function ProductsPage() {
         isOpen={showCountModal}
         onClose={() => setShowCountModal(false)}
         products={products}
-        onSuccess={(updated) => { saveStorageProducts(updated); setProducts(updated) }}
+        onSuccess={(updated) => {
+          saveStorageProducts(updated)
+          setProducts(updated)
+          const correlationId = generateCorrelationId()
+          const actorUserId = user?.userId || 'system'
+          const actorDisplayName = user?.displayName || 'ระบบ'
+          recordAuditLog({
+            userId: actorUserId,
+            displayName: actorDisplayName,
+            action: 'STOCK_COUNT_UPDATE',
+            entityType: 'STOCK',
+            entityId: 'ALL_PRODUCTS',
+            before: { totalProducts: products.length },
+            after: { totalProducts: updated.length },
+            correlationId,
+          })
+        }}
       />
 
       {/* Damaged Restore Modal */}
@@ -718,9 +805,6 @@ export default function ProductsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1.5 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800">
-                            {selectedProduct.code}
-                          </span>
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-lg">
                             {selectedProduct.category}
                           </span>
@@ -782,21 +866,9 @@ export default function ProductsPage() {
                         <Edit className="w-4 h-4" />
                         <span>แก้ไขข้อมูลสินค้า</span>
                       </span>
-                      <span className="text-xs text-slate-400 font-mono">รหัส: {selectedProduct.code}</span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                      {/* รหัสสินค้า (Read-only) */}
-                      <div>
-                        <label className="text-slate-500 font-bold block mb-1">รหัสสินค้า (ห้ามแก้ไข)</label>
-                        <input
-                          type="text"
-                          value={selectedProduct.code}
-                          disabled
-                          readOnly
-                          className="w-full px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl border border-slate-200 dark:border-slate-700 font-mono text-xs cursor-not-allowed"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
 
                       {/* ชื่อสินค้า */}
                       <div>
@@ -1141,7 +1213,7 @@ export default function ProductsPage() {
         />
         <AppModalBody className="space-y-3 text-xs py-3">
           <p className="text-slate-700 dark:text-slate-300">
-            คุณต้องการลบสินค้า <strong className="text-slate-900 dark:text-slate-100 font-bold">&quot;{productToDelete?.name}&quot;</strong> ({productToDelete?.code}) ออกจากระบบหรือไม่?
+            คุณต้องการลบสินค้า <strong className="text-slate-900 dark:text-slate-100 font-bold">&quot;{productToDelete?.name}&quot;</strong> ออกจากระบบหรือไม่?
           </p>
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">

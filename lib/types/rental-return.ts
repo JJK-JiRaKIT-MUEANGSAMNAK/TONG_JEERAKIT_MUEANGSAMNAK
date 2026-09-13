@@ -95,6 +95,8 @@ export interface GeneratedDocument {
   description: string
 }
 
+import type { BillRevisionRecord } from '@/lib/types/rental-pos'
+
 export interface FullBillItem {
   rentalBillItemId: string
   productId: string
@@ -103,6 +105,8 @@ export interface FullBillItem {
   quantity: number
   returnedQty: number
   outstandingQty: number
+  damagedQuantity?: number
+  lostQuantity?: number
   dailyRate: number
   unit: string
   defaultRepairFee: number
@@ -157,16 +161,21 @@ export interface FullBill {
   grandTotal: number
   paidAmount: number
   outstandingAmount: number
-  rentalStatus: 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED'
-  paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID'
+  rentalStatus: 'DRAFT' | 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED' | 'VOID'
+  paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | 'REFUNDED'
+  dispatchStatus?: 'PENDING' | 'DISPATCHED'
+  refundDueAmount?: number
+  revisions?: BillRevisionRecord[]
   items: FullBillItem[]
   auditLogs?: AuditLogRecord[]
   generatedDocs?: GeneratedDocument[]
   quotationId?: string
+  quotationNo?: string
   reservationId?: string
   closedAt?: string
   cancelledAt?: string
   cancelReason?: string
   remark?: string
 }
+
 

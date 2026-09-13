@@ -20,6 +20,9 @@ import { CustomDatePicker, getLocalDateString, parseLocalDate } from '@/componen
 import { CustomSelect, SelectOption } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
 import { logger } from '@/lib/utils/logger'
+import { loadProducts } from '@/lib/product-storage'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { processBillRevisionWorkflow } from '@/lib/bill-workflow-service'
 
 export type BillRevisionMode = 'CORRECTION' | 'EXTENSION'
 
@@ -80,6 +83,7 @@ function daysBetween(a: string, b: string): number {
 
 export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionViewProps) {
   const { showToast } = useToast()
+  const { user } = useAuth()
   const [reason, setReason] = useState('')
   const [headerRentalDate, setHeaderRentalDate] = useState<string>('')
   const [headerReturnDate, setHeaderReturnDate] = useState<string>('')
@@ -121,7 +125,19 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
 
   // Load product list for combobox
   useEffect(() => {
-    setProducts([])
+    const list = loadProducts()
+    setProducts(
+      list.map((p) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        rentalType: p.rentalType,
+        normalPrice: p.normalPrice,
+        dailyPrice: p.dailyPrice,
+        salePrice: p.salePrice ?? 0,
+        unitName: p.unit,
+      }))
+    )
   }, [])
 
   // Product select options (showing ONLY product name as requested)
@@ -223,12 +239,29 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
 
     setIsSaving(true)
     try {
+      processBillRevisionWorkflow({
+        billId: bill.id,
+        mode,
+        reason,
+        headerRentalDate,
+        headerReturnDate,
+        discountAmount,
+        shippingFee,
+        items,
+        actor: {
+          userId: user?.userId || 'system',
+          displayName: user?.displayName || 'ระบบ',
+        },
+      })
+
       showToast(
         mode === 'EXTENSION' ? 'บันทึกการเช่าต่อสำเร็จ' : 'แก้ไขบิลสำเร็จ',
-        'บันทึกข้อมูลเรียบร้อยแล้ว',
+        'บันทึกข้อมูลและประวัติการแก้ไขเรียบร้อยแล้ว',
         'SUCCESS'
       )
       await onSaved()
+    } catch (err: any) {
+      showToast('เกิดข้อผิดพลาดในการแก้ไขบิล', err?.message || 'ไม่สามารถบันทึกการแก้ไขบิลได้', 'ERROR')
     } finally {
       setIsSaving(false)
     }
@@ -644,11 +677,34 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
               </div>
             </div>
 
-            <div className="border-t border-slate-100 dark:border-slate-700/60 pt-2 flex justify-between items-center">
-              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">ยอดรวมสุทธิใหม่:</span>
-              <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                ฿{calculatedGrandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-              </span>
+            <div className="border-t border-slate-100 dark:border-slate-700/60 pt-2 space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">ยอดรวมสุทธิใหม่:</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  ฿{calculatedGrandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>ชำระแล้วเดิม:</span>
+                <span className="font-mono font-bold text-emerald-600">
+                  ฿{(bill.paidAmount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              {calculatedGrandTotal < (bill.paidAmount || 0) ? (
+                <div className="flex justify-between text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
+                  <span>ต้องคืนเงินลูกค้า:</span>
+                  <span className="font-mono font-black">
+                    ฿{((bill.paidAmount || 0) - calculatedGrandTotal).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between text-[11px] font-bold text-red-600 dark:text-red-400">
+                  <span>ยอดค้างชำระใหม่:</span>
+                  <span className="font-mono font-black">
+                    ฿{Math.max(0, calculatedGrandTotal - (bill.paidAmount || 0)).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
