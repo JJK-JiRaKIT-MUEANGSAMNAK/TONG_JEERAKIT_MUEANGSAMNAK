@@ -94,17 +94,13 @@ export default function ProductsPage() {
   // Initialize draft rows (10 rows) if empty once category rules & units load
   useEffect(() => {
     if (createDraftRows.length === 0 && (categoryRules.length > 0 || masterUnits.length > 0)) {
-      const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-      const defaultUnitId = masterUnits[0]?.id || 'unit-1'
-      setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
+      setCreateDraftRows(createInitialDraftRows('', ''))
     }
   }, [categoryRules, masterUnits, createDraftRows.length])
 
   // Clear draft helper
   const handleClearDraft = () => {
-    const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-    const defaultUnitId = masterUnits[0]?.id || 'unit-1'
-    setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
+    setCreateDraftRows(createInitialDraftRows('', ''))
     showToast('ล้างแบบร่างเรียบร้อย', 'รีเซ็ตข้อมูลในแบบฟอร์มเพิ่มสินค้าแล้ว', 'INFO')
   }
 
@@ -258,9 +254,7 @@ export default function ProductsPage() {
       )
 
       // Reset Draft to 10 rows after success
-      const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-      const defaultUnitId = masterUnits[0]?.id || 'unit-1'
-      setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
+      setCreateDraftRows(createInitialDraftRows('', ''))
 
       // Return to LIST view
       setActiveMainTab('LIST')

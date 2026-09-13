@@ -24,6 +24,7 @@ interface CustomSelectProps {
   disabled?: boolean
   searchable?: boolean
   emptyText?: string
+  hideChevron?: boolean
 }
 
 export function CustomSelect({
@@ -37,6 +38,7 @@ export function CustomSelect({
   disabled = false,
   searchable = false,
   emptyText = 'ยังไม่มีรายการ',
+  hideChevron = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -105,15 +107,17 @@ export function CustomSelect({
             </span>
           ) : (
             <span className="text-slate-400 font-normal">
-              {options.length === 0 && placeholder === '-- เลือกรายการ --' ? emptyText : placeholder}
+              {options.length === 0 && placeholder === '-- เลือกรายการ --' ? emptyText : placeholder || '\u00A0'}
             </span>
           )}
         </span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? (placement === 'top' ? '-rotate-180 text-emerald-500' : 'rotate-180 text-emerald-500') : ''
-          }`}
-        />
+        {!hideChevron && (
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+              isOpen ? (placement === 'top' ? '-rotate-180 text-emerald-500' : 'rotate-180 text-emerald-500') : ''
+            }`}
+          />
+        )}
       </button>
 
       {/* Popover Dropdown List (Smart Placement via Portal) */}
