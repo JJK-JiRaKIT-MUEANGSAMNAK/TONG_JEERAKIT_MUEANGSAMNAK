@@ -15,6 +15,7 @@ export interface ProductCategoryRule {
   calculationType: CalculationType
   calculationLabel: string
   unit: string
+  unitId?: string
   unitName?: string
   isDefault?: boolean
 }
@@ -35,6 +36,7 @@ export const DEFAULT_CATEGORY_RULES: ProductCategoryRule[] = [
     calculationType: 'PER_ROUND',
     calculationLabel: 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ',
     unit: 'แผ่น',
+    unitId: 'unit-1',
     isDefault: true,
   },
   {
@@ -43,6 +45,7 @@ export const DEFAULT_CATEGORY_RULES: ProductCategoryRule[] = [
     calculationType: 'PER_ROUND',
     calculationLabel: 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ',
     unit: 'ต้น',
+    unitId: 'unit-2',
     isDefault: true,
   },
   {
@@ -51,6 +54,7 @@ export const DEFAULT_CATEGORY_RULES: ProductCategoryRule[] = [
     calculationType: 'PER_ROUND',
     calculationLabel: 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ',
     unit: 'ชุด',
+    unitId: 'unit-3',
     isDefault: true,
   },
   {
@@ -59,6 +63,7 @@ export const DEFAULT_CATEGORY_RULES: ProductCategoryRule[] = [
     calculationType: 'PER_ROUND',
     calculationLabel: 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ',
     unit: 'ชิ้น',
+    unitId: 'unit-4',
     isDefault: true,
   },
   {
@@ -67,6 +72,7 @@ export const DEFAULT_CATEGORY_RULES: ProductCategoryRule[] = [
     calculationType: 'PER_ROUND',
     calculationLabel: 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ',
     unit: 'ชิ้น',
+    unitId: 'unit-4',
     isDefault: true,
   },
 ]

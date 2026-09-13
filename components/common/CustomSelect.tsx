@@ -22,6 +22,7 @@ interface CustomSelectProps {
   className?: string
   disabled?: boolean
   searchable?: boolean
+  emptyText?: string
 }
 
 export function CustomSelect({
@@ -33,6 +34,7 @@ export function CustomSelect({
   className = '',
   disabled = false,
   searchable = false,
+  emptyText = 'ยังไม่มีรายการ',
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -100,7 +102,9 @@ export function CustomSelect({
               )}
             </span>
           ) : (
-            <span className="text-slate-400 font-normal">{placeholder}</span>
+            <span className="text-slate-400 font-normal">
+              {options.length === 0 && placeholder === '-- เลือกรายการ --' ? emptyText : placeholder}
+            </span>
           )}
         </span>
         <ChevronDown
@@ -143,7 +147,7 @@ export function CustomSelect({
             )}
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-slate-400 text-center text-[11px]">
-                {searchTerm ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ไม่มีรายการให้เลือก'}
+                {searchTerm ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : emptyText}
               </div>
             ) : (
               filteredOptions.map((opt) => {

@@ -15,18 +15,25 @@ import {
   RotateCcw,
   Shuffle,
   Trash2,
+  PackagePlus,
+  Settings,
+  Layers,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
-import { Product } from '@/lib/types/rental-pos'
+import { Product, Unit, RentalType } from '@/lib/types/rental-pos'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { useToast } from '@/components/common/Toast'
 import { StockCountModal } from '@/components/products/StockCountModal'
-import { NewProductModal } from '@/components/products/NewProductModal'
+import { NewProductModal, ProductRowItem } from '@/components/products/NewProductModal'
 import { DamagedRestoreModal } from '@/components/products/DamagedRestoreModal'
 import { DamagedTransformModal } from '@/components/products/DamagedTransformModal'
+import { ProductListView } from '@/components/products/ProductListView'
+import { ProductCreateView } from '@/components/products/ProductCreateView'
+import { ProductSettingsView } from '@/components/products/ProductSettingsView'
 import { logger } from '@/lib/utils/logger'
 import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
-import { loadCategoryRules, ProductCategoryRule } from '@/lib/category-rules-storage'
+import { loadCategoryRules, addCategoryRule, ProductCategoryRule, CalculationType, CALCULATION_OPTIONS } from '@/lib/category-rules-storage'
+import { loadUnits } from '@/lib/unit-storage'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -58,11 +65,223 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [activeViewTab, setActiveViewTab] = useState<'ALL' | 'DAMAGED'>('ALL')
 
+  // Main 3-Tab Workspace State
+  const [activeMainTab, setActiveMainTab] = useState<'LIST' | 'ADD' | 'SETTINGS'>('LIST')
+
+  // Master Units & Category Rules
+  const [masterUnits, setMasterUnits] = useState<Unit[]>([])
+  const [categoryRules, setCategoryRules] = useState<ProductCategoryRule[]>([])
+
+  useEffect(() => {
+    setMasterUnits(loadUnits())
+    setCategoryRules(loadCategoryRules())
+  }, [])
+
+  // Persistent Draft State for ADD Tab (Survives tab switches!)
+  const [createDraftRows, setCreateDraftRows] = useState<ProductRowItem[]>([])
+  const [createIsAccessory, setCreateIsAccessory] = useState(false)
+  const [isCreatingSubmitting, setIsCreatingSubmitting] = useState(false)
+
+  // Initialize draft rows if empty once category rules load
+  useEffect(() => {
+    if (createDraftRows.length === 0 && categoryRules.length > 0) {
+      const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
+      const initial: ProductRowItem[] = []
+      for (let i = 0; i < 10; i++) {
+        initial.push({
+          id: `draft-row-${i}-${Date.now()}`,
+          name: '',
+          categoryId: defaultCatId,
+          rentPrice: null,
+          salePrice: null,
+          quantityAdded: 0,
+          addedDate: new Date(),
+        })
+      }
+      setCreateDraftRows(initial)
+    }
+  }, [categoryRules, createDraftRows.length])
+
+  // Clear draft helper
+  const handleClearDraft = () => {
+    const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
+    const resetRows: ProductRowItem[] = []
+    for (let i = 0; i < 10; i++) {
+      resetRows.push({
+        id: `draft-row-${i}-${Date.now()}`,
+        name: '',
+        categoryId: defaultCatId,
+        rentPrice: null,
+        salePrice: null,
+        quantityAdded: 0,
+        addedDate: new Date(),
+      })
+    }
+    setCreateDraftRows(resetRows)
+    setCreateIsAccessory(false)
+    showToast('ล้างแบบร่างเรียบร้อย', 'รีเซ็ตข้อมูลในแบบฟอร์มเพิ่มสินค้าแล้ว', 'INFO')
+  }
+
+  // Submit handler for ADD Tab
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isCreatingSubmitting) return
+
+    const validRows = createDraftRows.filter((r) => r.name.trim() !== '')
+    if (validRows.length === 0) {
+      showToast('กรุณาระบุข้อมูล', 'กรุณาระบุชื่อสินค้าอย่างน้อย 1 รายการ', 'ERROR')
+      return
+    }
+
+    try {
+      setIsCreatingSubmitting(true)
+      const now = Date.now()
+
+      const createdProducts: Product[] = validRows.map((r, idx) => {
+        const matchedRule = categoryRules.find((c) => c.id === r.categoryId) || categoryRules[0]
+        const categoryName = matchedRule?.name || 'ทั่วไป'
+        const unitName = matchedRule?.unit || 'ชิ้น'
+        const calcType = matchedRule?.calculationType || 'PER_ROUND'
+        const calcLabel = matchedRule?.calculationLabel || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+
+        const rentPriceNum =
+          r.rentPrice !== null && r.rentPrice !== undefined && (r.rentPrice as any) !== ''
+            ? Number(r.rentPrice)
+            : null
+        const salePriceNum =
+          r.salePrice !== null && r.salePrice !== undefined && (r.salePrice as any) !== ''
+            ? Number(r.salePrice)
+            : null
+
+        const totalQty = Number(r.quantityAdded) || 0
+
+        let rentalTypeVal: RentalType = 'NORMAL'
+        if (rentPriceNum != null) {
+          rentalTypeVal = calcType === 'PER_DAY' ? 'DAILY' : 'NORMAL'
+        } else if (salePriceNum != null) {
+          rentalTypeVal = 'SALE'
+        }
+
+        const dateStr = r.addedDate
+          ? r.addedDate.toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10)
+
+        return {
+          id: `prod-${now}-${idx}`,
+          code: `P${String(now).slice(-6)}${validRows.length > 1 ? `-${idx + 1}` : ''}`,
+          name: r.name.trim(),
+          category: categoryName,
+          categoryId: matchedRule?.id,
+          categoryRuleId: matchedRule?.id,
+          calculationType: calcType,
+          calculationLabel: calcLabel,
+          unit: unitName,
+          unitId: matchedRule?.unitId || matchedRule?.id,
+          rentPrice: rentPriceNum,
+          salePrice: salePriceNum,
+          normalPrice: rentPriceNum != null ? rentPriceNum : 0,
+          dailyPrice: calcType === 'PER_DAY' && rentPriceNum != null ? rentPriceNum : 0,
+          rentalType: rentalTypeVal,
+          rentalTypeId: matchedRule?.id,
+          costPrice: 0,
+          defaultDamageFee: 0,
+          defaultLossFee: 0,
+          totalQuantity: totalQty,
+          availableQuantity: totalQty,
+          rentedQuantity: 0,
+          damagedQuantity: 0,
+          lostQuantity: 0,
+          reservedQuantity: 0,
+          maintenanceQuantity: 0,
+          minimumStock: 3,
+          status: 'ACTIVE',
+          isAccessory: createIsAccessory,
+          isChargeable: !createIsAccessory,
+          requiresReturn: rentPriceNum != null,
+          createdAt: dateStr,
+        }
+      })
+
+      const correlationId = generateCorrelationId()
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
+
+      setProducts((prev) => {
+        const next = [...createdProducts, ...prev]
+        saveStorageProducts(next)
+        return next
+      })
+
+      createdProducts.forEach((item) => {
+        recordAuditLog({
+          userId: actorUserId,
+          displayName: actorDisplayName,
+          action: 'PRODUCT_CREATE',
+          entityType: 'PRODUCT',
+          entityId: item.id,
+          before: null,
+          after: { code: item.code, name: item.name, totalQuantity: item.totalQuantity },
+          correlationId,
+        })
+      })
+
+      showToast(
+        'บันทึกข้อมูลสินค้าสำเร็จ',
+        `บันทึกข้อมูลสินค้า ${createdProducts.length} รายการเรียบร้อยแล้ว`,
+        'SUCCESS'
+      )
+
+      // Reset Draft after success
+      const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
+      const resetRows: ProductRowItem[] = []
+      for (let i = 0; i < 10; i++) {
+        resetRows.push({
+          id: `draft-row-${i}-${Date.now()}`,
+          name: '',
+          categoryId: defaultCatId,
+          rentPrice: null,
+          salePrice: null,
+          quantityAdded: 0,
+          addedDate: new Date(),
+        })
+      }
+      setCreateDraftRows(resetRows)
+      setCreateIsAccessory(false)
+
+      // Return to LIST view
+      setActiveMainTab('LIST')
+    } catch (err: any) {
+      showToast('ไม่สามารถบันทึกสินค้าได้', err?.message || 'โปรดตรวจสอบข้อมูลสินค้า', 'ERROR')
+    } finally {
+      setIsCreatingSubmitting(false)
+    }
+  }
+
+  // Quick Add Category from Create View
+  const handleQuickAddCategory = (name: string, calcType: CalculationType, unitId: string): string => {
+    const matchedUnit = masterUnits.find((u) => u.id === unitId) || masterUnits[0]
+    const unitName = matchedUnit?.name || 'ชิ้น'
+    const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === calcType)
+    const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+
+    const updated = addCategoryRule({
+      name,
+      calculationType: calcType,
+      calculationLabel,
+      unit: unitName,
+      unitId: matchedUnit?.id,
+    })
+    setCategoryRules(updated)
+    showToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่มหมวดหมู่ "${name}" (${unitName}) เรียบร้อยแล้ว`, 'SUCCESS')
+    const newRule = updated.find((r) => r.name === name)
+    return newRule?.id || updated[updated.length - 1]?.id
+  }
+
   // Selected Product for detail drawer / history modal
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [activeDrawerTab, setActiveDrawerTab] = useState<'CURRENT' | 'HISTORY' | 'OVERVIEW'>('CURRENT')
 
-  // Unified Product & Stock Management Modal State
+  // Unified Product & Stock Management Modal State (kept for direct Edit if needed)
   const [showManageModal, setShowManageModal] = useState(false)
   const [activeManageTab, setActiveManageTab] = useState<'EDIT_DETAILS' | 'ADJUST_STOCK'>('EDIT_DETAILS')
   const [targetManageProduct, setTargetManageProduct] = useState<Product | null>(null)
@@ -185,12 +404,6 @@ export default function ProductsPage() {
     setActiveDrawerTab(initialTab)
   }
 
-  // Category Rules from unified storage
-  const [categoryRules, setCategoryRules] = useState<ProductCategoryRule[]>([])
-
-  useEffect(() => {
-    setCategoryRules(loadCategoryRules())
-  }, [])
 
   // Inline Edit State inside selectedProduct modal
   const [isEditingInline, setIsEditingInline] = useState(false)
@@ -334,329 +547,122 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Filter / Search & Action Bar */}
-      <div className="shrink-0 p-2 sm:p-2.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-2">
-        {/* Left / Center Group: Tabs, Search, and Category/Status Filters */}
-        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-          {/* View Mode Tabs: สินค้าทั้งหมด / สินค้าชำรุด */}
-          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveViewTab('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeViewTab === 'ALL'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              สินค้าทั้งหมด
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveViewTab('DAMAGED')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-                activeViewTab === 'DAMAGED'
-                  ? 'bg-amber-500 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-amber-600 dark:hover:text-amber-400'
-              }`}
-            >
-              <span>สินค้าชำรุด</span>
-              {damagedProductsCount > 0 && (
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                    activeViewTab === 'DAMAGED'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                  }`}
-                >
-                  {damagedProductsCount}
-                </span>
-              )}
-            </button>
-          </div>
+      {/* Main 3 Tabs Navigation: [รายการสินค้า] [เพิ่มสินค้า] [ตั้งค่าเสริม] */}
+      <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('LIST')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeMainTab === 'LIST'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span>รายการสินค้า</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
+              {products.length}
+            </span>
+          </button>
 
-          <div className="relative flex-1 min-w-[130px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={activeViewTab === 'DAMAGED' ? 'ค้นหาชื่อสินค้าชำรุด...' : 'ค้นหาชื่อสินค้า...'}
-              className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('ADD')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeMainTab === 'ADD'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400'
+            }`}
+          >
+            <PackagePlus className="w-4 h-4" />
+            <span>เพิ่มสินค้า</span>
+            {createDraftRows.some((r) => r.name.trim() !== '') && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
+            )}
+          </button>
 
-          <div className="w-28 sm:w-32 md:w-36 shrink-0">
-            <CustomSelect
-              value={categoryFilter}
-              onChange={(val) => setCategoryFilter(String(val))}
-              options={[
-                { value: 'ALL', label: 'ทุกหมวดหมู่' },
-                ...categories.map((c) => ({ value: c.label, label: c.label })),
-              ]}
-            />
-          </div>
-
-          {activeViewTab === 'ALL' && (
-            <div className="w-28 sm:w-32 md:w-36 shrink-0">
-              <CustomSelect
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(String(val))}
-                options={[
-                  { value: 'ALL', label: 'ทุกสถานะสต็อก' },
-                  { value: 'ACTIVE', label: 'สินค้าเปิดใช้งาน' },
-                  { value: 'LOW_STOCK', label: 'สต็อกใกล้หมด (เตือน)' },
-                  { value: 'OUT_OF_STOCK', label: 'สินค้าหมดคลัง' },
-                ]}
-              />
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('SETTINGS')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeMainTab === 'SETTINGS'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span>ตั้งค่าเสริม</span>
+          </button>
         </div>
 
-        {/* Right Group: Count Stock & Add Product Buttons */}
-        <div className="flex items-center justify-end gap-2 shrink-0 ml-auto sm:ml-0">
+        {/* Quick count stock button on right side */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleOpenStockCount}
-            className="h-9 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs shadow-xs transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            className="h-8 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs shadow-xs transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
-            <ClipboardList className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            <ClipboardList className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
             <span>นับสต็อก</span>
           </button>
-
-          <button
-            type="button"
-            onClick={handleOpenAdd}
-            className="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs shadow-sm transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>เพิ่มสินค้าใหม่</span>
-          </button>
         </div>
       </div>
 
-      {/* Products Table Area */}
-      <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col overflow-hidden">
-        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
-          <table className="w-full text-xs text-left border-collapse">
-            {activeViewTab === 'DAMAGED' ? (
-              <>
-                <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs">
-                  <tr>
-                    <th className="py-2 px-2.5 text-left">ชื่อสินค้า</th>
-                    <th className="py-2 px-1.5 w-28 text-left">หมวดหมู่</th>
-                    <th className="py-2 px-1.5 w-24 text-center bg-amber-900/80 text-amber-200 font-black">จำนวนชำรุด</th>
-                    <th className="py-2 px-1.5 w-20 text-center">พร้อมใช้</th>
-                    <th className="py-2 px-1.5 w-20 text-center">กำลังเช่า</th>
-                    <th className="py-2 px-1.5 w-36 text-center">การจัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {paginatedProducts.map((p) => (
-                    <tr key={p.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors">
-                      <td className="py-2 px-2.5 min-w-0">
-                        <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
-                          {p.name}
-                        </div>
-                      </td>
-                      <td className="py-2 px-1.5 w-28">
-                        <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
-                          {p.category}
-                        </span>
-                      </td>
-                      <td className="py-2 px-1.5 w-24 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-black text-xs border border-amber-300 dark:border-amber-800">
-                          {p.damagedQuantity} {p.unit}
-                        </span>
-                      </td>
-                      <td className="py-2 px-1.5 w-20 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {p.availableQuantity} {p.unit}
-                      </td>
-                      <td className="py-2 px-1.5 w-20 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                        {p.rentedQuantity} {p.unit}
-                      </td>
-                      <td className="py-2 px-1.5 w-36 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setRestoreTargetProduct(p)}
-                            className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs hover:scale-102 cursor-pointer"
-                            title="นำสินค้าชำรุดกลับมาใช้งานต่อ"
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            <span>ใช้งานต่อ</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTransformTargetProduct(p)}
-                            className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs hover:scale-102 cursor-pointer"
-                            title="ดัดแปลงสินค้าชำรุดเป็นสินค้าอื่น"
-                          >
-                            <Shuffle className="w-3 h-3" />
-                            <span>ดัดแปลงเป็น...</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-slate-400 text-xs">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                          <span>กำลังโหลดข้อมูลสินค้าจากฐานข้อมูล...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : paginatedProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-10 text-slate-400 text-xs italic">
-                        ไม่พบรายการสินค้าชำรุดในระบบ
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </>
-            ) : (
-              <>
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800 shadow-xs">
-                  <tr>
-                    <th className="py-2 px-2.5 text-left">ชื่อสินค้า</th>
-                    <th className="py-2 px-1.5 w-24 text-left">หมวดหมู่</th>
-                    <th className="py-2 px-1.5 w-24 text-right whitespace-nowrap">ราคาเช่า</th>
-                    <th className="py-2 px-1.5 w-20 text-right whitespace-nowrap">ค่าชำรุด</th>
-                    <th className="py-2 px-1.5 w-20 text-right whitespace-nowrap">ค่าสูญหาย</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">ทั้งหมด</th>
-                    <th className="py-2 px-1.5 w-24 text-center whitespace-nowrap">สถานะ</th>
-                    <th className="py-2 px-1.5 w-16 text-center">การจัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {paginatedProducts.map((p) => {
-                    const isLow = p.availableQuantity <= p.minimumStock
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-2 px-2.5 min-w-0">
-                          <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
-                            {p.name}
-                          </div>
-                        </td>
-                        <td className="py-2 px-1.5 w-24">
-                          <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
-                            {p.category}
-                          </span>
-                        </td>
-                        <td className="py-2 px-1.5 w-24 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                          {p.rentPrice !== undefined && p.rentPrice !== null ? (
-                            <span>฿{p.rentPrice.toLocaleString()}{p.calculationType === 'PER_DAY' || p.rentalType === 'DAILY' ? '/วัน' : '/รอบ'}</span>
-                          ) : p.salePrice !== undefined && p.salePrice !== null ? (
-                            <span className="text-violet-600 dark:text-violet-400">฿{p.salePrice.toLocaleString()} (ขาย)</span>
-                          ) : (
-                            <span>฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-1.5 w-20 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
-                          ฿{p.defaultDamageFee.toLocaleString()}
-                        </td>
-                        <td className="py-2 px-1.5 w-20 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
-                          ฿{p.defaultLossFee.toLocaleString()}
-                        </td>
-                        <td className="py-2 px-1.5 w-20 text-center font-mono whitespace-nowrap">
-                          <span className={`font-extrabold ${p.availableQuantity === 0 ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                            {p.availableQuantity} {p.unit}
-                          </span>
-                        </td>
-                        <td className="py-2 px-1.5 w-20 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          <span>{p.totalQuantity} {p.unit}</span>
-                        </td>
-                        <td className="py-2 px-1.5 w-24 text-center whitespace-nowrap">
-                          <span
-                            className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                              p.availableQuantity === 0
-                                ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300'
-                                : isLow
-                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
-                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                            }`}
-                          >
-                            {p.availableQuantity === 0 ? 'สินค้าหมด' : isLow ? 'สต็อกใกล้หมด' : 'พร้อมใช้'}
-                          </span>
-                        </td>
-                        <td className="py-2 px-1.5 w-16 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openProductHistory(p, 'CURRENT')}
-                              className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="ดูข้อมูลและประวัติการเช่า"
-                            >
-                              <History className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setProductToDelete(p)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                              title="ลบสินค้า"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-12 text-slate-400 text-xs">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                          <span>กำลังโหลดข้อมูลสินค้าจากฐานข้อมูล...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : paginatedProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-10 text-slate-400 text-xs italic">
-                        ไม่พบรายการสินค้าที่ตรงกับเงื่อนไขการค้นหา
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </>
-            )}
-          </table>
-        </div>
+      {/* Main Tab Workspace View */}
+      {activeMainTab === 'LIST' && (
+        <ProductListView
+          products={products}
+          paginatedProducts={paginatedProducts}
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          activeViewTab={activeViewTab}
+          setActiveViewTab={setActiveViewTab}
+          categories={categories}
+          damagedProductsCount={damagedProductsCount}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalProducts={totalProducts}
+          productsPerPage={productsPerPage}
+          setCurrentPage={setCurrentPage}
+          onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
+          onTransformDamaged={(p) => setTransformTargetProduct(p)}
+          onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
+          onDeleteProduct={(p) => setProductToDelete(p)}
+        />
+      )}
 
-        {/* Pagination Bar */}
-        <div className="shrink-0 p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <span className="truncate">
-            แสดง {paginatedProducts.length > 0 ? (currentPage - 1) * productsPerPage + 1 : 0} ถึง{' '}
-            {Math.min(currentPage * productsPerPage, totalProducts)} จากทั้งหมด {totalProducts} รายการ
-          </span>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 disabled:opacity-40 font-bold transition-colors"
-            >
-              ก่อนหน้า
-            </button>
-            <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 disabled:opacity-40 font-bold transition-colors"
-            >
-              ถัดไป
-            </button>
-          </div>
-        </div>
-      </div>
+      {activeMainTab === 'ADD' && (
+        <ProductCreateView
+          rows={createDraftRows}
+          setRows={setCreateDraftRows}
+          isAccessory={createIsAccessory}
+          setIsAccessory={setCreateIsAccessory}
+          categoryRules={categoryRules}
+          units={masterUnits}
+          isSubmitting={isCreatingSubmitting}
+          onSubmit={handleCreateSubmit}
+          onClearDraft={handleClearDraft}
+          onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
+          onQuickAddCategory={handleQuickAddCategory}
+        />
+      )}
+
+      {activeMainTab === 'SETTINGS' && (
+        <ProductSettingsView
+          categoryRules={categoryRules}
+          setCategoryRules={setCategoryRules}
+          masterUnits={masterUnits}
+          setMasterUnits={setMasterUnits}
+          allProducts={products}
+          onShowToast={(title, msg, type) => showToast(title, msg, type)}
+        />
+      )}
 
       {/* Centralized New / Manage Product Modal */}
       <NewProductModal
