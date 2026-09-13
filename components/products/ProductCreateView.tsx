@@ -168,68 +168,70 @@ export function ProductCreateView({
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <form onSubmit={onSubmit} className="flex flex-col h-full min-h-0">
-        {/* Table Area: Direct display without inner card nesting or overflow scroll */}
-        <div className="w-full">
-          <table className="w-full table-fixed text-left border-collapse text-xs">
+        {/* Table Area: Responsive content-based widths with excess given to product name */}
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs min-w-[1040px]">
             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs border-b border-slate-200 dark:border-slate-800 shadow-xs">
               <tr>
                 {/* 1. ลำดับ */}
-                <th className="py-2 px-1 text-center w-9 whitespace-nowrap">
+                <th className="py-2 px-1 text-center w-9 min-w-[36px] whitespace-nowrap">
                   ลำดับ
                 </th>
 
-                {/* 2. ชื่อสินค้า */}
-                <th className="py-2 px-1.5 text-center whitespace-nowrap">
+                {/* 2. ชื่อสินค้า: flex รับพื้นที่ส่วนเกินที่เหลือเป็นหลัก */}
+                <th className="py-2 px-1.5 text-center w-full min-w-[180px] whitespace-nowrap">
                   ชื่อสินค้า
                 </th>
 
-                {/* 3. อุปกรณ์เสริม */}
-                <th className="py-2 px-1 text-center w-14 whitespace-nowrap text-blue-600 dark:text-blue-400">
+                {/* 3. อุปกรณ์เสริม: กว้างพอให้หัวข้อ 1 บรรทัด */}
+                <th className="py-2 px-1 text-center w-20 min-w-[76px] whitespace-nowrap text-blue-600 dark:text-blue-400">
                   อุปกรณ์เสริม
                 </th>
 
-                {/* 4. หมวดหมู่ */}
-                <th className="py-2 px-1 text-left w-36 whitespace-nowrap">
+                {/* 4. หมวดหมู่: minimum กว้างพอให้ Dropdown แสดงคำ “อุปกรณ์เสริม” + ลูกศรครบ */}
+                <th className="py-2 px-1 text-left w-32 min-w-[124px] whitespace-nowrap">
                   หมวดหมู่
                 </th>
 
-                {/* 5. หน่วย */}
-                <th className="py-2 px-1 text-left w-28 whitespace-nowrap">
+                {/* 5. หน่วย: minimum กว้างพอให้ “แผ่น” + ลูกศร Dropdown ครบ (หน่วยนับอุปกรณ์เสริม) */}
+                <th className="py-2 px-1 text-left w-20 min-w-[76px] whitespace-nowrap" title="หน่วยนับอุปกรณ์เสริม">
                   หน่วย
                 </th>
 
-                {/* 6. ราคา */}
-                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-blue-600 dark:text-blue-400">
+                {/* 6. ราคา: อิงค่าปกติ 5 หลัก เช่น 10000 */}
+                <th className="py-2 px-1 text-center w-20 min-w-[72px] whitespace-nowrap text-blue-600 dark:text-blue-400">
                   ราคา
                 </th>
 
-                {/* 7. ต้นทุน/หน่วย */}
-                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                {/* 7. ต้นทุน/หน่วย: ใช้หัว “ต้นทุน/หน่วย” เป็นตัวกำหนดขั้นต่ำ */}
+                <th className="py-2 px-1 text-center w-[88px] min-w-[86px] whitespace-nowrap text-slate-600 dark:text-slate-300">
                   ต้นทุน/หน่วย
                 </th>
 
-                {/* 8. ค่าชำรุด */}
-                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-amber-600 dark:text-amber-400">
+                {/* 8. ค่าชำรุด: เทียบหัวกับเลข 10000 แล้วใช้ฝั่งที่กว้างกว่า */}
+                <th className="py-2 px-1 text-center w-[70px] min-w-[68px] whitespace-nowrap text-amber-600 dark:text-amber-400">
                   ค่าชำรุด
                 </th>
 
-                {/* 9. ค่าสูญหาย */}
-                <th className="py-2 px-1 text-center w-20 whitespace-nowrap text-red-600 dark:text-red-400">
+                {/* 9. ค่าสูญหาย: เทียบหัวกับเลข 10000 แล้วใช้ฝั่งที่กว้างกว่า */}
+                <th className="py-2 px-1 text-center w-[72px] min-w-[70px] whitespace-nowrap text-red-600 dark:text-red-400">
                   ค่าสูญหาย
                 </th>
 
-                {/* 10. จำนวนเพิ่ม */}
-                <th className="py-2 px-1 text-center w-24 whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                {/* 10. จำนวนเพิ่ม: อิงหัว “จำนวนเพิ่ม” และค่าปกติสูงสุดประมาณ 100 */}
+                <th className="py-2 px-1 text-center w-[76px] min-w-[74px] whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                   จำนวนเพิ่ม
                 </th>
 
-                {/* 11. วันที่ทำรายการ */}
-                <th className="py-2 px-1 text-center w-28 whitespace-nowrap">
+                {/* สต็อกขั้นต่ำ (ควบคุมผ่าน Settings กลาง) */}
+
+                {/* 11. วันที่ทำรายการ: กว้างพอแสดงวันที่ครบ */}
+                <th className="py-2 px-1 text-center w-28 min-w-[112px] whitespace-nowrap">
                   วันที่ทำรายการ
                 </th>
 
-                {/* 12. จัดการ */}
-                <th className="py-2 px-0.5 text-center w-8 whitespace-nowrap shrink-0">
+                {/* 12. จัดการ: ใช้พื้นที่ขั้นต่ำสำหรับปุ่ม */}
+                <th className="py-2 px-0.5 text-center w-9 min-w-[36px] whitespace-nowrap shrink-0">
                   จัดการ
                 </th>
               </tr>
