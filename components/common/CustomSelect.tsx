@@ -20,6 +20,7 @@ interface CustomSelectProps {
   align?: 'left' | 'right'
   direction?: 'down' | 'up'
   className?: string
+  buttonClassName?: string
   disabled?: boolean
   searchable?: boolean
   emptyText?: string
@@ -32,6 +33,7 @@ export function CustomSelect({
   placeholder = '-- เลือกรายการ --',
   align = 'left',
   className = '',
+  buttonClassName = '',
   disabled = false,
   searchable = false,
   emptyText = 'ยังไม่มีรายการ',
@@ -87,7 +89,7 @@ export function CustomSelect({
           if (!prev) setSearchTerm('')
           return !prev
         })}
-        className={`w-full min-w-0 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs transition-all text-left ${
+        className={`w-full min-w-0 ${buttonClassName ? buttonClassName : 'px-3 py-2 rounded-xl'} border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs transition-all text-left ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >

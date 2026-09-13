@@ -208,9 +208,9 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
       lastIdx = idx
     }
 
-    // Horizontal scroll is within the table border container (overflow-x-auto, min-w-[1300px])
+    // Horizontal scroll is within the table border container (overflow-x-auto, min-w-[1040px])
     expect(content.includes('overflow-x-auto')).toBe(true)
-    expect(content.includes('min-w-[1300px]')).toBe(true)
+    expect(content.includes('min-w-[1040px]')).toBe(true)
 
     // No global accessory checkbox
     expect(content.includes('type="checkbox"')).toBe(true) // Row-level checkbox exists
