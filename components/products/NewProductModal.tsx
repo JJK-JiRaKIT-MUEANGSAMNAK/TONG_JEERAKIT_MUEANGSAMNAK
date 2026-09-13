@@ -44,7 +44,7 @@ export interface NewProductModalProps {
   onShowToast?: (title: string, message: string, type: 'SUCCESS' | 'ERROR' | 'INFO') => void
 }
 
-const DEFAULT_ROW_COUNT = 3
+const DEFAULT_ROW_COUNT = 10
 
 const createEmptyRow = (defaultCatId: string, id?: string): ProductRowItem => ({
   id: id || `row-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -329,7 +329,7 @@ export function NewProductModal({
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      size="lg"
+      size="2xl"
     >
       {/* Modal Header */}
       <AppModalHeader
