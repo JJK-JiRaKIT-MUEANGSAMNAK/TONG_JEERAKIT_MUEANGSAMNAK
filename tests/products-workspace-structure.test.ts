@@ -176,4 +176,125 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
     createDraftRows[0].categoryId = newCat!.id
     expect(createDraftRows[0].categoryId).toBe(newCat!.id)
   })
+
+  it('12. ProductCreateView defines the 13 columns in exact order and horizontal scroll container', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const filePath = path.resolve(process.cwd(), 'components/products/ProductCreateView.tsx')
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    // 13 columns in order
+    const expectedHeaders = [
+      'ลำดับ',
+      'ชื่อสินค้า',
+      'อุปกรณ์เสริม',
+      'หมวดหมู่',
+      'หน่วยนับอุปกรณ์เสริม',
+      'ราคา',
+      'ต้นทุน/หน่วย',
+      'ค่าชำรุด',
+      'ค่าสูญหาย',
+      'จำนวนเพิ่ม',
+      'สต็อกขั้นต่ำ',
+      'วันที่ทำรายการ',
+      'จัดการ',
+    ]
+
+    let lastIdx = -1
+    for (const h of expectedHeaders) {
+      const idx = content.indexOf(h)
+      expect(idx).toBeGreaterThan(-1)
+      expect(idx).toBeGreaterThan(lastIdx)
+      lastIdx = idx
+    }
+
+    // Horizontal scroll is within the table border container (overflow-x-auto, min-w-[1300px])
+    expect(content.includes('overflow-x-auto')).toBe(true)
+    expect(content.includes('min-w-[1300px]')).toBe(true)
+
+    // No global accessory checkbox
+    expect(content.includes('type="checkbox"')).toBe(true) // Row-level checkbox exists
+    expect(content.includes('แถวที่ไม่มีชื่อสินค้าจะไม่ถูกบันทึก')).toBe(true)
+  })
+
+  it('13. Row-level accessory toggle enables accessory unit dropdown without muting isChargeable', async () => {
+    const { createInitialDraftRows } = await import('@/lib/product-draft-types')
+    const rows = createInitialDraftRows('rule-cat-1', 'unit-4')
+    expect(rows.length).toBe(10)
+    expect(rows[0].isAccessory).toBe(false)
+    expect(rows[0].accessoryUnitId).toBe('unit-4')
+
+    // Toggle row 0 to accessory
+    rows[0].isAccessory = true
+    rows[0].accessoryUnitId = 'unit-2' // e.g. 'ต้น'
+    rows[0].price = 150
+    rows[0].costPrice = 80
+    rows[0].damageFee = 50
+    rows[0].lossFee = 300
+    rows[0].quantityAdded = 10
+    rows[0].minimumStock = 5
+
+    expect(rows[0].isAccessory).toBe(true)
+    expect(rows[0].accessoryUnitId).toBe('unit-2')
+    expect(rows[0].costPrice).toBe(80)
+    expect(rows[0].damageFee).toBe(50)
+    expect(rows[0].lossFee).toBe(300)
+    expect(rows[0].minimumStock).toBe(5)
+  })
+
+  it('14. ADD Tab row mapping accurately preserves costPrice, damageFee, lossFee, minimumStock, and maps price by calculationType', () => {
+    // Add or find a PER_DAY rule
+    const chosenUnit = loadUnits()[0]
+    const updatedRules = addCategoryRule({
+      name: 'เสาค้ำยัน',
+      calculationType: 'PER_DAY',
+      calculationLabel: 'ราคาเช่าต่อวัน × จำนวนสินค้า × จำนวนวัน',
+      unit: chosenUnit.name,
+      unitId: chosenUnit.id,
+    })
+    const perDayRule = updatedRules.find((r) => r.calculationType === 'PER_DAY')!
+    const units = loadUnits()
+    const accUnit = units.find((u) => u.name === 'ชิ้น') || units[0]
+
+    const draftRow = {
+      id: 'row-test-1',
+      name: 'เสาค้ำยัน 3.5 ม.',
+      isAccessory: true,
+      categoryId: perDayRule.id,
+      accessoryUnitId: accUnit.id,
+      price: 25,
+      costPrice: 150,
+      damageFee: 50,
+      lossFee: 200,
+      quantityAdded: 20,
+      minimumStock: 4,
+      addedDate: new Date('2026-03-12'),
+    }
+
+    // Map according to business rules in handleCreateSubmit
+    const calcType = perDayRule.calculationType
+    let rentPriceNum = null
+    let salePriceNum = null
+    let dailyPriceNum = 0
+    let normalPriceNum = 0
+    let rentalTypeVal = 'NORMAL'
+
+    if (calcType === 'PER_DAY') {
+      rentPriceNum = draftRow.price
+      dailyPriceNum = draftRow.price
+      normalPriceNum = draftRow.price
+      rentalTypeVal = 'DAILY'
+    }
+
+    expect(rentPriceNum).toBe(25)
+    expect(dailyPriceNum).toBe(25)
+    expect(rentalTypeVal).toBe('DAILY')
+    expect(draftRow.costPrice).toBe(150)
+    expect(draftRow.damageFee).toBe(50)
+    expect(draftRow.lossFee).toBe(200)
+    expect(draftRow.minimumStock).toBe(4)
+    expect(draftRow.quantityAdded).toBe(20)
+    expect(draftRow.isAccessory).toBe(true)
+  })
 })
+

@@ -28,12 +28,12 @@ import { NewProductModal, ProductRowItem } from '@/components/products/NewProduc
 import { DamagedRestoreModal } from '@/components/products/DamagedRestoreModal'
 import { DamagedTransformModal } from '@/components/products/DamagedTransformModal'
 import { ProductListView } from '@/components/products/ProductListView'
-import { ProductCreateView } from '@/components/products/ProductCreateView'
+import { ProductCreateView, ProductCreateDraftRow, createInitialDraftRows } from '@/components/products/ProductCreateView'
 import { ProductSettingsView } from '@/components/products/ProductSettingsView'
 import { logger } from '@/lib/utils/logger'
 import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
 import { loadCategoryRules, addCategoryRule, ProductCategoryRule, CalculationType, CALCULATION_OPTIONS } from '@/lib/category-rules-storage'
-import { loadUnits } from '@/lib/unit-storage'
+import { loadUnits, addUnit } from '@/lib/unit-storage'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -78,51 +78,27 @@ export default function ProductsPage() {
   }, [])
 
   // Persistent Draft State for ADD Tab (Survives tab switches!)
-  const [createDraftRows, setCreateDraftRows] = useState<ProductRowItem[]>([])
-  const [createIsAccessory, setCreateIsAccessory] = useState(false)
+  const [createDraftRows, setCreateDraftRows] = useState<ProductCreateDraftRow[]>([])
   const [isCreatingSubmitting, setIsCreatingSubmitting] = useState(false)
 
-  // Initialize draft rows if empty once category rules load
+  // Initialize draft rows (10 rows) if empty once category rules & units load
   useEffect(() => {
-    if (createDraftRows.length === 0 && categoryRules.length > 0) {
+    if (createDraftRows.length === 0 && (categoryRules.length > 0 || masterUnits.length > 0)) {
       const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-      const initial: ProductRowItem[] = []
-      for (let i = 0; i < 10; i++) {
-        initial.push({
-          id: `draft-row-${i}-${Date.now()}`,
-          name: '',
-          categoryId: defaultCatId,
-          rentPrice: null,
-          salePrice: null,
-          quantityAdded: 0,
-          addedDate: new Date(),
-        })
-      }
-      setCreateDraftRows(initial)
+      const defaultUnitId = masterUnits[0]?.id || 'unit-1'
+      setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
     }
-  }, [categoryRules, createDraftRows.length])
+  }, [categoryRules, masterUnits, createDraftRows.length])
 
   // Clear draft helper
   const handleClearDraft = () => {
     const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-    const resetRows: ProductRowItem[] = []
-    for (let i = 0; i < 10; i++) {
-      resetRows.push({
-        id: `draft-row-${i}-${Date.now()}`,
-        name: '',
-        categoryId: defaultCatId,
-        rentPrice: null,
-        salePrice: null,
-        quantityAdded: 0,
-        addedDate: new Date(),
-      })
-    }
-    setCreateDraftRows(resetRows)
-    setCreateIsAccessory(false)
+    const defaultUnitId = masterUnits[0]?.id || 'unit-1'
+    setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
     showToast('ล้างแบบร่างเรียบร้อย', 'รีเซ็ตข้อมูลในแบบฟอร์มเพิ่มสินค้าแล้ว', 'INFO')
   }
 
-  // Submit handler for ADD Tab
+  // Submit handler for ADD Tab (13-Column Table)
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isCreatingSubmitting) return
@@ -133,6 +109,18 @@ export default function ProductsPage() {
       return
     }
 
+    // Validate accessory rows: must have accessoryUnitId selected
+    for (const r of validRows) {
+      if (r.isAccessory && !r.accessoryUnitId) {
+        showToast(
+          'กรุณาระบุหน่วยนับอุปกรณ์เสริม',
+          `สินค้า "${r.name}" กำหนดเป็นอุปกรณ์เสริมแต่ยังไม่ได้เลือกหน่วยนับ`,
+          'ERROR'
+        )
+        return
+      }
+    }
+
     try {
       setIsCreatingSubmitting(true)
       const now = Date.now()
@@ -140,27 +128,54 @@ export default function ProductsPage() {
       const createdProducts: Product[] = validRows.map((r, idx) => {
         const matchedRule = categoryRules.find((c) => c.id === r.categoryId) || categoryRules[0]
         const categoryName = matchedRule?.name || 'ทั่วไป'
-        const unitName = matchedRule?.unit || 'ชิ้น'
         const calcType = matchedRule?.calculationType || 'PER_ROUND'
         const calcLabel = matchedRule?.calculationLabel || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
 
-        const rentPriceNum =
-          r.rentPrice !== null && r.rentPrice !== undefined && (r.rentPrice as any) !== ''
-            ? Number(r.rentPrice)
+        // Determine Unit: If accessory, use selected accessoryUnit; otherwise use category unit
+        let finalUnitName = matchedRule?.unit || 'ชิ้น'
+        let finalUnitId = matchedRule?.unitId || matchedRule?.id
+
+        if (r.isAccessory && r.accessoryUnitId) {
+          const matchedAccUnit = masterUnits.find((u) => u.id === r.accessoryUnitId)
+          if (matchedAccUnit) {
+            finalUnitName = matchedAccUnit.name
+            finalUnitId = matchedAccUnit.id
+          }
+        }
+
+        // Single Price field mapping based on calculationType
+        const priceNum =
+          r.price !== null && r.price !== undefined && (r.price as any) !== ''
+            ? Number(r.price)
             : null
-        const salePriceNum =
-          r.salePrice !== null && r.salePrice !== undefined && (r.salePrice as any) !== ''
-            ? Number(r.salePrice)
-            : null
+
+        let rentPriceNum: number | null = null
+        let salePriceNum: number | null = null
+        let normalPriceNum = 0
+        let dailyPriceNum = 0
+        let rentalTypeVal: RentalType = 'NORMAL'
+
+        if (calcType === 'SALE') {
+          salePriceNum = priceNum
+          rentalTypeVal = 'SALE'
+        } else if (calcType === 'PER_DAY') {
+          rentPriceNum = priceNum
+          dailyPriceNum = priceNum != null ? priceNum : 0
+          normalPriceNum = priceNum != null ? priceNum : 0
+          rentalTypeVal = 'DAILY'
+        } else {
+          // PER_ROUND or default
+          rentPriceNum = priceNum
+          normalPriceNum = priceNum != null ? priceNum : 0
+          dailyPriceNum = priceNum != null ? priceNum : 0
+          rentalTypeVal = 'NORMAL'
+        }
 
         const totalQty = Number(r.quantityAdded) || 0
-
-        let rentalTypeVal: RentalType = 'NORMAL'
-        if (rentPriceNum != null) {
-          rentalTypeVal = calcType === 'PER_DAY' ? 'DAILY' : 'NORMAL'
-        } else if (salePriceNum != null) {
-          rentalTypeVal = 'SALE'
-        }
+        const costPriceNum = r.costPrice != null ? Number(r.costPrice) : 0
+        const damageFeeNum = r.damageFee != null ? Number(r.damageFee) : 0
+        const lossFeeNum = r.lossFee != null ? Number(r.lossFee) : 0
+        const minStockNum = r.minimumStock != null ? Number(r.minimumStock) : 3
 
         const dateStr = r.addedDate
           ? r.addedDate.toISOString().slice(0, 10)
@@ -175,17 +190,17 @@ export default function ProductsPage() {
           categoryRuleId: matchedRule?.id,
           calculationType: calcType,
           calculationLabel: calcLabel,
-          unit: unitName,
-          unitId: matchedRule?.unitId || matchedRule?.id,
+          unit: finalUnitName,
+          unitId: finalUnitId,
           rentPrice: rentPriceNum,
           salePrice: salePriceNum,
-          normalPrice: rentPriceNum != null ? rentPriceNum : 0,
-          dailyPrice: calcType === 'PER_DAY' && rentPriceNum != null ? rentPriceNum : 0,
+          normalPrice: normalPriceNum,
+          dailyPrice: dailyPriceNum,
           rentalType: rentalTypeVal,
           rentalTypeId: matchedRule?.id,
-          costPrice: 0,
-          defaultDamageFee: 0,
-          defaultLossFee: 0,
+          costPrice: costPriceNum,
+          defaultDamageFee: damageFeeNum,
+          defaultLossFee: lossFeeNum,
           totalQuantity: totalQty,
           availableQuantity: totalQty,
           rentedQuantity: 0,
@@ -193,11 +208,12 @@ export default function ProductsPage() {
           lostQuantity: 0,
           reservedQuantity: 0,
           maintenanceQuantity: 0,
-          minimumStock: 3,
+          minimumStock: minStockNum,
           status: 'ACTIVE',
-          isAccessory: createIsAccessory,
-          isChargeable: !createIsAccessory,
-          requiresReturn: rentPriceNum != null,
+          isAccessory: r.isAccessory,
+          // Accessories are NOT free; isChargeable remains true
+          isChargeable: true,
+          requiresReturn: calcType !== 'SALE',
           createdAt: dateStr,
         }
       })
@@ -231,22 +247,10 @@ export default function ProductsPage() {
         'SUCCESS'
       )
 
-      // Reset Draft after success
+      // Reset Draft to 10 rows after success
       const defaultCatId = categoryRules[0]?.id || 'rule-cat-1'
-      const resetRows: ProductRowItem[] = []
-      for (let i = 0; i < 10; i++) {
-        resetRows.push({
-          id: `draft-row-${i}-${Date.now()}`,
-          name: '',
-          categoryId: defaultCatId,
-          rentPrice: null,
-          salePrice: null,
-          quantityAdded: 0,
-          addedDate: new Date(),
-        })
-      }
-      setCreateDraftRows(resetRows)
-      setCreateIsAccessory(false)
+      const defaultUnitId = masterUnits[0]?.id || 'unit-1'
+      setCreateDraftRows(createInitialDraftRows(defaultCatId, defaultUnitId))
 
       // Return to LIST view
       setActiveMainTab('LIST')
@@ -254,6 +258,20 @@ export default function ProductsPage() {
       showToast('ไม่สามารถบันทึกสินค้าได้', err?.message || 'โปรดตรวจสอบข้อมูลสินค้า', 'ERROR')
     } finally {
       setIsCreatingSubmitting(false)
+    }
+  }
+
+  // Quick Add Unit from Create View
+  const handleQuickAddUnit = (name: string): string => {
+    try {
+      const updated = addUnit(name)
+      setMasterUnits(updated)
+      showToast('เพิ่มหน่วยนับสำเร็จ', `เพิ่มหน่วยนับ "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+      const newUnit = updated.find((u) => u.name === name)
+      return newUnit?.id || updated[updated.length - 1]?.id
+    } catch (err: any) {
+      showToast('ไม่สามารถเพิ่มหน่วยนับได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+      return ''
     }
   }
 
@@ -641,8 +659,6 @@ export default function ProductsPage() {
         <ProductCreateView
           rows={createDraftRows}
           setRows={setCreateDraftRows}
-          isAccessory={createIsAccessory}
-          setIsAccessory={setCreateIsAccessory}
           categoryRules={categoryRules}
           units={masterUnits}
           isSubmitting={isCreatingSubmitting}
@@ -650,6 +666,7 @@ export default function ProductsPage() {
           onClearDraft={handleClearDraft}
           onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
           onQuickAddCategory={handleQuickAddCategory}
+          onQuickAddUnit={handleQuickAddUnit}
         />
       )}
 
