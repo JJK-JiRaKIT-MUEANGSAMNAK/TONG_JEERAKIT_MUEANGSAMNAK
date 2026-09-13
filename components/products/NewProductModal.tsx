@@ -5,7 +5,6 @@ import {
   Plus,
   Settings,
   Trash2,
-  ArrowLeft,
   Check,
   X,
   Edit2,
@@ -356,78 +355,63 @@ export function NewProductModal({
 
       {/* VIEW 1: SETTINGS VIEW (เมื่อกด [⚙ ตั้งค่าเสริม]) */}
       {showSettings ? (
-        <AppModalBody className="p-4 sm:p-5 space-y-4 text-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setShowSettings(false)}
-              className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center gap-1 font-bold text-xs transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>กลับสู่หน้าเพิ่มสินค้า</span>
-            </button>
-            <span className="text-slate-400 text-[11px]">1 แถว = 1 ชุดกฎของสินค้า (ใช้ร่วมกับเมนูตั้งค่าหลัก)</span>
-          </div>
-
-          {/* Add Category Rule Row */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-            <h5 className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">เพิ่มชุดกฎสินค้าใหม่</h5>
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-              <div className="sm:col-span-4">
-                <input
-                  type="text"
-                  value={ruleNewName}
-                  onChange={(e) => setRuleNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
-                  placeholder="ชื่อหมวดหมู่..."
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div className="sm:col-span-5">
-                <CustomSelect
-                  value={ruleNewCalcType}
-                  onChange={(val) => setRuleNewCalcType(val as CalculationType)}
-                  options={CALCULATION_OPTIONS.map((opt) => ({
-                    value: opt.type,
-                    label: opt.label,
-                  }))}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <input
-                  type="text"
-                  value={ruleNewUnit}
-                  onChange={(e) => setRuleNewUnit(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
-                  placeholder="หน่วยนับ..."
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div className="sm:col-span-1">
-                <button
-                  type="button"
-                  onClick={handleRuleAdd}
-                  disabled={!ruleNewName.trim() || !ruleNewUnit.trim()}
-                  className="w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>เพิ่ม</span>
-                </button>
-              </div>
+        <AppModalBody className="p-3 sm:p-4 space-y-3 text-xs">
+          {/* Add Category Rule Row: จัด ชื่อหมวดหมู่ / รูปแบบคำนวณ / หน่วยนับ / ปุ่มเพิ่ม แถวเดียวเมื่อพื้นที่พอ จัดแนวตรงตาราง */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <div className="w-full sm:w-36 shrink-0">
+              <input
+                type="text"
+                value={ruleNewName}
+                onChange={(e) => setRuleNewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
+                placeholder="ชื่อหมวดหมู่..."
+                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div className="w-full sm:flex-1 min-w-0">
+              <CustomSelect
+                value={ruleNewCalcType}
+                onChange={(val) => setRuleNewCalcType(val as CalculationType)}
+                options={CALCULATION_OPTIONS.map((opt) => ({
+                  value: opt.type,
+                  label: opt.label,
+                }))}
+              />
+            </div>
+            <div className="w-full sm:w-24 shrink-0">
+              <input
+                type="text"
+                value={ruleNewUnit}
+                onChange={(e) => setRuleNewUnit(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
+                placeholder="หน่วยนับ..."
+                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div className="w-full sm:w-16 shrink-0">
+              <button
+                type="button"
+                onClick={handleRuleAdd}
+                disabled={!ruleNewName.trim() || !ruleNewUnit.trim()}
+                className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>เพิ่ม</span>
+              </button>
             </div>
           </div>
 
           {/* Category Rules Table: ลำดับ | ชื่อหมวดหมู่ | รูปแบบการคำนวณ | หน่วยนับ | จัดการ */}
           <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900">
-            <div className="overflow-x-auto max-h-[50vh]">
-              <table className="w-full text-left text-xs border-collapse min-w-[520px]">
+            <div className="max-h-[50vh] overflow-y-auto">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-xs">
                   <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="py-2.5 px-3 w-12 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
-                    <th className="py-2.5 px-3 w-36 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
-                    <th className="py-2.5 px-3 w-20 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
-                    <th className="py-2.5 px-2 w-20 text-center">จัดการ</th>
+                    <th className="py-2 px-2.5 w-10 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
+                    <th className="py-2 px-2.5 w-36 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
+                    <th className="py-2 px-2.5 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
+                    <th className="py-2 px-2.5 w-24 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
+                    <th className="py-2 px-2 w-16 text-center">จัดการ</th>
                   </tr>
                 </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -585,32 +569,32 @@ export function NewProductModal({
           <AppModalBody className="p-3 sm:p-4 space-y-3">
             {/* ตารางกรอกสินค้าใหม่: ลำดับ | ชื่อสินค้า | หมวดหมู่ | ราคาเช่า | ราคาขาย | จำนวนที่เพิ่ม | วันที่เพิ่ม | จัดการ */}
             <div className="border border-slate-200 dark:border-slate-700/80 rounded-2xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto max-h-[60vh]">
-                <table className="w-full text-left border-collapse min-w-[700px] text-xs">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs shadow-xs">
                     <tr>
-                      <th className="px-3 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-12">
+                      <th className="px-1.5 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-8">
                         ลำดับ
                       </th>
-                      <th className="px-3 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 min-w-[180px]">
+                      <th className="px-2 py-2 text-left border-b border-slate-200 dark:border-slate-700">
                         ชื่อสินค้า
                       </th>
-                      <th className="px-2 py-2.5 text-left border-b border-slate-200 dark:border-slate-700 w-36">
+                      <th className="px-1.5 py-2 text-left border-b border-slate-200 dark:border-slate-700 w-28">
                         หมวดหมู่
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-blue-600 dark:text-blue-400">
+                      <th className="px-1.5 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-20 whitespace-nowrap text-blue-600 dark:text-blue-400">
                         ราคาเช่า
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-violet-600 dark:text-violet-400">
+                      <th className="px-1.5 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-20 whitespace-nowrap text-violet-600 dark:text-violet-400">
                         ราคาขาย
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-24 text-emerald-600 dark:text-emerald-400">
+                      <th className="px-1.5 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-16 whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                         จำนวนที่เพิ่ม
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-32">
+                      <th className="px-1.5 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-26 whitespace-nowrap">
                         วันที่เพิ่ม
                       </th>
-                      <th className="px-2 py-2.5 text-center border-b border-slate-200 dark:border-slate-700 w-12">
+                      <th className="px-1 py-2 text-center border-b border-slate-200 dark:border-slate-700 w-8">
                         จัดการ
                       </th>
                     </tr>
@@ -619,26 +603,26 @@ export function NewProductModal({
                     {rows.map((row, idx) => (
                       <tr
                         key={row.id}
-                        className="h-12 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       >
                         {/* ลำดับ */}
-                        <td className="px-2 py-1.5 text-center align-middle font-bold text-slate-400">
+                        <td className="px-1.5 py-1.5 text-center align-middle font-bold text-slate-400">
                           {idx + 1}
                         </td>
 
                         {/* ชื่อสินค้า */}
-                        <td className="px-3 py-1.5 align-middle">
+                        <td className="px-2 py-1.5 align-middle">
                           <input
                             type="text"
                             value={row.name}
                             onChange={(e) => handleUpdateRow(row.id, 'name', e.target.value)}
                             placeholder="ระบุชื่อหรือขนาดสินค้า..."
-                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                         </td>
 
                         {/* หมวดหมู่ (เลือกแยกต่อแถว) */}
-                        <td className="px-2 py-1.5 align-middle">
+                        <td className="px-1.5 py-1.5 align-middle">
                           <CustomSelect
                             value={row.categoryId}
                             onChange={(val) => handleUpdateRow(row.id, 'categoryId', String(val))}
@@ -650,43 +634,43 @@ export function NewProductModal({
                         </td>
 
                         {/* ราคาเช่า (อิสระ ว่างได้ ห้ามบังคับ 0) */}
-                        <td className="px-2 py-1.5 text-center align-middle">
+                        <td className="px-1 py-1.5 text-center align-middle whitespace-nowrap">
                           <NumericInput
                             value={row.rentPrice ?? ''}
                             placeholder="ไม่ระบุ"
                             onChange={(val) => handleUpdateRow(row.id, 'rentPrice', val === '' ? null : val)}
                             min={0}
                             allowDecimals={true}
-                            className="w-full px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full px-1.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         </td>
 
                         {/* ราคาขาย (อิสระ ว่างได้ ห้ามบังคับ 0) */}
-                        <td className="px-2 py-1.5 text-center align-middle">
+                        <td className="px-1 py-1.5 text-center align-middle whitespace-nowrap">
                           <NumericInput
                             value={row.salePrice ?? ''}
                             placeholder="ไม่ระบุ"
                             onChange={(val) => handleUpdateRow(row.id, 'salePrice', val === '' ? null : val)}
                             min={0}
                             allowDecimals={true}
-                            className="w-full px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-violet-600 dark:text-violet-400 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                            className="w-full px-1.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-violet-600 dark:text-violet-400 focus:ring-2 focus:ring-violet-500 focus:outline-none"
                           />
                         </td>
 
                         {/* จำนวนที่เพิ่ม */}
-                        <td className="px-2 py-1.5 text-center align-middle">
+                        <td className="px-1 py-1.5 text-center align-middle whitespace-nowrap">
                           <NumericInput
                             value={row.quantityAdded || ''}
                             placeholder="0"
                             onChange={(val) => handleUpdateRow(row.id, 'quantityAdded', val === '' ? 0 : Number(val))}
                             min={0}
                             allowDecimals={false}
-                            className="w-full px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            className="w-full px-1.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                           />
                         </td>
 
                         {/* วันที่เพิ่ม (อยู่ต่อแถว ค่าเริ่มต้นเป็นวันนี้) */}
-                        <td className="px-2 py-1.5 text-center align-middle">
+                        <td className="px-1 py-1.5 text-center align-middle">
                           <CustomDatePicker
                             value={row.addedDate}
                             onChange={(val) => handleUpdateRow(row.id, 'addedDate', val)}
@@ -694,14 +678,14 @@ export function NewProductModal({
                         </td>
 
                         {/* จัดการ: ลบแถว */}
-                        <td className="px-2 py-1.5 text-center align-middle">
+                        <td className="px-1 py-1.5 text-center align-middle">
                           <button
                             type="button"
                             onClick={() => handleRemoveRow(row.id)}
                             className="p-1 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors mx-auto flex items-center justify-center cursor-pointer"
                             title="ลบแถว"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
@@ -709,37 +693,33 @@ export function NewProductModal({
                   </tbody>
                 </table>
               </div>
-
-              {/* Add Row Button */}
-              <div className="p-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={handleAddRow}
-                  className="px-3 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>เพิ่มแถวสินค้า</span>
-                </button>
-                <span className="text-[11px] text-slate-400">
-                  * ช่องราคาที่ไม่ได้กรอกจะถือว่าไม่มีราคา ไม่บังคับให้แสดง ฿0.00
-                </span>
-              </div>
             </div>
           </AppModalBody>
 
           {/* Modal Footer */}
           <AppModalFooter>
             <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
-              {/* ซ้าย: checkbox "เป็นอุปกรณ์เสริม" */}
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isAccessory}
-                  onChange={(e) => setIsAccessory(e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 cursor-pointer"
-                />
-                <span>เป็นอุปกรณ์เสริม</span>
-              </label>
+              {/* ซ้าย: checkbox "เป็นอุปกรณ์เสริม" + ปุ่ม "เพิ่มแถวสินค้า" */}
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isAccessory}
+                    onChange={(e) => setIsAccessory(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 cursor-pointer"
+                  />
+                  <span>เป็นอุปกรณ์เสริม</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  className="px-2.5 py-1.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>เพิ่มแถวสินค้า</span>
+                </button>
+              </div>
 
               {/* ขวา: [ยกเลิก] [บันทึกข้อมูลสินค้า] */}
               <div className="flex items-center gap-2">
