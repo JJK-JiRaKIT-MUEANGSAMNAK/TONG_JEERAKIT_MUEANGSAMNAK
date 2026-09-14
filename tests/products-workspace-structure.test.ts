@@ -445,5 +445,22 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
     // + เพิ่มแถว at bottom of table 3
     expect(content.includes('+ เพิ่มแถว')).toBe(true)
   })
+
+  it('20. ProductSettingsView styling: no summary count texts, unified ActionButton and system color tokens', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const filePath = path.resolve(process.cwd(), 'components/products/ProductSettingsView.tsx')
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    // 1) Must not have summary count text like "ทั้งหมด X รายการ"
+    expect(content.includes('ทั้งหมด')).toBe(false)
+    expect(content.match(/ทั้งหมด\s*(\d+|\{[^}]+\})\s*รายการ/)).toBeNull()
+
+    // 2) Must use ActionButton component
+    expect(content.includes('ActionButton')).toBe(true)
+
+    // 3) Must not contain ad-hoc purple color classes
+    expect(content.includes('purple')).toBe(false)
+  })
 })
 

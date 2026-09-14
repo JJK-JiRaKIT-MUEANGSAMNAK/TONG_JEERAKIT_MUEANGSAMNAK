@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react'
+import { ActionButton } from '@/components/common/ActionButton'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import {
   ProductCategoryItem,
@@ -336,9 +337,6 @@ export function ProductSettingsView({
             <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
               หมวดหมู่สินค้า
             </h3>
-            <span className="text-[11px] text-slate-400 font-medium">
-              ทั้งหมด {categories.length} รายการ
-            </span>
           </div>
 
           {/* Toolbar เหนือตาราง: [ ชื่อหมวดหมู่ใหม่... ] [ + เพิ่มหมวดหมู่ ] */}
@@ -349,24 +347,25 @@ export function ProductSettingsView({
               onChange={(e) => setNewCatName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategoryAdd())}
               placeholder="ชื่อหมวดหมู่ใหม่..."
-              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
             />
-            <button
+            <ActionButton
               type="button"
               onClick={handleCategoryAdd}
               disabled={!newCatName.trim()}
-              className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+              variant="primary"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              className="h-8 py-0 px-3 rounded-xl shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มหมวดหมู่</span>
-            </button>
+              เพิ่มหมวดหมู่
+            </ActionButton>
           </div>
 
           {/* Table 1: | ลำดับ | หมวดหมู่ | จัดการ | */}
-          <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs border-collapse table-fixed">
-                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                   <tr className="border-b border-slate-200 dark:border-slate-700">
                     <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                       ลำดับ
@@ -402,7 +401,7 @@ export function ProductSettingsView({
                                 value={catEditName}
                                 onChange={(e) => setCatEditName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategorySaveEdit(cat.id))}
-                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                                 autoFocus
                               />
                             </td>
@@ -441,14 +440,14 @@ export function ProductSettingsView({
                                 <button
                                   type="button"
                                   onClick={() => handleCategoryDelete(cat.id)}
-                                  className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
                                 >
                                   ลบ
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setCatDeleteConfirmId(null)}
-                                  className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
                                 >
                                   ยกเลิก
                                 </button>
@@ -471,7 +470,7 @@ export function ProductSettingsView({
                               <button
                                 type="button"
                                 onClick={() => handleCategoryStartEdit(cat)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                                 title="แก้ไข"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -513,26 +512,28 @@ export function ProductSettingsView({
             </div>
 
             {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
-            <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-850">
-              <button
+            <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
+              <ActionButton
                 type="button"
                 onClick={() => setCatPage((p) => Math.max(1, p - 1))}
                 disabled={catPage <= 1}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ก่อนหน้า
-              </button>
+              </ActionButton>
               <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
                 หน้า {catPage} / {catTotalPages}
               </span>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setCatPage((p) => Math.min(catTotalPages, p + 1))}
                 disabled={catPage >= catTotalPages}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ถัดไป
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>
@@ -546,9 +547,6 @@ export function ProductSettingsView({
             <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
               หน่วยนับ
             </h3>
-            <span className="text-[11px] text-slate-400 font-medium">
-              ทั้งหมด {masterUnits.length} รายการ
-            </span>
           </div>
 
           {/* Toolbar เหนือตาราง: [ ชื่อหน่วยนับใหม่... ] [ + เพิ่มหน่วยนับ ] */}
@@ -559,24 +557,25 @@ export function ProductSettingsView({
               onChange={(e) => setNewUnitName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitAdd())}
               placeholder="ชื่อหน่วยนับใหม่..."
-              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
             />
-            <button
+            <ActionButton
               type="button"
               onClick={handleUnitAdd}
               disabled={!newUnitName.trim()}
-              className="h-8 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+              variant="primary"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              className="h-8 py-0 px-3 rounded-xl shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มหน่วยนับ</span>
-            </button>
+              เพิ่มหน่วยนับ
+            </ActionButton>
           </div>
 
           {/* Table 2: | ลำดับ | หน่วยนับ | จัดการ | */}
-          <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs border-collapse table-fixed">
-                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                   <tr className="border-b border-slate-200 dark:border-slate-700">
                     <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                       ลำดับ
@@ -612,7 +611,7 @@ export function ProductSettingsView({
                                 value={unitEditName}
                                 onChange={(e) => setUnitEditName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitSaveEdit(u.id))}
-                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-purple-500 outline-none"
+                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                                 autoFocus
                               />
                             </td>
@@ -651,14 +650,14 @@ export function ProductSettingsView({
                                 <button
                                   type="button"
                                   onClick={() => handleUnitDelete(u.id)}
-                                  className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
                                 >
                                   ลบ
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setUnitDeleteConfirmId(null)}
-                                  className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
                                 >
                                   ยกเลิก
                                 </button>
@@ -681,7 +680,7 @@ export function ProductSettingsView({
                               <button
                                 type="button"
                                 onClick={() => handleUnitStartEdit(u)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                                 title="แก้ไข"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -723,26 +722,28 @@ export function ProductSettingsView({
             </div>
 
             {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
-            <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-855">
-              <button
+            <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
+              <ActionButton
                 type="button"
                 onClick={() => setUnitPage((p) => Math.max(1, p - 1))}
                 disabled={unitPage <= 1}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ก่อนหน้า
-              </button>
+              </ActionButton>
               <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
                 หน้า {unitPage} / {unitTotalPages}
               </span>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setUnitPage((p) => Math.min(unitTotalPages, p + 1))}
                 disabled={unitPage >= unitTotalPages}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ถัดไป
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>
@@ -762,16 +763,13 @@ export function ProductSettingsView({
               ข้อมูลช่วย Lookup กำหนดวิธีคิดเงิน รูปแบบการคิดเงิน และหน่วยนับอัตโนมัติตอนเพิ่มสินค้าใหม่
             </p>
           </div>
-          <span className="text-[11px] text-slate-400 font-medium">
-            ทั้งหมด {compositeRules.length} รายการ
-          </span>
         </div>
 
         {/* Table 3: | ลำดับ | หมวดหมู่ | วิธีคิดเงิน | หน่วยนับ | จัดการ | */}
-        <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
           <div className="overflow-x-auto">
             <table className="w-full text-center text-xs border-collapse table-fixed min-w-[580px]">
-              <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                     ลำดับ
@@ -852,7 +850,7 @@ export function ProductSettingsView({
                 {compositeRules.length === 0 && !isAddingCompositeRow ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-slate-400 italic">
-                      ยังไม่มีข้อมูลประกอบ กด &quot;+ เพิ่มแถว&quot; ด้านล่างเพื่อเพิ่ม
+                      ยังไม่มีรายการ
                     </td>
                   </tr>
                 ) : (
@@ -939,7 +937,7 @@ export function ProductSettingsView({
                         </td>
                         <td className="py-1 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
                           {rule.unitId ? (
-                            <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-[11px]">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
                               {getUnitName(rule.unitId)}
                             </span>
                           ) : (
@@ -954,7 +952,7 @@ export function ProductSettingsView({
                             <button
                               type="button"
                               onClick={() => handleStartEditCompositeRow(rule)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                               title="แก้ไข"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -991,39 +989,42 @@ export function ProductSettingsView({
           </div>
 
           {/* ท้ายตาราง: [ + เพิ่มแถว ] และ Pagination: ก่อนหน้า | หน้า X / Y | ถัดไป */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-850">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
             <div>
-              <button
+              <ActionButton
                 type="button"
                 onClick={handleStartAddCompositeRow}
                 disabled={isAddingCompositeRow || categories.length === 0}
-                className="px-3 py-1.5 rounded-xl border border-dashed border-emerald-400 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-40 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                variant="dashed"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                className="h-8 py-0 px-3 rounded-xl border-dashed"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ เพิ่มแถว</span>
-              </button>
+                + เพิ่มแถว
+              </ActionButton>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setCompPage((p) => Math.max(1, p - 1))}
                 disabled={compPage <= 1}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ก่อนหน้า
-              </button>
+              </ActionButton>
               <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
                 หน้า {compPage} / {compTotalPages}
               </span>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setCompPage((p) => Math.min(compTotalPages, p + 1))}
                 disabled={compPage >= compTotalPages}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                variant="outline"
+                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ถัดไป
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>
