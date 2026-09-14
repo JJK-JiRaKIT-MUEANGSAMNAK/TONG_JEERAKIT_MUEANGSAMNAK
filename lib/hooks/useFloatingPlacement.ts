@@ -9,6 +9,7 @@ export interface UseFloatingPlacementOptions {
   estimatedWidth?: number
   estimatedHeight?: number
   matchTriggerWidth?: boolean
+  minWidth?: number
 }
 
 export interface FloatingCoords {
@@ -42,6 +43,7 @@ export function useFloatingPlacement(
     estimatedWidth,
     estimatedHeight = 260,
     matchTriggerWidth = false,
+    minWidth,
   } = options
 
   const [coords, setCoords] = useState<FloatingCoords>({ left: minMargin })
@@ -69,6 +71,9 @@ export function useFloatingPlacement(
 
     // Width
     let calculatedWidth = matchTriggerWidth ? rect.width : estimatedWidth
+    if (minWidth) {
+      calculatedWidth = calculatedWidth ? Math.max(calculatedWidth, minWidth) : minWidth
+    }
 
     // Horizontal alignment
     let left: number
@@ -107,7 +112,7 @@ export function useFloatingPlacement(
         maxHeight: calculatedMaxHeight,
       })
     }
-  }, [triggerRef, align, offset, minMargin, estimatedWidth, estimatedHeight, matchTriggerWidth])
+  }, [triggerRef, align, offset, minMargin, estimatedWidth, estimatedHeight, matchTriggerWidth, minWidth])
 
   useEffect(() => {
     if (isOpen) {

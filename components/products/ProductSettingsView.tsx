@@ -1,15 +1,21 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Plus, Edit2, Trash2, Check, X, Tag, Scale } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import {
-  ProductCategoryRule,
+  ProductCategoryItem,
+  CategoryCompositeRule,
   CalculationType,
   CALCULATION_OPTIONS,
-  addCategoryRule,
-  updateCategoryRule,
-  deleteCategoryRule,
+  loadCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+  loadCompositeRules,
+  addCompositeRule,
+  updateCompositeRule,
+  ProductCategoryRule,
 } from '@/lib/category-rules-storage'
 import {
   Unit,
@@ -20,148 +26,165 @@ import {
 import { Product } from '@/lib/types/rental-pos'
 
 interface ProductSettingsViewProps {
-  categoryRules: ProductCategoryRule[]
-  setCategoryRules: React.Dispatch<React.SetStateAction<ProductCategoryRule[]>>
+  categories?: ProductCategoryItem[]
+  setCategories?: React.Dispatch<React.SetStateAction<ProductCategoryItem[]>>
+  compositeRules?: CategoryCompositeRule[]
+  setCompositeRules?: React.Dispatch<React.SetStateAction<CategoryCompositeRule[]>>
   masterUnits: Unit[]
   setMasterUnits: React.Dispatch<React.SetStateAction<Unit[]>>
   allProducts: Product[]
   onShowToast: (title: string, message: string, type: 'SUCCESS' | 'ERROR' | 'INFO') => void
+  // Backward compatibility props
+  categoryRules?: ProductCategoryRule[]
+  setCategoryRules?: React.Dispatch<React.SetStateAction<ProductCategoryRule[]>>
 }
 
+const PAGE_SIZE = 5
+
 export function ProductSettingsView({
-  categoryRules,
-  setCategoryRules,
+  categories: propCategories,
+  setCategories: propSetCategories,
+  compositeRules: propCompositeRules,
+  setCompositeRules: propSetCompositeRules,
   masterUnits,
   setMasterUnits,
   allProducts,
   onShowToast,
 }: ProductSettingsViewProps) {
-  // Category Rules Form State
-  const [ruleNewName, setRuleNewName] = useState('')
-  const [ruleNewCalcType, setRuleNewCalcType] = useState<CalculationType>('PER_ROUND')
-  const [ruleNewUnitId, setRuleNewUnitId] = useState<string>(masterUnits[0]?.id || 'unit-4')
+  // ─── Local State if not passed from parent ────────────────
+  const [internalCategories, setInternalCategories] = useState<ProductCategoryItem[]>(() => loadCategories())
+  const [internalCompositeRules, setInternalCompositeRules] = useState<CategoryCompositeRule[]>(() => loadCompositeRules())
 
-  const [ruleEditId, setRuleEditId] = useState<string | null>(null)
-  const [ruleEditName, setRuleEditName] = useState('')
-  const [ruleEditCalcType, setRuleEditCalcType] = useState<CalculationType>('PER_ROUND')
-  const [ruleEditUnitId, setRuleEditUnitId] = useState<string>('')
-  const [ruleDeleteConfirmId, setRuleDeleteConfirmId] = useState<string | null>(null)
+  const categories = propCategories ?? internalCategories
+  const setCategories = propSetCategories ?? setInternalCategories
 
-  // Master Units Form State
-  const [unitNewName, setUnitNewName] = useState('')
+  const compositeRules = propCompositeRules ?? internalCompositeRules
+  const setCompositeRules = propSetCompositeRules ?? setInternalCompositeRules
+
+  // ─── Table 1: Categories State ─────────────────────────────
+  const [newCatName, setNewCatName] = useState('')
+  const [catEditId, setCatEditId] = useState<string | null>(null)
+  const [catEditName, setCatEditName] = useState('')
+  const [catDeleteConfirmId, setCatDeleteConfirmId] = useState<string | null>(null)
+  const [catPage, setCatPage] = useState(1)
+
+  // ─── Table 2: Units State ──────────────────────────────────
+  const [newUnitName, setNewUnitName] = useState('')
   const [unitEditId, setUnitEditId] = useState<string | null>(null)
   const [unitEditName, setUnitEditName] = useState('')
   const [unitDeleteConfirmId, setUnitDeleteConfirmId] = useState<string | null>(null)
+  const [unitPage, setUnitPage] = useState(1)
 
-  // ─── Category Rules Handlers ──────────────────────────
-  const handleRuleAdd = () => {
-    const name = ruleNewName.trim()
-    if (!name) {
+  // ─── Table 3: Composite Rules State ────────────────────────
+  const [isAddingCompositeRow, setIsAddingCompositeRow] = useState(false)
+  const [newCompCategoryId, setNewCompCategoryId] = useState('')
+  const [newCompCalcType, setNewCompCalcType] = useState<CalculationType>('PER_ROUND')
+  const [newCompUnitId, setNewCompUnitId] = useState('')
+
+  const [compEditId, setCompEditId] = useState<string | null>(null)
+  const [compEditCategoryId, setCompEditCategoryId] = useState('')
+  const [compEditCalcType, setCompEditCalcType] = useState<CalculationType>('PER_ROUND')
+  const [compEditUnitId, setCompEditUnitId] = useState('')
+  const [compPage, setCompPage] = useState(1)
+
+  // ─── Categories Handlers (ตาราง 1) ─────────────────────────
+  const handleCategoryAdd = () => {
+    const trimmed = newCatName.trim()
+    if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหมวดหมู่', 'ชื่อหมวดหมู่ต้องไม่เป็นค่าว่าง', 'ERROR')
       return
     }
 
-    const matchedUnit = masterUnits.find((u) => u.id === ruleNewUnitId) || masterUnits[0]
-    const unitName = matchedUnit?.name || 'ชิ้น'
-
-    const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === ruleNewCalcType)
-    const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
-
-    const updated = addCategoryRule({
-      name,
-      calculationType: ruleNewCalcType,
-      calculationLabel,
-      unit: unitName,
-      unitId: matchedUnit?.id,
-    })
-    setCategoryRules(updated)
-    setRuleNewName('')
-    setRuleNewCalcType('PER_ROUND')
-    onShowToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่ม "${name}" (${unitName}) เรียบร้อยแล้ว`, 'SUCCESS')
+    try {
+      const updated = addCategory(trimmed)
+      setCategories(updated)
+      setNewCatName('')
+      onShowToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่มหมวดหมู่ "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
+    } catch (err: any) {
+      onShowToast('ไม่สามารถเพิ่มหมวดหมู่ได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+    }
   }
 
-  const handleRuleUpdate = (id: string) => {
-    const name = ruleEditName.trim()
-    if (!name) {
+  const handleCategoryStartEdit = (cat: ProductCategoryItem) => {
+    setCatEditId(cat.id)
+    setCatEditName(cat.name)
+    setCatDeleteConfirmId(null)
+  }
+
+  const handleCategorySaveEdit = (id: string) => {
+    const trimmed = catEditName.trim()
+    if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหมวดหมู่', 'ชื่อหมวดหมู่ต้องไม่เป็นค่าว่าง', 'ERROR')
       return
     }
 
-    const matchedUnit = masterUnits.find((u) => u.id === ruleEditUnitId) || masterUnits[0]
-    const unitName = matchedUnit?.name || 'ชิ้น'
-
-    const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === ruleEditCalcType)
-    const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
-
-    const updated = updateCategoryRule({
-      id,
-      name,
-      calculationType: ruleEditCalcType,
-      calculationLabel,
-      unit: unitName,
-      unitId: matchedUnit?.id,
-    })
-    setCategoryRules(updated)
-    setRuleEditId(null)
-    setRuleEditName('')
-    onShowToast('แก้ไขหมวดหมู่สำเร็จ', `อัปเดต "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+    try {
+      const updated = updateCategory(id, trimmed)
+      setCategories(updated)
+      setCatEditId(null)
+      setCatEditName('')
+      onShowToast('แก้ไขหมวดหมู่สำเร็จ', `อัปเดต "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
+    } catch (err: any) {
+      onShowToast('ไม่สามารถแก้ไขหมวดหมู่ได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+    }
   }
 
-  const handleRuleDelete = (id: string) => {
-    // Check if in use by products
-    const ruleToDelete = categoryRules.find((r) => r.id === id)
-    if (ruleToDelete) {
-      const inUse = allProducts.some(
-        (p) => p.categoryId === id || p.categoryRuleId === id || p.category === ruleToDelete.name
-      )
-      if (inUse) {
-        onShowToast(
-          'ไม่สามารถลบได้',
-          `หมวดหมู่ "${ruleToDelete.name}" มีสินค้าที่ใช้งานอยู่ กรุณาย้ายสินค้าก่อนลบ`,
-          'ERROR'
+  const handleCategoryDelete = (id: string) => {
+    try {
+      const updated = deleteCategory(id, (targetCat) => {
+        // Safe check: used in products or composite rules?
+        const usedInProducts = allProducts.some(
+          (p) => p.categoryId === targetCat.id || p.category === targetCat.name
         )
-        setRuleDeleteConfirmId(null)
-        return
-      }
+        const usedInComposite = compositeRules.some((r) => r.categoryId === targetCat.id)
+        return usedInProducts || usedInComposite
+      })
+      setCategories(updated)
+      setCatDeleteConfirmId(null)
+      onShowToast('ลบหมวดหมู่สำเร็จ', 'ลบข้อมูลหมวดหมู่ออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
+    } catch (err: any) {
+      onShowToast('ไม่สามารถลบหมวดหมู่ได้', err?.message || 'หมวดหมู่นี้กำลังถูกใช้งานอยู่', 'ERROR')
+      setCatDeleteConfirmId(null)
     }
-
-    const updated = deleteCategoryRule(id)
-    setCategoryRules(updated)
-    setRuleDeleteConfirmId(null)
-    onShowToast('ลบหมวดหมู่สำเร็จ', 'ลบข้อมูลหมวดหมู่ออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
   }
 
-  // ─── Master Units Handlers ────────────────────────────
+  // ─── Units Handlers (ตาราง 2) ──────────────────────────────
   const handleUnitAdd = () => {
-    const name = unitNewName.trim()
-    if (!name) {
+    const trimmed = newUnitName.trim()
+    if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหน่วยนับ', 'ชื่อหน่วยนับต้องไม่ว่าง', 'ERROR')
       return
     }
 
     try {
-      const updated = addUnit(name)
+      const updated = addUnit(trimmed)
       setMasterUnits(updated)
-      setUnitNewName('')
-      onShowToast('เพิ่มหน่วยนับสำเร็จ', `เพิ่มหน่วยนับ "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+      setNewUnitName('')
+      onShowToast('เพิ่มหน่วยนับสำเร็จ', `เพิ่มหน่วยนับ "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
     } catch (err: any) {
       onShowToast('ไม่สามารถเพิ่มหน่วยนับได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
     }
   }
 
-  const handleUnitUpdate = (id: string) => {
-    const name = unitEditName.trim()
-    if (!name) {
+  const handleUnitStartEdit = (unit: Unit) => {
+    setUnitEditId(unit.id)
+    setUnitEditName(unit.name)
+    setUnitDeleteConfirmId(null)
+  }
+
+  const handleUnitSaveEdit = (id: string) => {
+    const trimmed = unitEditName.trim()
+    if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหน่วยนับ', 'ชื่อหน่วยนับต้องไม่ว่าง', 'ERROR')
       return
     }
 
     try {
-      const updated = updateUnit(id, name)
+      const updated = updateUnit(id, trimmed)
       setMasterUnits(updated)
       setUnitEditId(null)
       setUnitEditName('')
-      onShowToast('แก้ไขหน่วยนับสำเร็จ', `อัปเดตหน่วยนับ "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+      onShowToast('แก้ไขหน่วยนับสำเร็จ', `อัปเดตหน่วยนับ "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
     } catch (err: any) {
       onShowToast('ไม่สามารถแก้ไขหน่วยนับได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
     }
@@ -170,14 +193,11 @@ export function ProductSettingsView({
   const handleUnitDelete = (id: string) => {
     try {
       const updated = deleteUnit(id, (targetUnit) => {
-        // Safe check: unit used in category rules or products?
-        const usedInRules = categoryRules.some(
-          (r) => r.unitId === targetUnit.id || r.unit === targetUnit.name
-        )
         const usedInProducts = allProducts.some(
           (p) => p.unitId === targetUnit.id || p.unit === targetUnit.name
         )
-        return usedInRules || usedInProducts
+        const usedInComposite = compositeRules.some((r) => r.unitId === targetUnit.id)
+        return usedInProducts || usedInComposite
       })
       setMasterUnits(updated)
       setUnitDeleteConfirmId(null)
@@ -188,437 +208,824 @@ export function ProductSettingsView({
     }
   }
 
+  // ─── Composite Rules Handlers (ตาราง 3) ────────────────────
+  const handleStartAddCompositeRow = () => {
+    const defaultCatId = categories[0]?.id || ''
+    setNewCompCategoryId(defaultCatId)
+    setNewCompCalcType('PER_ROUND')
+    setNewCompUnitId('')
+    setIsAddingCompositeRow(true)
+    setCompEditId(null)
+  }
+
+  const handleSaveAddCompositeRow = () => {
+    if (!newCompCategoryId) {
+      onShowToast('กรุณาเลือกหมวดหมู่', 'ต้องเลือกหมวดหมู่สินค้าสำหรับแถวนี้', 'ERROR')
+      return
+    }
+
+    try {
+      const updated = addCompositeRule({
+        categoryId: newCompCategoryId,
+        calculationType: newCompCalcType,
+        unitId: newCompUnitId || undefined,
+      })
+      setCompositeRules(updated)
+      setIsAddingCompositeRow(false)
+      onShowToast('เพิ่มข้อมูลประกอบสำเร็จ', 'เพิ่มรายการในตารางประกอบข้อมูลเรียบร้อยแล้ว', 'SUCCESS')
+    } catch (err: any) {
+      onShowToast('ไม่สามารถเพิ่มข้อมูลประกอบได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+    }
+  }
+
+  const handleStartEditCompositeRow = (rule: CategoryCompositeRule) => {
+    setCompEditId(rule.id)
+    setCompEditCategoryId(rule.categoryId)
+    setCompEditCalcType(rule.calculationType)
+    setCompEditUnitId(rule.unitId || '')
+    setIsAddingCompositeRow(false)
+  }
+
+  const handleSaveEditCompositeRow = (id: string) => {
+    if (!compEditCategoryId) {
+      onShowToast('กรุณาเลือกหมวดหมู่', 'ต้องเลือกหมวดหมู่สินค้า', 'ERROR')
+      return
+    }
+
+    try {
+      const updated = updateCompositeRule({
+        id,
+        categoryId: compEditCategoryId,
+        calculationType: compEditCalcType,
+        unitId: compEditUnitId || undefined,
+      })
+      setCompositeRules(updated)
+      setCompEditId(null)
+      onShowToast('บันทึกข้อมูลประกอบสำเร็จ', 'อัปเดตข้อมูลประกอบเรียบร้อยแล้ว', 'SUCCESS')
+    } catch (err: any) {
+      onShowToast('ไม่สามารถบันทึกข้อมูลประกอบได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+    }
+  }
+
+  // ─── Calculation Options Helper ────────────────────────────
+  const calcOptions = useMemo(
+    () =>
+      CALCULATION_OPTIONS.map((opt) => ({
+        value: opt.type,
+        label: opt.label,
+      })),
+    []
+  )
+
+  const activeUnits = useMemo(() => masterUnits.filter((u) => u.isActive), [masterUnits])
+
+  const unitOptions = useMemo(() => {
+    const list: Array<{ value: string; label: string }> = [{ value: '', label: '-- ไม่ระบุ --' }]
+    for (const u of activeUnits) {
+      list.push({ value: u.id, label: u.name })
+    }
+    return list
+  }, [activeUnits])
+
+  const categoryOptions = useMemo(() => {
+    return categories.map((c) => ({
+      value: c.id,
+      label: c.name,
+    }))
+  }, [categories])
+
+  const getCategoryName = (id: string) => {
+    const found = categories.find((c) => c.id === id)
+    return found ? found.name : '-'
+  }
+
+  const getCalcLabel = (type: CalculationType) => {
+    const found = CALCULATION_OPTIONS.find((c) => c.type === type)
+    return found ? found.label : type
+  }
+
+  const getUnitName = (id?: string) => {
+    if (!id) return '-'
+    const found = masterUnits.find((u) => u.id === id)
+    return found ? found.name : '-'
+  }
+
+  // ─── Pagination Calculations ───────────────────────────────
+  const catTotalPages = Math.ceil(categories.length / PAGE_SIZE) || 1
+  const paginatedCats = categories.slice((catPage - 1) * PAGE_SIZE, catPage * PAGE_SIZE)
+  const catPaddingRows = Math.max(0, PAGE_SIZE - paginatedCats.length)
+
+  const unitTotalPages = Math.ceil(masterUnits.length / PAGE_SIZE) || 1
+  const paginatedUnits = masterUnits.slice((unitPage - 1) * PAGE_SIZE, unitPage * PAGE_SIZE)
+  const unitPaddingRows = Math.max(0, PAGE_SIZE - paginatedUnits.length)
+
+  const compTotalPages = Math.ceil(compositeRules.length / PAGE_SIZE) || 1
+  const paginatedComp = compositeRules.slice((compPage - 1) * PAGE_SIZE, compPage * PAGE_SIZE)
+  const compPaddingRows = Math.max(0, PAGE_SIZE - (paginatedComp.length + (isAddingCompositeRow ? 1 : 0)))
+
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto p-1 text-xs">
-      {/* ส่วนที่ 1: หมวดหมู่สินค้า */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-              <Tag className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-                หมวดหมู่สินค้า
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                กำหนดหมวดหมู่สินค้า รูปแบบการคิดเงิน และหน่วยนับ
-              </p>
-            </div>
+      {/* Landscape: 2 columns for Table 1 + Table 2 / Portrait: stacked */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* ==================================================== */}
+        {/* ตารางที่ 1: หมวดหมู่สินค้า */}
+        {/* ==================================================== */}
+        <div className="flex flex-col">
+          {/* Header title */}
+          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
+              หมวดหมู่สินค้า
+            </h3>
+            <span className="text-[11px] text-slate-400 font-medium">
+              ทั้งหมด {categories.length} รายการ
+            </span>
           </div>
-        </div>
 
-        {/* Add Category Form */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-          <div className="w-full sm:w-44 shrink-0">
+          {/* Toolbar เหนือตาราง: [ ชื่อหมวดหมู่ใหม่... ] [ + เพิ่มหมวดหมู่ ] */}
+          <div className="flex items-center gap-2 mb-2.5">
             <input
               type="text"
-              value={ruleNewName}
-              onChange={(e) => setRuleNewName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategoryAdd())}
               placeholder="ชื่อหมวดหมู่ใหม่..."
-              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
-          </div>
-          <div className="w-full sm:flex-1 min-w-0">
-            <CustomSelect
-              value={ruleNewCalcType}
-              onChange={(val) => setRuleNewCalcType(val as CalculationType)}
-              options={CALCULATION_OPTIONS.map((opt) => ({
-                value: opt.type,
-                label: opt.label,
-              }))}
-            />
-          </div>
-          <div className="w-full sm:w-48 shrink-0 flex items-center gap-1.5">
-            <div className="flex-1 min-w-0">
-              <CustomSelect
-                value={ruleNewUnitId || masterUnits[0]?.id || ''}
-                onChange={(val) => setRuleNewUnitId(String(val))}
-                options={
-                  masterUnits.filter((u) => u.isActive).length > 0
-                    ? masterUnits
-                        .filter((u) => u.isActive)
-                        .map((u) => ({
-                          value: u.id,
-                          label: u.name,
-                        }))
-                    : [{ value: '', label: 'ยังไม่มีรายการ' }]
-                }
-                placeholder={masterUnits.length > 0 ? '-- เลือกหน่วยนับ --' : 'ยังไม่มีรายการ'}
-              />
-            </div>
             <button
               type="button"
-              onClick={() => {
-                const el = document.getElementById('section-units')
-                el?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              title="ไปเพิ่มหน่วยนับด้านล่าง"
-              className="px-2 py-2 rounded-xl border border-dashed border-purple-300 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-400 font-bold text-xs flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline text-[11px]">เพิ่มหน่วยนับ</span>
-            </button>
-          </div>
-          <div className="w-full sm:w-28 shrink-0">
-            <button
-              type="button"
-              onClick={handleRuleAdd}
-              disabled={!ruleNewName.trim() || masterUnits.length === 0}
-              className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
+              onClick={handleCategoryAdd}
+              disabled={!newCatName.trim()}
+              className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>เพิ่มหมวดหมู่</span>
             </button>
           </div>
-        </div>
 
-        {/* Categories Table */}
-        <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-x-auto shadow-xs">
-          <table className="w-full min-w-[620px] text-left text-xs border-collapse">
-            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="py-2 px-2.5 w-12 text-center border-r border-slate-200 dark:border-slate-700">
-                  ลำดับ
-                </th>
-                <th className="py-2 px-3 w-44 border-r border-slate-200 dark:border-slate-700">
-                  ชื่อหมวดหมู่
-                </th>
-                <th className="py-2 px-3 border-r border-slate-200 dark:border-slate-700">
-                  รูปแบบการคิดเงิน
-                </th>
-                <th className="py-2 px-3 w-32 text-center border-r border-slate-200 dark:border-slate-700">
-                  หน่วยนับ
-                </th>
-                <th className="py-2 px-2 w-20 text-center">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {categoryRules.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-4 text-center text-slate-400 italic">
-                    ยังไม่มีรายการ
-                  </td>
-                </tr>
-              ) : (
-                categoryRules.map((rule, idx) => (
-                  <tr key={rule.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    {ruleEditId === rule.id ? (
-                      <>
-                        <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
-                          <input
-                            type="text"
-                            value={ruleEditName}
-                            onChange={(e) => setRuleEditName(e.target.value)}
-                            className="w-full px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold"
-                            autoFocus
-                          />
-                        </td>
-                        <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
-                          <CustomSelect
-                            value={ruleEditCalcType}
-                            onChange={(val) => setRuleEditCalcType(val as CalculationType)}
-                            options={CALCULATION_OPTIONS.map((opt) => ({
-                              value: opt.type,
-                              label: opt.label,
-                            }))}
-                          />
-                        </td>
-                        <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
-                          <CustomSelect
-                            value={ruleEditUnitId}
-                            onChange={(val) => setRuleEditUnitId(String(val))}
-                            options={
-                              masterUnits.filter((u) => u.isActive).length > 0
-                                ? masterUnits
-                                    .filter((u) => u.isActive)
-                                    .map((u) => ({
-                                      value: u.id,
-                                      label: u.name,
-                                    }))
-                                : [{ value: '', label: 'ยังไม่มีรายการ' }]
-                            }
-                            placeholder={masterUnits.length > 0 ? '-- เลือกหน่วยนับ --' : 'ยังไม่มีรายการ'}
-                          />
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleRuleUpdate(rule.id)}
-                              className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
-                              title="บันทึก"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setRuleEditId(null)}
-                              className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                              title="ยกเลิก"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : ruleDeleteConfirmId === rule.id ? (
-                      <>
-                        <td colSpan={4} className="py-2 px-3 text-red-600 font-bold">
-                          ยืนยันลบหมวดหมู่ &quot;{rule.name}&quot; หรือไม่?
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleRuleDelete(rule.id)}
-                              className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
-                            >
-                              ลบ
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setRuleDeleteConfirmId(null)}
-                              className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
-                            >
-                              ยกเลิก
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
-                          {rule.name}
-                        </td>
-                        <td className="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
-                          {rule.calculationLabel}
-                        </td>
-                        <td className="py-2 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold">
-                            {rule.unit}
-                          </span>
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRuleEditId(rule.id)
-                                setRuleEditName(rule.name)
-                                setRuleEditCalcType(rule.calculationType)
-                                const matchedUnit = masterUnits.find(
-                                  (u) => u.id === rule.unitId || u.name === rule.unit
-                                )
-                                setRuleEditUnitId(matchedUnit?.id || masterUnits[0]?.id || '')
-                                setRuleDeleteConfirmId(null)
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRuleDeleteConfirmId(rule.id)
-                                setRuleEditId(null)
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    )}
+          {/* Table 1: | ลำดับ | หมวดหมู่ | จัดการ | */}
+          <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-xs border-collapse table-fixed">
+                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
+                      ลำดับ
+                    </th>
+                    <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                      หมวดหมู่
+                    </th>
+                    <th className="py-2.5 px-2 w-24 text-center">
+                      จัดการ
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-slate-400 italic">
+                        ยังไม่มีรายการ
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCats.map((cat, idx) => {
+                      const globalIdx = (catPage - 1) * PAGE_SIZE + idx + 1
 
-      {/* ส่วนที่ 2: หน่วยนับ */}
-      <div
-        id="section-units"
-        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4"
-      >
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-              <Scale className="w-4 h-4" />
+                      if (catEditId === cat.id) {
+                        return (
+                          <tr key={cat.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
+                            <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                              {globalIdx}
+                            </td>
+                            <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
+                              <input
+                                type="text"
+                                value={catEditName}
+                                onChange={(e) => setCatEditName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategorySaveEdit(cat.id))}
+                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                                autoFocus
+                              />
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCategorySaveEdit(cat.id)}
+                                  className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="บันทึก"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCatEditId(null)}
+                                  className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="ยกเลิก"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      if (catDeleteConfirmId === cat.id) {
+                        return (
+                          <tr key={cat.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
+                            <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
+                              ยืนยันลบหมวดหมู่ &quot;{cat.name}&quot;?
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCategoryDelete(cat.id)}
+                                  className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
+                                >
+                                  ลบ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCatDeleteConfirmId(null)}
+                                  className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                >
+                                  ยกเลิก
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      return (
+                        <tr key={cat.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                            {globalIdx}
+                          </td>
+                          <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
+                            {cat.name}
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleCategoryStartEdit(cat)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="แก้ไข"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCatDeleteConfirmId(cat.id)
+                                  setCatEditId(null)
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                title="ลบ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+
+                  {/* Padding slots to strictly keep table height fixed (ห้ามยืดตารางตามจำนวนรายการ) */}
+                  {Array.from({ length: catPaddingRows }).map((_, pIdx) => (
+                    <tr key={`cat-pad-${pIdx}`} className="h-10 select-none">
+                      <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                        -
+                      </td>
+                      <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                        -
+                      </td>
+                      <td className="py-1 px-2 text-center text-transparent">
+                        -
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-                หน่วยนับ
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                จัดการหน่วยนับสำหรับสินค้าและหมวดหมู่ เช่น ชิ้น, ตัว, แผ่น, ชุด
-              </p>
+
+            {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
+            <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-850">
+              <button
+                type="button"
+                onClick={() => setCatPage((p) => Math.max(1, p - 1))}
+                disabled={catPage <= 1}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ก่อนหน้า
+              </button>
+              <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
+                หน้า {catPage} / {catTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCatPage((p) => Math.min(catTotalPages, p + 1))}
+                disabled={catPage >= catTotalPages}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ถัดไป
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Add Unit Row */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-          <div className="w-full sm:w-72 shrink-0">
+        {/* ==================================================== */}
+        {/* ตารางที่ 2: หน่วยนับ */}
+        {/* ==================================================== */}
+        <div className="flex flex-col">
+          {/* Header title */}
+          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
+              หน่วยนับ
+            </h3>
+            <span className="text-[11px] text-slate-400 font-medium">
+              ทั้งหมด {masterUnits.length} รายการ
+            </span>
+          </div>
+
+          {/* Toolbar เหนือตาราง: [ ชื่อหน่วยนับใหม่... ] [ + เพิ่มหน่วยนับ ] */}
+          <div className="flex items-center gap-2 mb-2.5">
             <input
               type="text"
-              value={unitNewName}
-              onChange={(e) => setUnitNewName(e.target.value)}
+              value={newUnitName}
+              onChange={(e) => setNewUnitName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitAdd())}
-              placeholder="ชื่อหน่วยนับใหม่ (เช่น แผ่น, ตัว, ลัง)..."
-              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              placeholder="ชื่อหน่วยนับใหม่..."
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
             />
-          </div>
-          <div className="w-full sm:w-28 shrink-0">
             <button
               type="button"
               onClick={handleUnitAdd}
-              disabled={!unitNewName.trim()}
-              className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
+              disabled={!newUnitName.trim()}
+              className="h-8 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>เพิ่มหน่วยนับ</span>
             </button>
           </div>
+
+          {/* Table 2: | ลำดับ | หน่วยนับ | จัดการ | */}
+          <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-xs border-collapse table-fixed">
+                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
+                      ลำดับ
+                    </th>
+                    <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                      หน่วยนับ
+                    </th>
+                    <th className="py-2.5 px-2 w-24 text-center">
+                      จัดการ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {masterUnits.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-slate-400 italic">
+                        ยังไม่มีรายการ
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedUnits.map((u, idx) => {
+                      const globalIdx = (unitPage - 1) * PAGE_SIZE + idx + 1
+
+                      if (unitEditId === u.id) {
+                        return (
+                          <tr key={u.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
+                            <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                              {globalIdx}
+                            </td>
+                            <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
+                              <input
+                                type="text"
+                                value={unitEditName}
+                                onChange={(e) => setUnitEditName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitSaveEdit(u.id))}
+                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-purple-500 outline-none"
+                                autoFocus
+                              />
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnitSaveEdit(u.id)}
+                                  className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="บันทึก"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setUnitEditId(null)}
+                                  className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                                  title="ยกเลิก"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      if (unitDeleteConfirmId === u.id) {
+                        return (
+                          <tr key={u.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
+                            <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
+                              ยืนยันลบหน่วยนับ &quot;{u.name}&quot;?
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnitDelete(u.id)}
+                                  className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
+                                >
+                                  ลบ
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setUnitDeleteConfirmId(null)}
+                                  className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                >
+                                  ยกเลิก
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      return (
+                        <tr key={u.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                            {globalIdx}
+                          </td>
+                          <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
+                            {u.name}
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUnitStartEdit(u)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="แก้ไข"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUnitDeleteConfirmId(u.id)
+                                  setUnitEditId(null)
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                title="ลบ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+
+                  {/* Padding slots to strictly keep table height fixed */}
+                  {Array.from({ length: unitPaddingRows }).map((_, pIdx) => (
+                    <tr key={`unit-pad-${pIdx}`} className="h-10 select-none">
+                      <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                        -
+                      </td>
+                      <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                        -
+                      </td>
+                      <td className="py-1 px-2 text-center text-transparent">
+                        -
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
+            <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-855">
+              <button
+                type="button"
+                onClick={() => setUnitPage((p) => Math.max(1, p - 1))}
+                disabled={unitPage <= 1}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ก่อนหน้า
+              </button>
+              <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
+                หน้า {unitPage} / {unitTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setUnitPage((p) => Math.min(unitTotalPages, p + 1))}
+                disabled={unitPage >= unitTotalPages}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ถัดไป
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ==================================================== */}
+      {/* ตารางที่ 3: ตารางประกอบข้อมูล (Full Width Below) */}
+      {/* ==================================================== */}
+      <div className="flex flex-col mt-2">
+        {/* Header title */}
+        <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
+              ตารางประกอบข้อมูล
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              ข้อมูลช่วย Lookup กำหนดวิธีคิดเงิน รูปแบบการคิดเงิน และหน่วยนับอัตโนมัติตอนเพิ่มสินค้าใหม่
+            </p>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">
+            ทั้งหมด {compositeRules.length} รายการ
+          </span>
         </div>
 
-        {/* Units Table: ลำดับ | ชื่อหน่วยนับ | จัดการ */}
-        <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-x-auto shadow-xs">
-          <table className="w-full min-w-[360px] text-left text-xs border-collapse">
-            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="py-2 px-2.5 w-12 text-center border-r border-slate-200 dark:border-slate-700">
-                  ลำดับ
-                </th>
-                <th className="py-2 px-3 border-r border-slate-200 dark:border-slate-700">
-                  ชื่อหน่วยนับ
-                </th>
-                <th className="py-2 px-2 w-24 text-center">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {masterUnits.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="py-4 text-center text-slate-400 italic">
-                    ยังไม่มีรายการ
-                  </td>
+        {/* Table 3: | ลำดับ | หมวดหมู่ | วิธีคิดเงิน | หน่วยนับ | จัดการ | */}
+        <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
+          <div className="overflow-x-auto">
+            <table className="w-full text-center text-xs border-collapse table-fixed min-w-[580px]">
+              <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs">
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
+                    ลำดับ
+                  </th>
+                  <th className="py-2.5 px-3 w-48 text-center border-r border-slate-200 dark:border-slate-700">
+                    หมวดหมู่
+                  </th>
+                  <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                    วิธีคิดเงิน
+                  </th>
+                  <th className="py-2.5 px-3 w-40 text-center border-r border-slate-200 dark:border-slate-700">
+                    หน่วยนับ
+                  </th>
+                  <th className="py-2.5 px-2 w-20 text-center">
+                    จัดการ
+                  </th>
                 </tr>
-              ) : (
-                masterUnits.map((u, idx) => (
-                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    {unitEditId === u.id ? (
-                      <>
-                        <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                          {idx + 1}
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {/* แถวสำหรับเพิ่มใหม่ (+ เพิ่มแถว) */}
+                {isAddingCompositeRow && (
+                  <tr className="h-11 bg-emerald-50/60 dark:bg-emerald-950/20">
+                    <td className="py-1 px-2 text-center font-bold text-emerald-600 border-r border-slate-200 dark:border-slate-700">
+                      +
+                    </td>
+                    <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                      <CustomSelect
+                        value={newCompCategoryId}
+                        onChange={(val) => setNewCompCategoryId(String(val))}
+                        options={categoryOptions}
+                        placeholder="-- เลือกหมวดหมู่ --"
+                        className="w-full"
+                        buttonClassName="h-7 text-xs font-bold justify-between"
+                      />
+                    </td>
+                    <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                      <CustomSelect
+                        value={newCompCalcType}
+                        onChange={(val) => setNewCompCalcType(val as CalculationType)}
+                        options={calcOptions}
+                        className="w-full"
+                        buttonClassName="h-7 text-xs font-bold justify-between"
+                      />
+                    </td>
+                    <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                      <CustomSelect
+                        value={newCompUnitId}
+                        onChange={(val) => setNewCompUnitId(String(val))}
+                        options={unitOptions}
+                        placeholder="-- ไม่ระบุ --"
+                        className="w-full"
+                        buttonClassName="h-7 text-xs font-bold justify-between"
+                      />
+                    </td>
+                    <td className="py-1 px-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleSaveAddCompositeRow}
+                          className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 flex items-center justify-center transition-colors cursor-pointer"
+                          title="บันทึก"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingCompositeRow(false)}
+                          className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                          title="ยกเลิก"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
+                {compositeRules.length === 0 && !isAddingCompositeRow ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                      ยังไม่มีข้อมูลประกอบ กด &quot;+ เพิ่มแถว&quot; ด้านล่างเพื่อเพิ่ม
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedComp.map((rule, idx) => {
+                    const globalIdx = (compPage - 1) * PAGE_SIZE + idx + 1
+
+                    if (compEditId === rule.id) {
+                      return (
+                        <tr key={rule.id} className="h-11 bg-amber-50/50 dark:bg-amber-950/20">
+                          <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                            {globalIdx}
+                          </td>
+                          <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                            <CustomSelect
+                              value={compEditCategoryId}
+                              onChange={(val) => setCompEditCategoryId(String(val))}
+                              options={categoryOptions}
+                              placeholder="-- เลือกหมวดหมู่ --"
+                              className="w-full"
+                              buttonClassName="h-7 text-xs font-bold justify-between"
+                            />
+                          </td>
+                          <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                            <CustomSelect
+                              value={compEditCalcType}
+                              onChange={(val) => setCompEditCalcType(val as CalculationType)}
+                              options={calcOptions}
+                              className="w-full"
+                              buttonClassName="h-7 text-xs font-bold justify-between"
+                            />
+                          </td>
+                          <td className="py-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                            <CustomSelect
+                              value={compEditUnitId}
+                              onChange={(val) => setCompEditUnitId(String(val))}
+                              options={unitOptions}
+                              placeholder="-- ไม่ระบุ --"
+                              className="w-full"
+                              buttonClassName="h-7 text-xs font-bold justify-between"
+                            />
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditCompositeRow(rule.id)}
+                                className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                                title="บันทึก"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCompEditId(null)}
+                                className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                                title="ยกเลิก"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
+
+                    return (
+                      <tr key={rule.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                          {globalIdx}
                         </td>
-                        <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
-                          <input
-                            type="text"
-                            value={unitEditName}
-                            onChange={(e) => setUnitEditName(e.target.value)}
-                            className="w-full px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold"
-                            autoFocus
-                          />
+                        <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
+                          {getCategoryName(rule.categoryId)}
                         </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="py-1 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                          <span className={`px-2.5 py-0.5 rounded-lg font-bold text-[11px] ${
+                            rule.calculationType === 'NO_CHARGE'
+                              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                              : rule.calculationType === 'SALE'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                              : 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
+                          }`}>
+                            {getCalcLabel(rule.calculationType)}
+                          </span>
+                        </td>
+                        <td className="py-1 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                          {rule.unitId ? (
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-[11px]">
+                              {getUnitName(rule.unitId)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px] font-normal">
+                              - (เลือกเอง)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-1 px-2 text-center">
+                          {/* บันทึกแล้วแสดงเฉพาะปุ่มแก้ไข (ไม่มีปุ่มลบในตารางประกอบ) */}
+                          <div className="flex items-center justify-center">
                             <button
                               type="button"
-                              onClick={() => handleUnitUpdate(u.id)}
-                              className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
-                              title="บันทึก"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setUnitEditId(null)}
-                              className="p-1 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                              title="ยกเลิก"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : unitDeleteConfirmId === u.id ? (
-                      <>
-                        <td colSpan={2} className="py-2 px-3 text-red-600 font-bold">
-                          ยืนยันลบหน่วยนับ &quot;{u.name}&quot; หรือไม่?
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleUnitDelete(u.id)}
-                              className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
-                            >
-                              ลบ
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setUnitDeleteConfirmId(null)}
-                              className="px-2 py-0.5 rounded border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
-                            >
-                              ยกเลิก
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
-                          {u.name}
-                        </td>
-                        <td className="py-2 px-2 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setUnitEditId(u.id)
-                                setUnitEditName(u.name)
-                                setUnitDeleteConfirmId(null)
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                              onClick={() => handleStartEditCompositeRow(rule)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                               title="แก้ไข"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setUnitDeleteConfirmId(u.id)
-                                setUnitEditId(null)
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </td>
-                      </>
-                    )}
+                      </tr>
+                    )
+                  })
+                )}
+
+                {/* Padding slots to strictly keep table height fixed */}
+                {Array.from({ length: compPaddingRows }).map((_, pIdx) => (
+                  <tr key={`comp-pad-${pIdx}`} className="h-10 select-none">
+                    <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-2 text-center text-transparent">
+                      -
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ท้ายตาราง: [ + เพิ่มแถว ] และ Pagination: ก่อนหน้า | หน้า X / Y | ถัดไป */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-850">
+            <div>
+              <button
+                type="button"
+                onClick={handleStartAddCompositeRow}
+                disabled={isAddingCompositeRow || categories.length === 0}
+                className="px-3 py-1.5 rounded-xl border border-dashed border-emerald-400 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-40 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ เพิ่มแถว</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCompPage((p) => Math.max(1, p - 1))}
+                disabled={compPage <= 1}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ก่อนหน้า
+              </button>
+              <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
+                หน้า {compPage} / {compTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCompPage((p) => Math.min(compTotalPages, p + 1))}
+                disabled={compPage >= compTotalPages}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35 font-bold hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                ถัดไป
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

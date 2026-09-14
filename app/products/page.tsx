@@ -24,7 +24,7 @@ import { ActionButton } from '@/components/common/ActionButton'
 import { Product, Unit, RentalType } from '@/lib/types/rental-pos'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { useToast } from '@/components/common/Toast'
-import { StockCountModal } from '@/components/products/StockCountModal'
+import { ProductStockCountView } from '@/components/products/ProductStockCountView'
 import { NewProductModal, ProductRowItem } from '@/components/products/NewProductModal'
 import { DamagedRestoreModal } from '@/components/products/DamagedRestoreModal'
 import { DamagedTransformModal } from '@/components/products/DamagedTransformModal'
@@ -33,7 +33,20 @@ import { ProductCreateView, ProductCreateDraftRow, createInitialDraftRows } from
 import { ProductSettingsView } from '@/components/products/ProductSettingsView'
 import { logger } from '@/lib/utils/logger'
 import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
-import { loadCategoryRules, addCategoryRule, ProductCategoryRule, CalculationType, CALCULATION_OPTIONS } from '@/lib/category-rules-storage'
+import {
+  loadCategories,
+  addCategory,
+  loadCompositeRules,
+  addCompositeRule,
+  ProductCategoryItem,
+  CategoryCompositeRule,
+  loadCategoryRules,
+  addCategoryRule,
+  ProductCategoryRule,
+  CalculationType,
+  CALCULATION_OPTIONS,
+  CALCULATION_LONG_LABELS,
+} from '@/lib/category-rules-storage'
 import { loadUnits, addUnit } from '@/lib/unit-storage'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomDatePicker, parseLocalDate, getLocalDateString } from '@/components/common/CustomDatePicker'
@@ -67,15 +80,19 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [activeViewTab, setActiveViewTab] = useState<'ALL' | 'DAMAGED'>('ALL')
 
-  // Main 3-Tab Workspace State
-  const [activeMainTab, setActiveMainTab] = useState<'LIST' | 'ADD' | 'SETTINGS'>('LIST')
+  // Main 4-Tab Workspace State
+  const [activeMainTab, setActiveMainTab] = useState<'LIST' | 'ADD' | 'SETTINGS' | 'COUNT'>('LIST')
 
-  // Master Units & Category Rules
+  // Master Units, Categories & Composite Rules
   const [masterUnits, setMasterUnits] = useState<Unit[]>([])
+  const [productCategories, setProductCategories] = useState<ProductCategoryItem[]>([])
+  const [compositeRules, setCompositeRules] = useState<CategoryCompositeRule[]>([])
   const [categoryRules, setCategoryRules] = useState<ProductCategoryRule[]>([])
 
   useEffect(() => {
     setMasterUnits(loadUnits())
+    setProductCategories(loadCategories())
+    setCompositeRules(loadCompositeRules())
     setCategoryRules(loadCategoryRules())
   }, [])
 
@@ -104,7 +121,7 @@ export default function ProductsPage() {
     showToast('ล้างแบบร่างเรียบร้อย', 'รีเซ็ตข้อมูลในแบบฟอร์มเพิ่มสินค้าแล้ว', 'INFO')
   }
 
-  // Submit handler for ADD Tab (13-Column Table)
+  // Submit handler for ADD Tab
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isCreatingSubmitting) return
@@ -115,39 +132,20 @@ export default function ProductsPage() {
       return
     }
 
-    // Validate accessory rows: must have accessoryUnitId selected
-    for (const r of validRows) {
-      if (r.isAccessory && !r.accessoryUnitId) {
-        showToast(
-          'กรุณาระบุหน่วยนับอุปกรณ์เสริม',
-          `สินค้า "${r.name}" กำหนดเป็นอุปกรณ์เสริมแต่ยังไม่ได้เลือกหน่วยนับ`,
-          'ERROR'
-        )
-        return
-      }
-    }
-
     try {
       setIsCreatingSubmitting(true)
       const now = Date.now()
 
       const createdProducts: Product[] = validRows.map((r, idx) => {
-        const matchedRule = categoryRules.find((c) => c.id === r.categoryId) || categoryRules[0]
-        const categoryName = matchedRule?.name || 'ทั่วไป'
-        const calcType = matchedRule?.calculationType || 'PER_ROUND'
-        const calcLabel = matchedRule?.calculationLabel || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+        const matchedCat = productCategories.find((c) => c.id === r.categoryId)
+        const categoryName = matchedCat?.name || r.categoryId || 'ทั่วไป'
+        const calcType = (r.calculationType || 'PER_ROUND') as CalculationType
+        const calcLabel = CALCULATION_LONG_LABELS[calcType] || 'ต่อรอบ'
 
-        // Determine Unit: If accessory, use selected accessoryUnit; otherwise use category unit
-        let finalUnitName = matchedRule?.unit || 'ชิ้น'
-        let finalUnitId = matchedRule?.unitId || matchedRule?.id
-
-        if (r.isAccessory && r.accessoryUnitId) {
-          const matchedAccUnit = masterUnits.find((u) => u.id === r.accessoryUnitId)
-          if (matchedAccUnit) {
-            finalUnitName = matchedAccUnit.name
-            finalUnitId = matchedAccUnit.id
-          }
-        }
+        // Determine Unit: lookup from masterUnits by r.unitId or fallback
+        const matchedUnit = masterUnits.find((u) => u.id === r.unitId) || masterUnits[0]
+        const finalUnitName = matchedUnit?.name || 'ชิ้น'
+        const finalUnitId = matchedUnit?.id
 
         // Single Price field mapping based on calculationType
         const priceNum =
@@ -160,21 +158,37 @@ export default function ProductsPage() {
         let normalPriceNum = 0
         let dailyPriceNum = 0
         let rentalTypeVal: RentalType = 'NORMAL'
+        let isChargeableVal = true
+        let requiresReturnVal = true
 
-        if (calcType === 'SALE') {
+        if (calcType === 'NO_CHARGE') {
+          rentPriceNum = 0
+          salePriceNum = null
+          normalPriceNum = 0
+          dailyPriceNum = 0
+          rentalTypeVal = 'NORMAL'
+          isChargeableVal = false
+          requiresReturnVal = true
+        } else if (calcType === 'SALE') {
           salePriceNum = priceNum
           rentalTypeVal = 'SALE'
+          isChargeableVal = true
+          requiresReturnVal = false
         } else if (calcType === 'PER_DAY') {
           rentPriceNum = priceNum
           dailyPriceNum = priceNum != null ? priceNum : 0
           normalPriceNum = priceNum != null ? priceNum : 0
           rentalTypeVal = 'DAILY'
+          isChargeableVal = true
+          requiresReturnVal = true
         } else {
           // PER_ROUND or default
           rentPriceNum = priceNum
           normalPriceNum = priceNum != null ? priceNum : 0
           dailyPriceNum = priceNum != null ? priceNum : 0
           rentalTypeVal = 'NORMAL'
+          isChargeableVal = true
+          requiresReturnVal = true
         }
 
         const totalQty = Number(r.quantityAdded) || 0
@@ -192,8 +206,8 @@ export default function ProductsPage() {
           code: `P${String(now).slice(-6)}${validRows.length > 1 ? `-${idx + 1}` : ''}`,
           name: r.name.trim(),
           category: categoryName,
-          categoryId: matchedRule?.id,
-          categoryRuleId: matchedRule?.id,
+          categoryId: matchedCat?.id,
+          categoryRuleId: matchedCat?.id,
           calculationType: calcType,
           calculationLabel: calcLabel,
           unit: finalUnitName,
@@ -203,7 +217,7 @@ export default function ProductsPage() {
           normalPrice: normalPriceNum,
           dailyPrice: dailyPriceNum,
           rentalType: rentalTypeVal,
-          rentalTypeId: matchedRule?.id,
+          rentalTypeId: matchedCat?.id,
           costPrice: costPriceNum,
           defaultDamageFee: damageFeeNum,
           defaultLossFee: lossFeeNum,
@@ -216,10 +230,9 @@ export default function ProductsPage() {
           maintenanceQuantity: 0,
           minimumStock: minStockNum,
           status: 'ACTIVE',
-          isAccessory: r.isAccessory,
-          // Accessories are NOT free; isChargeable remains true
-          isChargeable: true,
-          requiresReturn: calcType !== 'SALE',
+          isAccessory: r.isAccessory ?? false,
+          isChargeable: isChargeableVal,
+          requiresReturn: requiresReturnVal,
           createdAt: dateStr,
         }
       })
@@ -281,22 +294,27 @@ export default function ProductsPage() {
 
   // Quick Add Category from Create View
   const handleQuickAddCategory = (name: string, calcType: CalculationType, unitId: string): string => {
-    const matchedUnit = masterUnits.find((u) => u.id === unitId) || masterUnits[0]
-    const unitName = matchedUnit?.name || 'ชิ้น'
-    const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === calcType)
-    const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
+    try {
+      const updatedCats = addCategory(name)
+      setProductCategories(updatedCats)
+      const newCat = updatedCats.find((c) => c.name === name)
+      const newCatId = newCat?.id || updatedCats[updatedCats.length - 1]?.id
 
-    const updated = addCategoryRule({
-      name,
-      calculationType: calcType,
-      calculationLabel,
-      unit: unitName,
-      unitId: matchedUnit?.id,
-    })
-    setCategoryRules(updated)
-    showToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่มหมวดหมู่ "${name}" (${unitName}) เรียบร้อยแล้ว`, 'SUCCESS')
-    const newRule = updated.find((r) => r.name === name)
-    return newRule?.id || updated[updated.length - 1]?.id
+      if (newCatId) {
+        const updatedComp = addCompositeRule({
+          categoryId: newCatId,
+          calculationType: calcType,
+          unitId: unitId || undefined,
+        })
+        setCompositeRules(updatedComp)
+      }
+
+      showToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่มหมวดหมู่ "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
+      return newCatId || ''
+    } catch (err: any) {
+      showToast('ไม่สามารถเพิ่มหมวดหมู่ได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+      return ''
+    }
   }
 
   // Selected Product for detail drawer / history modal
@@ -312,8 +330,6 @@ export default function ProductsPage() {
   const [restoreTargetProduct, setRestoreTargetProduct] = useState<Product | null>(null)
   const [transformTargetProduct, setTransformTargetProduct] = useState<Product | null>(null)
 
-  // Stock Count Modal State
-  const [showCountModal, setShowCountModal] = useState(false)
 
   // Delete product confirmation handler
   const handleConfirmDeleteProduct = async () => {
@@ -417,7 +433,7 @@ export default function ProductsPage() {
 
   // Stock Count Handlers
   const handleOpenStockCount = () => {
-    setShowCountModal(true)
+    setActiveMainTab('COUNT')
   }
 
   const openProductHistory = (product: Product, initialTab: 'CURRENT' | 'HISTORY' | 'OVERVIEW' = 'CURRENT') => {
@@ -606,14 +622,11 @@ export default function ProductsPage() {
           >
             ตั้งค่าเสริม
           </ActionButton>
-        </div>
 
-        {/* Quick count stock button on right side */}
-        <div className="flex items-center gap-2">
           <ActionButton
-            onClick={handleOpenStockCount}
-            variant="ghost"
-            icon={<ClipboardList className="text-slate-500 dark:text-slate-400" />}
+            onClick={() => setActiveMainTab('COUNT')}
+            variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
+            icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
           >
             นับสต็อก
           </ActionButton>
@@ -653,6 +666,8 @@ export default function ProductsPage() {
         <ProductCreateView
           rows={createDraftRows}
           setRows={setCreateDraftRows}
+          categories={productCategories}
+          compositeRules={compositeRules}
           categoryRules={categoryRules}
           units={masterUnits}
           isSubmitting={isCreatingSubmitting}
@@ -666,12 +681,40 @@ export default function ProductsPage() {
 
       {activeMainTab === 'SETTINGS' && (
         <ProductSettingsView
+          categories={productCategories}
+          setCategories={setProductCategories}
+          compositeRules={compositeRules}
+          setCompositeRules={setCompositeRules}
           categoryRules={categoryRules}
           setCategoryRules={setCategoryRules}
           masterUnits={masterUnits}
           setMasterUnits={setMasterUnits}
           allProducts={products}
           onShowToast={(title, msg, type) => showToast(title, msg, type)}
+        />
+      )}
+
+      {activeMainTab === 'COUNT' && (
+        <ProductStockCountView
+          products={products}
+          onSuccess={(updated) => {
+            saveStorageProducts(updated)
+            setProducts(updated)
+            const correlationId = generateCorrelationId()
+            const actorUserId = user?.userId || 'system'
+            const actorDisplayName = user?.displayName || 'ระบบ'
+            recordAuditLog({
+              userId: actorUserId,
+              displayName: actorDisplayName,
+              action: 'STOCK_COUNT_UPDATE',
+              entityType: 'STOCK',
+              entityId: 'ALL_PRODUCTS',
+              before: { totalProducts: products.length },
+              after: { totalProducts: updated.length },
+              correlationId,
+            })
+          }}
+          onNavigateToList={() => setActiveMainTab('LIST')}
         />
       )}
 
@@ -731,30 +774,6 @@ export default function ProductsPage() {
           }
         }}
         onShowToast={(title, msg, type) => showToast(title, msg, type)}
-      />
-
-      {/* Centralized Stock Count Modal */}
-      <StockCountModal
-        isOpen={showCountModal}
-        onClose={() => setShowCountModal(false)}
-        products={products}
-        onSuccess={(updated) => {
-          saveStorageProducts(updated)
-          setProducts(updated)
-          const correlationId = generateCorrelationId()
-          const actorUserId = user?.userId || 'system'
-          const actorDisplayName = user?.displayName || 'ระบบ'
-          recordAuditLog({
-            userId: actorUserId,
-            displayName: actorDisplayName,
-            action: 'STOCK_COUNT_UPDATE',
-            entityType: 'STOCK',
-            entityId: 'ALL_PRODUCTS',
-            before: { totalProducts: products.length },
-            after: { totalProducts: updated.length },
-            correlationId,
-          })
-        }}
       />
 
       {/* Damaged Restore Modal */}

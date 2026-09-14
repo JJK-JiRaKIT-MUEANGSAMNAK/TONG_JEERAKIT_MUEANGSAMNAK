@@ -27,7 +27,7 @@ Object.defineProperty(globalThis, 'window', {
 
 import { loadUnits, addUnit, updateUnit, deleteUnit, toggleUnitStatus, DEFAULT_UNITS } from '@/lib/unit-storage'
 import { loadCategoryRules, addCategoryRule, DEFAULT_CATEGORY_RULES } from '@/lib/category-rules-storage'
-import { loadProducts } from '@/lib/product-storage'
+import { loadProducts, applyStockCountAdjustment } from '@/lib/product-storage'
 
 describe('Unit and Category Rules & Products Workspace Tests', () => {
   beforeEach(() => {
@@ -177,27 +177,26 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
     expect(createDraftRows[0].categoryId).toBe(newCat!.id)
   })
 
-  it('12. ProductCreateView defines the 13 columns in exact order and horizontal scroll container', async () => {
+  it('12. ProductCreateView defines columns in exact order and fits screen without horizontal scroll', async () => {
     const fs = await import('fs')
     const path = await import('path')
     const filePath = path.resolve(process.cwd(), 'components/products/ProductCreateView.tsx')
     const content = fs.readFileSync(filePath, 'utf-8')
 
-    // 13 columns in order
+    // Elements in order across 2-line row layout
     const expectedHeaders = [
       'ลำดับ',
       'ชื่อสินค้า',
-      'อุปกรณ์เสริม',
       'หมวดหมู่',
-      'หน่วยนับอุปกรณ์เสริม',
+      'วิธีคิดเงิน',
+      'หน่วย',
+      'จัดการ',
       'ราคา',
-      'ต้นทุน/หน่วย',
+      'ต้นทุน',
       'ค่าชำรุด',
       'ค่าสูญหาย',
       'จำนวนเพิ่ม',
-      'สต็อกขั้นต่ำ',
       'วันที่ทำรายการ',
-      'จัดการ',
     ]
 
     let lastIdx = -1
@@ -208,34 +207,35 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
       lastIdx = idx
     }
 
-    // Horizontal scroll is within the table border container (overflow-x-auto, min-w-[1040px])
-    expect(content.includes('overflow-x-auto')).toBe(true)
-    expect(content.includes('min-w-[1040px]')).toBe(true)
+    // Fits screen width without horizontal scroll, scrolls vertically internally
+    expect(content.includes('overflow-y-auto')).toBe(true)
 
-    // No global accessory checkbox
-    expect(content.includes('type="checkbox"')).toBe(true) // Row-level checkbox exists
+    // Accessory checkbox has been cancelled as requested
+    expect(content.includes('type="checkbox"')).toBe(false)
     expect(content.includes('แถวที่ไม่มีชื่อสินค้าจะไม่ถูกบันทึก')).toBe(true)
   })
 
-  it('13. Row-level accessory toggle enables accessory unit dropdown without muting isChargeable', async () => {
+  it('13. Category selection lookups composite rules and sets calculationType, unitId, and hides price on NO_CHARGE', async () => {
     const { createInitialDraftRows } = await import('@/lib/product-draft-types')
-    const rows = createInitialDraftRows('rule-cat-1', 'unit-4')
+    const rows = createInitialDraftRows('cat-1', 'unit-1', 'PER_ROUND')
     expect(rows.length).toBe(10)
-    expect(rows[0].isAccessory).toBe(false)
-    expect(rows[0].accessoryUnitId).toBe('unit-4')
+    expect(rows[0].categoryId).toBe('cat-1')
+    expect(rows[0].calculationType).toBe('PER_ROUND')
+    expect(rows[0].unitId).toBe('unit-1')
 
-    // Toggle row 0 to accessory
-    rows[0].isAccessory = true
-    rows[0].accessoryUnitId = 'unit-2' // e.g. 'ต้น'
-    rows[0].price = 150
+    // Test NO_CHARGE behavior
+    rows[0].calculationType = 'NO_CHARGE'
+    rows[0].price = 0
+    rows[0].unitId = 'unit-2'
     rows[0].costPrice = 80
     rows[0].damageFee = 50
     rows[0].lossFee = 300
     rows[0].quantityAdded = 10
     rows[0].minimumStock = 5
 
-    expect(rows[0].isAccessory).toBe(true)
-    expect(rows[0].accessoryUnitId).toBe('unit-2')
+    expect(rows[0].calculationType).toBe('NO_CHARGE')
+    expect(rows[0].price).toBe(0)
+    expect(rows[0].unitId).toBe('unit-2')
     expect(rows[0].costPrice).toBe(80)
     expect(rows[0].damageFee).toBe(50)
     expect(rows[0].lossFee).toBe(300)
@@ -295,6 +295,155 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
     expect(draftRow.minimumStock).toBe(4)
     expect(draftRow.quantityAdded).toBe(20)
     expect(draftRow.isAccessory).toBe(true)
+  })
+
+  it('15. COUNT Tab / Stock Count adjustments update inventory accurately and create audit records', () => {
+    const products = loadProducts()
+    const targetProduct = products[0]
+    expect(targetProduct).toBeDefined()
+
+    const initialTotal = targetProduct.totalQuantity
+    const actor = { userId: 'user-test', displayName: 'ผู้ทดสอบ' }
+
+    // Apply stock count adjustment
+    const updatedProducts = applyStockCountAdjustment(
+      targetProduct.id,
+      { normalQty: initialTotal + 5, damagedQty: 2, lostQty: 1 },
+      'ตรวจนับสต็อกประจำไตรมาส',
+      actor
+    )
+
+    const updated = updatedProducts.find((p: any) => p.id === targetProduct.id)
+    expect(updated).toBeDefined()
+    if (!updated) throw new Error('Target product not found')
+    expect(updated.availableQuantity).toBe(initialTotal + 5)
+    expect(updated.damagedQuantity).toBe(2)
+    expect(updated.lostQuantity).toBe(1)
+    expect(updated.totalQuantity).toBe(initialTotal + 5 + 2 + 1)
+  })
+
+  it('16. Categories management (Table 1) adds, updates, and deletes safely', async () => {
+    const { loadCategories, addCategory, updateCategory, deleteCategory } = await import('@/lib/category-rules-storage')
+    const initialCats = loadCategories()
+    expect(initialCats.length).toBeGreaterThan(0)
+
+    const updated = addCategory('เสาค้ำยันพิเศษ')
+    const found = updated.find((c) => c.name === 'เสาค้ำยันพิเศษ')
+    expect(found).toBeDefined()
+
+    const renamed = updateCategory(found!.id, 'เสาค้ำยันพิเศษ V2')
+    expect(renamed.find((c) => c.id === found!.id)?.name).toBe('เสาค้ำยันพิเศษ V2')
+
+    // Safety check: cannot delete if in use
+    expect(() => {
+      deleteCategory(found!.id, () => true)
+    }).toThrow('กำลังถูกใช้งานอยู่')
+
+    // Can delete if not in use
+    const deleted = deleteCategory(found!.id, () => false)
+    expect(deleted.some((c) => c.id === found!.id)).toBe(false)
+  })
+
+  it('17. Composite rules management (Table 3) supports 4 calculation types including NO_CHARGE', async () => {
+    const {
+      loadCompositeRules,
+      addCompositeRule,
+      updateCompositeRule,
+      CALCULATION_OPTIONS,
+    } = await import('@/lib/category-rules-storage')
+
+    // Verify exactly the 4 required calculation types
+    const types = CALCULATION_OPTIONS.map((o) => o.type)
+    expect(types).toContain('PER_ROUND')
+    expect(types).toContain('PER_DAY')
+    expect(types).toContain('SALE')
+    expect(types).toContain('NO_CHARGE')
+
+    const initialRules = loadCompositeRules()
+    expect(Array.isArray(initialRules)).toBe(true)
+
+    const newRule = {
+      categoryId: 'cat-test-1',
+      calculationType: 'NO_CHARGE' as const,
+      unitId: 'unit-4',
+    }
+    const withAdded = addCompositeRule(newRule)
+    const addedItem = withAdded.find((r) => r.categoryId === 'cat-test-1')
+    expect(addedItem).toBeDefined()
+    expect(addedItem?.calculationType).toBe('NO_CHARGE')
+    expect(addedItem?.unitId).toBe('unit-4')
+
+    // Update rule retains values
+    const updatedRules = updateCompositeRule({
+      ...addedItem!,
+      calculationType: 'PER_DAY',
+      unitId: '', // Unit allowed to be empty
+    })
+    const updatedItem = updatedRules.find((r) => r.id === addedItem!.id)
+    expect(updatedItem?.calculationType).toBe('PER_DAY')
+    expect(updatedItem?.unitId).toBe('')
+  })
+
+  it('18. ProductCreateView lookup behavior: autofills on match, leaves empty without fallback if not found, NO_CHARGE sets price=0', async () => {
+    const mockCompositeRules: any[] = [
+      { id: 'comp-1', categoryId: 'cat-beam', calculationType: 'PER_ROUND', unitId: 'unit-sheet' },
+      { id: 'comp-2', categoryId: 'cat-free', calculationType: 'NO_CHARGE', unitId: '' }, // No unit
+    ]
+
+    // 1. Category with rule and unit: autofills both
+    const match1 = mockCompositeRules.find((r) => r.categoryId === 'cat-beam')
+    expect(match1).toBeDefined()
+    expect(match1.calculationType).toBe('PER_ROUND')
+    expect(match1.unitId).toBe('unit-sheet')
+
+    // 2. Category with NO_CHARGE and no unit: calculationType = NO_CHARGE, price = 0, unit empty for user to choose
+    const match2 = mockCompositeRules.find((r) => r.categoryId === 'cat-free')
+    expect(match2).toBeDefined()
+    expect(match2.calculationType).toBe('NO_CHARGE')
+    expect(match2.unitId).toBe('')
+    const isNoCharge = match2.calculationType === 'NO_CHARGE'
+    const finalPrice = isNoCharge ? 0 : 100
+    expect(finalPrice).toBe(0)
+
+    // 3. Category without composite rule: does NOT guess or fallback, leaves user to choose
+    const match3 = mockCompositeRules.find((r) => r.categoryId === 'cat-unknown')
+    expect(match3).toBeUndefined()
+    const autoCalcType = match3 ? match3.calculationType : ''
+    const autoUnitId = match3 ? match3.unitId : ''
+    expect(autoCalcType).toBe('')
+    expect(autoUnitId).toBe('')
+  })
+
+  it('19. ProductSettingsView layout: no outer card frames, 3 standard tables with pagination and fixed heights', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const filePath = path.resolve(process.cwd(), 'components/products/ProductSettingsView.tsx')
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    // No outer Card frame classes
+    expect(content.includes('rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4')).toBe(false)
+
+    // Landscape 2 columns + full width table 3 below
+    expect(content.includes('grid grid-cols-1 lg:grid-cols-2 gap-4')).toBe(true)
+
+    // 3 tables present
+    expect(content.includes('หมวดหมู่สินค้า')).toBe(true)
+    expect(content.includes('หน่วยนับ')).toBe(true)
+    expect(content.includes('ตารางประกอบข้อมูล')).toBe(true)
+
+    // Pagination elements (ก่อนหน้า | หน้า X / Y | ถัดไป)
+    expect(content.includes('ก่อนหน้า')).toBe(true)
+    expect(content.includes('ถัดไป')).toBe(true)
+    expect(content.includes('PAGE_SIZE = 5')).toBe(true)
+
+    // Fixed header
+    expect(content.includes('sticky top-0')).toBe(true)
+
+    // Centers text
+    expect(content.includes('text-center')).toBe(true)
+
+    // + เพิ่มแถว at bottom of table 3
+    expect(content.includes('+ เพิ่มแถว')).toBe(true)
   })
 })
 

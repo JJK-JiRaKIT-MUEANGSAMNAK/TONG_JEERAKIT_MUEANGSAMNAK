@@ -337,6 +337,7 @@ export interface CustomDatePickerProps {
   align?: 'left' | 'right'
   minDate?: Date
   className?: string
+  buttonClassName?: string
   disabled?: boolean
   showClear?: boolean
 }
@@ -352,6 +353,7 @@ export function CustomDatePicker({
   align = 'right',
   minDate: _minDate,
   className = '',
+  buttonClassName = '',
   disabled = false,
   showClear = true,
 }: CustomDatePickerProps) {
@@ -394,8 +396,12 @@ export function CustomDatePicker({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
-        className={`w-full min-w-0 px-2 py-1 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] sm:text-xs font-mono font-semibold flex items-center justify-between gap-1 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs transition-all text-left cursor-pointer ${
-          disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : 'hover:border-slate-300 dark:hover:border-slate-600'
+        className={`w-full min-w-0 flex items-center justify-between gap-1 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs transition-all text-left cursor-pointer ${
+          buttonClassName
+            ? buttonClassName
+            : 'px-2 py-1 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] sm:text-xs font-mono font-semibold hover:border-slate-300 dark:hover:border-slate-600'
+        } ${
+          disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''
         }`}
       >
         <span className={`truncate flex-1 min-w-0 ${value ? 'text-slate-900 dark:text-slate-100 font-bold' : 'text-slate-400 font-normal'}`}>
