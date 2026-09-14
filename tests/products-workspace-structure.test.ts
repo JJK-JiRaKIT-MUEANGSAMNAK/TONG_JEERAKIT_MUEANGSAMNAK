@@ -462,5 +462,23 @@ describe('Unit and Category Rules & Products Workspace Tests', () => {
     // 3) Must not contain ad-hoc purple color classes
     expect(content.includes('purple')).toBe(false)
   })
+
+  it('21. ProductSettingsView aligns toolbars with finance table layout (embedded in single Card)', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const filePath = path.resolve(process.cwd(), 'components/products/ProductSettingsView.tsx')
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    // Single card pattern with embedded toolbar
+    expect(content.includes('rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden')).toBe(true)
+    expect(content.includes('p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2')).toBe(true)
+
+    // Input uses finance styling (bg-slate-50, border-slate-200, rounded-xl)
+    expect(content.includes('bg-slate-50 dark:bg-slate-900 text-xs font-semibold')).toBe(true)
+    expect(content.includes('border border-slate-200 dark:border-slate-700')).toBe(true)
+
+    // Table content area
+    expect(content.includes('flex-1 min-h-0 overflow-auto')).toBe(true)
+  })
 })
 

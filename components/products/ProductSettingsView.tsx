@@ -331,23 +331,16 @@ export function ProductSettingsView({
         {/* ==================================================== */}
         {/* ตารางที่ 1: หมวดหมู่สินค้า */}
         {/* ==================================================== */}
-        <div className="flex flex-col">
-          {/* Header title */}
-          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-              หมวดหมู่สินค้า
-            </h3>
-          </div>
-
-          {/* Toolbar เหนือตาราง: [ ชื่อหมวดหมู่ใหม่... ] [ + เพิ่มหมวดหมู่ ] */}
-          <div className="flex items-center gap-2 mb-2.5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+          {/* Table Toolbar */}
+          <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
             <input
               type="text"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategoryAdd())}
               placeholder="ชื่อหมวดหมู่ใหม่..."
-              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
             />
             <ActionButton
               type="button"
@@ -361,203 +354,194 @@ export function ProductSettingsView({
             </ActionButton>
           </div>
 
-          {/* Table 1: | ลำดับ | หมวดหมู่ | จัดการ | */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
-            <div className="overflow-x-auto">
-              <table className="w-full text-center text-xs border-collapse table-fixed">
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
-                  <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
-                      ลำดับ
-                    </th>
-                    <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                      หมวดหมู่
-                    </th>
-                    <th className="py-2.5 px-2 w-24 text-center">
-                      จัดการ
-                    </th>
+          {/* Table Content */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <table className="w-full text-center text-xs border-collapse table-fixed">
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
+                    ลำดับ
+                  </th>
+                  <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                    หมวดหมู่
+                  </th>
+                  <th className="py-2.5 px-2 w-24 text-center">
+                    จัดการ
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-400 italic">
+                      ยังไม่มีรายการ
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {categories.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-400 italic">
-                        ยังไม่มีรายการ
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedCats.map((cat, idx) => {
-                      const globalIdx = (catPage - 1) * PAGE_SIZE + idx + 1
+                ) : (
+                  paginatedCats.map((cat, idx) => {
+                    const globalIdx = (catPage - 1) * PAGE_SIZE + idx + 1
 
-                      if (catEditId === cat.id) {
-                        return (
-                          <tr key={cat.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
-                            <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                              {globalIdx}
-                            </td>
-                            <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
-                              <input
-                                type="text"
-                                value={catEditName}
-                                onChange={(e) => setCatEditName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategorySaveEdit(cat.id))}
-                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
-                                autoFocus
-                              />
-                            </td>
-                            <td className="py-1 px-2 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleCategorySaveEdit(cat.id)}
-                                  className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
-                                  title="บันทึก"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setCatEditId(null)}
-                                  className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                                  title="ยกเลิก"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      }
-
-                      if (catDeleteConfirmId === cat.id) {
-                        return (
-                          <tr key={cat.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
-                            <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
-                              ยืนยันลบหมวดหมู่ &quot;{cat.name}&quot;?
-                            </td>
-                            <td className="py-1 px-2 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleCategoryDelete(cat.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
-                                >
-                                  ลบ
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setCatDeleteConfirmId(null)}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
-                                >
-                                  ยกเลิก
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      }
-
+                    if (catEditId === cat.id) {
                       return (
-                        <tr key={cat.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <tr key={cat.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
                           <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
                             {globalIdx}
                           </td>
-                          <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
-                            {cat.name}
+                          <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
+                            <input
+                              type="text"
+                              value={catEditName}
+                              onChange={(e) => setCatEditName(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCategorySaveEdit(cat.id))}
+                              className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
+                              autoFocus
+                            />
                           </td>
                           <td className="py-1 px-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => handleCategoryStartEdit(cat)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                title="แก้ไข"
+                                onClick={() => handleCategorySaveEdit(cat.id)}
+                                className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                                title="บันทึก"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
+                                <Check className="w-4 h-4" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setCatDeleteConfirmId(cat.id)
-                                  setCatEditId(null)
-                                }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                                title="ลบ"
+                                onClick={() => setCatEditId(null)}
+                                className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                                title="ยกเลิก"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       )
-                    })
-                  )}
+                    }
 
-                  {/* Padding slots to strictly keep table height fixed (ห้ามยืดตารางตามจำนวนรายการ) */}
-                  {Array.from({ length: catPaddingRows }).map((_, pIdx) => (
-                    <tr key={`cat-pad-${pIdx}`} className="h-10 select-none">
-                      <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
-                        -
-                      </td>
-                      <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
-                        -
-                      </td>
-                      <td className="py-1 px-2 text-center text-transparent">
-                        -
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    if (catDeleteConfirmId === cat.id) {
+                      return (
+                        <tr key={cat.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
+                          <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
+                            ยืนยันลบหมวดหมู่ &quot;{cat.name}&quot;?
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleCategoryDelete(cat.id)}
+                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
+                              >
+                                ลบ
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCatDeleteConfirmId(null)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
 
-            {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
-            <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
-              <ActionButton
-                type="button"
-                onClick={() => setCatPage((p) => Math.max(1, p - 1))}
-                disabled={catPage <= 1}
-                variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
-              >
-                ก่อนหน้า
-              </ActionButton>
-              <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
-                หน้า {catPage} / {catTotalPages}
-              </span>
-              <ActionButton
-                type="button"
-                onClick={() => setCatPage((p) => Math.min(catTotalPages, p + 1))}
-                disabled={catPage >= catTotalPages}
-                variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
-              >
-                ถัดไป
-              </ActionButton>
-            </div>
+                    return (
+                      <tr key={cat.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                          {globalIdx}
+                        </td>
+                        <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
+                          {cat.name}
+                        </td>
+                        <td className="py-1 px-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCategoryStartEdit(cat)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCatDeleteConfirmId(cat.id)
+                                setCatEditId(null)
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+
+                {/* Padding slots to strictly keep table height fixed (ห้ามยืดตารางตามจำนวนรายการ) */}
+                {Array.from({ length: catPaddingRows }).map((_, pIdx) => (
+                  <tr key={`cat-pad-${pIdx}`} className="h-10 select-none">
+                    <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-2 text-center text-transparent">
+                      -
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
+            <ActionButton
+              type="button"
+              onClick={() => setCatPage((p) => Math.max(1, p - 1))}
+              disabled={catPage <= 1}
+              variant="outline"
+              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
+            >
+              ก่อนหน้า
+            </ActionButton>
+            <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
+              หน้า {catPage} / {catTotalPages}
+            </span>
+            <ActionButton
+              type="button"
+              onClick={() => setCatPage((p) => Math.min(catTotalPages, p + 1))}
+              disabled={catPage >= catTotalPages}
+              variant="outline"
+              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
+            >
+              ถัดไป
+            </ActionButton>
           </div>
         </div>
 
         {/* ==================================================== */}
         {/* ตารางที่ 2: หน่วยนับ */}
         {/* ==================================================== */}
-        <div className="flex flex-col">
-          {/* Header title */}
-          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-              หน่วยนับ
-            </h3>
-          </div>
-
-          {/* Toolbar เหนือตาราง: [ ชื่อหน่วยนับใหม่... ] [ + เพิ่มหน่วยนับ ] */}
-          <div className="flex items-center gap-2 mb-2.5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+          {/* Table Toolbar */}
+          <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
             <input
               type="text"
               value={newUnitName}
               onChange={(e) => setNewUnitName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitAdd())}
               placeholder="ชื่อหน่วยนับใหม่..."
-              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
+              className="flex-1 min-w-0 h-8 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-400"
             />
             <ActionButton
               type="button"
@@ -571,180 +555,178 @@ export function ProductSettingsView({
             </ActionButton>
           </div>
 
-          {/* Table 2: | ลำดับ | หน่วยนับ | จัดการ | */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
-            <div className="overflow-x-auto">
-              <table className="w-full text-center text-xs border-collapse table-fixed">
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
-                  <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
-                      ลำดับ
-                    </th>
-                    <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                      หน่วยนับ
-                    </th>
-                    <th className="py-2.5 px-2 w-24 text-center">
-                      จัดการ
-                    </th>
+          {/* Table Content */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <table className="w-full text-center text-xs border-collapse table-fixed">
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
+                    ลำดับ
+                  </th>
+                  <th className="py-2.5 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                    หน่วยนับ
+                  </th>
+                  <th className="py-2.5 px-2 w-24 text-center">
+                    จัดการ
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {masterUnits.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-400 italic">
+                      ยังไม่มีรายการ
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {masterUnits.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-400 italic">
-                        ยังไม่มีรายการ
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedUnits.map((u, idx) => {
-                      const globalIdx = (unitPage - 1) * PAGE_SIZE + idx + 1
+                ) : (
+                  paginatedUnits.map((u, idx) => {
+                    const globalIdx = (unitPage - 1) * PAGE_SIZE + idx + 1
 
-                      if (unitEditId === u.id) {
-                        return (
-                          <tr key={u.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
-                            <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                              {globalIdx}
-                            </td>
-                            <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
-                              <input
-                                type="text"
-                                value={unitEditName}
-                                onChange={(e) => setUnitEditName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitSaveEdit(u.id))}
-                                className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
-                                autoFocus
-                              />
-                            </td>
-                            <td className="py-1 px-2 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleUnitSaveEdit(u.id)}
-                                  className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
-                                  title="บันทึก"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setUnitEditId(null)}
-                                  className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                                  title="ยกเลิก"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      }
-
-                      if (unitDeleteConfirmId === u.id) {
-                        return (
-                          <tr key={u.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
-                            <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
-                              ยืนยันลบหน่วยนับ &quot;{u.name}&quot;?
-                            </td>
-                            <td className="py-1 px-2 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleUnitDelete(u.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
-                                >
-                                  ลบ
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setUnitDeleteConfirmId(null)}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
-                                >
-                                  ยกเลิก
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      }
-
+                    if (unitEditId === u.id) {
                       return (
-                        <tr key={u.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <tr key={u.id} className="h-10 bg-amber-50/50 dark:bg-amber-950/20">
                           <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
                             {globalIdx}
                           </td>
-                          <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
-                            {u.name}
+                          <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700">
+                            <input
+                              type="text"
+                              value={unitEditName}
+                              onChange={(e) => setUnitEditName(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUnitSaveEdit(u.id))}
+                              className="w-full h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-center focus:ring-2 focus:ring-emerald-500 outline-none"
+                              autoFocus
+                            />
                           </td>
                           <td className="py-1 px-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => handleUnitStartEdit(u)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                title="แก้ไข"
+                                onClick={() => handleUnitSaveEdit(u.id)}
+                                className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                                title="บันทึก"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
+                                <Check className="w-4 h-4" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setUnitDeleteConfirmId(u.id)
-                                  setUnitEditId(null)
-                                }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                                title="ลบ"
+                                onClick={() => setUnitEditId(null)}
+                                className="w-7 h-7 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                                title="ยกเลิก"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       )
-                    })
-                  )}
+                    }
 
-                  {/* Padding slots to strictly keep table height fixed */}
-                  {Array.from({ length: unitPaddingRows }).map((_, pIdx) => (
-                    <tr key={`unit-pad-${pIdx}`} className="h-10 select-none">
-                      <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
-                        -
-                      </td>
-                      <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
-                        -
-                      </td>
-                      <td className="py-1 px-2 text-center text-transparent">
-                        -
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    if (unitDeleteConfirmId === u.id) {
+                      return (
+                        <tr key={u.id} className="h-10 bg-red-50/60 dark:bg-red-950/30">
+                          <td colSpan={2} className="py-1 px-3 text-center text-red-600 font-bold text-xs">
+                            ยืนยันลบหน่วยนับ &quot;{u.name}&quot;?
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUnitDelete(u.id)}
+                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs"
+                              >
+                                ลบ
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setUnitDeleteConfirmId(null)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-[11px] cursor-pointer transition-colors"
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
 
-            {/* Pagination Footer: ก่อนหน้า | หน้า X / Y | ถัดไป */}
-            <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
-              <ActionButton
-                type="button"
-                onClick={() => setUnitPage((p) => Math.max(1, p - 1))}
-                disabled={unitPage <= 1}
-                variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
-              >
-                ก่อนหน้า
-              </ActionButton>
-              <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
-                หน้า {unitPage} / {unitTotalPages}
-              </span>
-              <ActionButton
-                type="button"
-                onClick={() => setUnitPage((p) => Math.min(unitTotalPages, p + 1))}
-                disabled={unitPage >= unitTotalPages}
-                variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
-              >
-                ถัดไป
-              </ActionButton>
-            </div>
+                    return (
+                      <tr key={u.id} className="h-10 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-1 px-2 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                          {globalIdx}
+                        </td>
+                        <td className="py-1 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 truncate">
+                          {u.name}
+                        </td>
+                        <td className="py-1 px-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleUnitStartEdit(u)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUnitDeleteConfirmId(u.id)
+                                setUnitEditId(null)
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+
+                {/* Padding slots to strictly keep table height fixed */}
+                {Array.from({ length: unitPaddingRows }).map((_, pIdx) => (
+                  <tr key={`unit-pad-${pIdx}`} className="h-10 select-none">
+                    <td className="py-1 px-2 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-transparent">
+                      -
+                    </td>
+                    <td className="py-1 px-2 text-center text-transparent">
+                      -
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50 dark:bg-slate-850">
+            <ActionButton
+              type="button"
+              onClick={() => setUnitPage((p) => Math.max(1, p - 1))}
+              disabled={unitPage <= 1}
+              variant="outline"
+              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
+            >
+              ก่อนหน้า
+            </ActionButton>
+            <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">
+              หน้า {unitPage} / {unitTotalPages}
+            </span>
+            <ActionButton
+              type="button"
+              onClick={() => setUnitPage((p) => Math.min(unitTotalPages, p + 1))}
+              disabled={unitPage >= unitTotalPages}
+              variant="outline"
+              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
+            >
+              ถัดไป
+            </ActionButton>
           </div>
         </div>
       </div>
