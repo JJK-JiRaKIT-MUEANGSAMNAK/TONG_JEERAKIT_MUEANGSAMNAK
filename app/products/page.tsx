@@ -576,10 +576,11 @@ export default function ProductsPage() {
       {/* AREA 2: กรอบเดียว ครอบแถบ 4 ปุ่มหลัก + พื้นที่ทำงาน */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
-        <div className="p-1.5 sm:p-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-1.5 overflow-x-auto max-w-full shrink-0">
+        <div className="p-1.5 sm:p-2 border-b border-slate-200 dark:border-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-1.5 shrink-0">
           <ActionButton
             onClick={() => setActiveMainTab('LIST')}
             variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
+            className="w-full"
             icon={<Layers className="text-blue-600 dark:text-blue-400" />}
             badge={
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
@@ -593,7 +594,7 @@ export default function ProductsPage() {
           <ActionButton
             onClick={() => setActiveMainTab('ADD')}
             variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
-            className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
+            className={`w-full ${activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}`}
             icon={<PackagePlus />}
             badge={
               createDraftRows.some((r) => r.name.trim() !== '') ? (
@@ -607,6 +608,7 @@ export default function ProductsPage() {
           <ActionButton
             onClick={() => setActiveMainTab('SETTINGS')}
             variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
+            className="w-full"
             icon={<Settings className="text-purple-600 dark:text-purple-400" />}
           >
             ตั้งค่าเสริม
@@ -615,6 +617,7 @@ export default function ProductsPage() {
           <ActionButton
             onClick={() => setActiveMainTab('COUNT')}
             variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
+            className="w-full"
             icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
           >
             นับสต็อก

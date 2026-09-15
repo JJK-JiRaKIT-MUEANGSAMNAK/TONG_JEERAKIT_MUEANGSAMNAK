@@ -192,7 +192,7 @@ export default function BillsPage() {
   }
 
   return (
-    <div className={`h-full min-h-0 flex flex-col overflow-hidden ${activeWorkflow ? 'p-1 sm:p-1.5 md:p-2 gap-1.5 sm:gap-2' : 'p-2.5 sm:p-3 md:p-4'} bg-slate-100 dark:bg-slate-900 text-xs`}>
+    <div className={`h-full min-h-0 flex flex-col overflow-hidden ${activeWorkflow ? 'p-1 sm:p-1.5 md:p-2 gap-1.5 sm:gap-2' : 'p-2.5 sm:p-3 md:p-4 gap-2 sm:gap-2.5'} bg-slate-100 dark:bg-slate-900 text-xs`}>
 
       {activeWorkflow ? (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -225,53 +225,52 @@ export default function BillsPage() {
           )}
         </div>
       ) : (
-        <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
+        <>
           {/* Summary Metrics */}
-          <div className="px-2.5 pt-2 pb-1.5 sm:px-3 sm:pt-2.5 sm:pb-2 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2">
-              <div className="bg-blue-50/60 dark:bg-blue-950/40 p-2 sm:p-2.5 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-blue-700 dark:text-blue-300 font-semibold">กำลังเช่าอยู่</span>
-                  <h3 className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">{rentingCount} บิล</h3>
-                </div>
-                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-blue-600 dark:text-blue-300">
-                  <Clock className="w-3.5 h-3.5" />
-                </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
+            <div className="bg-blue-50/60 dark:bg-blue-950/40 p-2 sm:p-2.5 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-blue-700 dark:text-blue-300 font-semibold">กำลังเช่าอยู่</span>
+                <h3 className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">{rentingCount} บิล</h3>
               </div>
-
-              <div className="bg-red-50/60 dark:bg-red-950/40 p-2 sm:p-2.5 rounded-xl border border-red-200 dark:border-red-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-red-700 dark:text-red-300 font-semibold">เกินกำหนดคืน</span>
-                  <h3 className="text-base sm:text-lg font-black text-red-600 dark:text-red-400 mt-0.5">{overdueCount} บิล</h3>
-                </div>
-                <div className="p-1.5 bg-red-100 dark:bg-red-900/50 rounded-lg text-red-600 dark:text-red-300">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                </div>
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-blue-600 dark:text-blue-300">
+                <Clock className="w-3.5 h-3.5" />
               </div>
+            </div>
 
-              <div className="bg-amber-50/60 dark:bg-amber-950/40 p-2 sm:p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-300 font-semibold">ค้างชำระ</span>
-                  <h3 className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{unpaidCount} บิล</h3>
-                </div>
-                <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-lg text-amber-600 dark:text-amber-300">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                </div>
+            <div className="bg-red-50/60 dark:bg-red-950/40 p-2 sm:p-2.5 rounded-xl border border-red-200 dark:border-red-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-red-700 dark:text-red-300 font-semibold">เกินกำหนดคืน</span>
+                <h3 className="text-base sm:text-lg font-black text-red-600 dark:text-red-400 mt-0.5">{overdueCount} บิล</h3>
               </div>
+              <div className="p-1.5 bg-red-100 dark:bg-red-900/50 rounded-lg text-red-600 dark:text-red-300">
+                <ShieldAlert className="w-3.5 h-3.5" />
+              </div>
+            </div>
 
-              <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-2 sm:p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] sm:text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">ปิดบิลแล้ว</span>
-                  <h3 className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{closedCount} บิล</h3>
-                </div>
-                <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg text-emerald-600 dark:text-emerald-300">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                </div>
+            <div className="bg-amber-50/60 dark:bg-amber-950/40 p-2 sm:p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-300 font-semibold">ค้างชำระ</span>
+                <h3 className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{unpaidCount} บิล</h3>
+              </div>
+              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-lg text-amber-600 dark:text-amber-300">
+                <AlertCircle className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-2 sm:p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">ปิดบิลแล้ว</span>
+                <h3 className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{closedCount} บิล</h3>
+              </div>
+              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg text-emerald-600 dark:text-emerald-300">
+                <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
             </div>
           </div>
 
-          {/* Filter Toolbar */}
+          <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
+            {/* Filter Toolbar */}
           <div className="p-2 sm:p-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col gap-2 shrink-0">
             {/* Row 1: Search & Filter Dropdowns */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -972,7 +971,8 @@ export default function BillsPage() {
         </>
       )}
     </div>
-  )}
+  </>
+)}
 
       <DepositRefundModal
         isOpen={showDepositRefund && !!selectedRowBill}
