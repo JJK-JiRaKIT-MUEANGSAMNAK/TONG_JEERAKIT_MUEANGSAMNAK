@@ -209,15 +209,15 @@ export function SplitTenderEditor({
 
       <div className={`grid grid-cols-3 gap-1.5 rounded-lg p-2 text-center ${overpayment || cashInvalid ? 'bg-red-50 dark:bg-red-950/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
         <div>
-          <span className="block text-[9px] font-bold text-slate-500">ยอดค้าง</span>
+          <span className="block text-[10px] font-bold text-slate-500">ยอดค้าง</span>
           <span className="text-xs font-black tabular-nums">฿{outstandingAmount.toLocaleString('th-TH')}</span>
         </div>
         <div>
-          <span className="block text-[9px] font-bold text-slate-500">ชำระครั้งนี้</span>
+          <span className="block text-[10px] font-bold text-slate-500">ชำระครั้งนี้</span>
           <span className={`text-xs font-black tabular-nums ${overpayment ? 'text-red-600' : 'text-blue-600'}`}>฿{total.toLocaleString('th-TH')}</span>
         </div>
         <div>
-          <span className="block text-[9px] font-bold text-slate-500">คงเหลือ</span>
+          <span className="block text-[10px] font-bold text-slate-500">คงเหลือ</span>
           <span className="text-xs font-black tabular-nums">฿{remaining.toLocaleString('th-TH')}</span>
         </div>
       </div>

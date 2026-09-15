@@ -735,42 +735,42 @@ export default function BillsPage() {
                         onClick={() => setSelectedRowBill(b)}
                         className={`transition-colors cursor-pointer ${selectedRowBill?.id === b.id ? 'bg-emerald-50/50 dark:bg-emerald-900/20 ring-1 ring-inset ring-emerald-500/30' : 'hover:bg-slate-50/80 dark:hover:bg-slate-700/30'}`}
                       >
-                        <td className="px-1 py-1.5 font-bold font-mono text-blue-600 dark:text-blue-400 truncate text-[9.5px] sm:text-[10px]">
+                        <td className="px-1 py-1.5 font-bold font-mono text-blue-600 dark:text-blue-400 truncate text-[10px]">
                           {b.billNo}
                         </td>
                         <td className="px-1 py-1.5 space-y-px overflow-hidden">
-                          <div className="font-bold text-slate-900 dark:text-slate-100 truncate text-[9.5px] sm:text-[10px]">
+                          <div className="font-bold text-slate-900 dark:text-slate-100 truncate text-[10px]">
                             {b.customerName}
                           </div>
-                          <div className="text-slate-500 text-[8.5px] sm:text-[9px] flex items-center gap-0.5 font-mono truncate">
+                          <div className="text-slate-500 text-[10px] flex items-center gap-0.5 font-mono truncate">
                             <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                             <span className="truncate">{b.customerPhone}</span>
                           </div>
                         </td>
-                        <td className="px-1 py-1.5 font-semibold text-slate-700 dark:text-slate-300 truncate text-[9px] sm:text-[10px] font-mono">
+                        <td className="px-1 py-1.5 font-semibold text-slate-700 dark:text-slate-300 truncate text-[10px] font-mono">
                           {b.scheduledReturnDate}
                         </td>
                         <td className="px-1 py-1.5 text-center truncate">
                           {overdue ? (
-                            <span className="px-1 py-0.5 rounded-full bg-red-100 text-red-700 font-black text-[8.5px] sm:text-[9.5px] whitespace-nowrap">
+                            <span className="px-1 py-0.5 rounded-full bg-red-100 text-red-700 font-black text-[10px] whitespace-nowrap">
                               +{overdueDays} วัน
                             </span>
                           ) : (
-                            <span className="text-slate-400 font-mono text-[9px] sm:text-[10px]">-</span>
+                            <span className="text-slate-400 font-mono text-[10px]">-</span>
                           )}
                         </td>
-                        <td className="px-1 py-1.5 text-right font-extrabold text-slate-900 dark:text-slate-100 tabular-nums whitespace-nowrap text-[9.5px] sm:text-[10px]">
+                        <td className="px-1 py-1.5 text-right font-extrabold text-slate-900 dark:text-slate-100 tabular-nums whitespace-nowrap text-[10px]">
                           ฿{b.grandTotal.toLocaleString('th-TH')}
                         </td>
-                        <td className="px-1 py-1.5 text-right text-emerald-600 font-semibold tabular-nums whitespace-nowrap text-[9.5px] sm:text-[10px]">
+                        <td className="px-1 py-1.5 text-right text-emerald-600 font-semibold tabular-nums whitespace-nowrap text-[10px]">
                           ฿{b.paidAmount.toLocaleString('th-TH')}
                         </td>
-                        <td className="px-1 py-1.5 text-right font-bold text-red-600 tabular-nums whitespace-nowrap text-[9.5px] sm:text-[10px]">
+                        <td className="px-1 py-1.5 text-right font-bold text-red-600 tabular-nums whitespace-nowrap text-[10px]">
                           ฿{b.outstandingAmount.toLocaleString('th-TH')}
                         </td>
                         <td className="px-1 py-1.5 text-center truncate">
                           <span
-                            className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold whitespace-nowrap ${
+                            className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
                               b.rentalStatus === 'DRAFT'
                                 ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300'
                                 : b.rentalStatus === 'CANCELLED'
@@ -799,7 +799,7 @@ export default function BillsPage() {
                         </td>
                         <td className="px-1 py-1.5 text-center truncate">
                           <span
-                            className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold whitespace-nowrap ${b.paymentStatus === 'PAID'
+                            className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${b.paymentStatus === 'PAID'
                                 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                                 : b.paymentStatus === 'PARTIAL'
                                   ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'

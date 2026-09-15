@@ -435,7 +435,7 @@ export default function OwnerPermissionsPage() {
                                   </div>
                                   <span>{member.profile?.fullName || 'ไม่ระบุชื่อ'}</span>
                                   {isSelf && (
-                                    <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 text-[9px] font-bold">
+                                    <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
                                       คุณ
                                     </span>
                                   )}

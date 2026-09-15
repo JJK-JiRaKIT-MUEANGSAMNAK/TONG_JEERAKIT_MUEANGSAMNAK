@@ -296,7 +296,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-6 gap-1.5 sm:gap-2 md:gap-1.5 lg:gap-2.5 xl:gap-3">
           {/* 1. รับเงินวันนี้ */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               รับเงินวันนี้
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
@@ -306,7 +306,7 @@ export default function DashboardPage() {
 
           {/* 2. รับเงินเดือนนี้ */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               รับเงินเดือนนี้
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-blue-600 dark:text-blue-400 mt-0.5 truncate">
@@ -316,7 +316,7 @@ export default function DashboardPage() {
 
           {/* 3. ยอดค้างชำระทั้งหมด */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               ยอดค้างชำระทั้งหมด
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5 truncate">
@@ -326,7 +326,7 @@ export default function DashboardPage() {
 
           {/* 4. บิลกำลังเช่า */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               บิลกำลังเช่า
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
@@ -336,7 +336,7 @@ export default function DashboardPage() {
 
           {/* 5. บิลเกินกำหนด */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               บิลเกินกำหนด
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-red-600 dark:text-red-400 mt-0.5 truncate">
@@ -346,7 +346,7 @@ export default function DashboardPage() {
 
           {/* 6. สินค้าพร้อมใช้ */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               สินค้าพร้อมใช้
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
@@ -361,7 +361,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 md:gap-1.5 lg:gap-2.5 xl:gap-3">
           {/* Reserved Stock */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               สินค้าจอง
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 truncate">
@@ -371,7 +371,7 @@ export default function DashboardPage() {
 
           {/* Backorder Pending */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               Backorder รอดำเนินการ
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5 truncate">
@@ -381,7 +381,7 @@ export default function DashboardPage() {
 
           {/* Deposit Held Today */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               มัดจำค้างอยู่วันนี้
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-teal-600 dark:text-teal-400 mt-0.5 truncate">
@@ -391,7 +391,7 @@ export default function DashboardPage() {
 
           {/* Pending Dispatch */}
           <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 md:p-1.5 lg:p-3.5 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs min-w-0">
-            <span className="text-[10px] sm:text-[10.5px] md:text-[9.5px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
+            <span className="text-[10px] sm:text-[10.5px] md:text-[10px] lg:text-[11px] text-slate-500 dark:text-slate-400 font-semibold block truncate">
               รอจัดส่ง
             </span>
             <h3 className="text-sm sm:text-base md:text-xs lg:text-lg xl:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
@@ -457,7 +457,7 @@ export default function DashboardPage() {
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                        <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[9px] md:text-[9.5px] lg:text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">
                           ครบกำหนดคืนวันนี้
                         </span>
                         <span className="font-bold text-xs md:text-xs lg:text-sm text-slate-900 dark:text-slate-100">{b.billNo}</span>
@@ -483,7 +483,7 @@ export default function DashboardPage() {
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                        <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold text-[9px] md:text-[9.5px] lg:text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold text-[10px]">
                           คืนบางส่วน (ยังค้าง)
                         </span>
                         <span className="font-bold text-xs md:text-xs lg:text-sm text-slate-900 dark:text-slate-100">{b.billNo}</span>
@@ -514,7 +514,7 @@ export default function DashboardPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                         <span
-                          className={`px-1.5 py-0.5 rounded font-bold text-[9px] md:text-[9.5px] lg:text-[10px] text-white ${
+                          className={`px-1.5 py-0.5 rounded font-bold text-[10px] text-white ${
                             apt.type === 'DELIVERY' ? 'bg-blue-600' : 'bg-emerald-600'
                           }`}
                         >
@@ -579,7 +579,7 @@ export default function DashboardPage() {
                       <span className="font-bold text-xs md:text-xs lg:text-sm text-slate-900 dark:text-slate-100 block truncate">
                         {d.customerName}
                       </span>
-                      <span className="text-[9px] md:text-[9.5px] lg:text-[10px] text-slate-500 dark:text-slate-400 truncate block">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                         {d.customerPhone} ({d.billCount} บิล)
                       </span>
                     </div>
@@ -628,7 +628,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                       <span className="font-black text-xs md:text-xs lg:text-sm text-red-700 dark:text-red-300">{b.billNo}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-red-600 text-white font-bold text-[9px] md:text-[9.5px] lg:text-[10px]">
+                      <span className="px-1.5 py-0.5 rounded bg-red-600 text-white font-bold text-[10px]">
                         เกิน {b.overdueDays} วัน
                       </span>
                     </div>
@@ -695,7 +695,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 md:px-2 md:py-0.5 lg:px-2.5 lg:py-1 rounded-full font-bold text-[9px] md:text-[9.5px] lg:text-[10px] shrink-0 ${
+                    className={`px-2 py-0.5 md:px-2 md:py-0.5 lg:px-2.5 lg:py-1 rounded-full font-bold text-[10px] shrink-0 ${
                       (p.availableQuantity || 0) === 0
                         ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900'
                         : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-900'

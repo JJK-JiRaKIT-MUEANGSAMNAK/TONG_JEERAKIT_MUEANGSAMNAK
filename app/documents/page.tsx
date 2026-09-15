@@ -702,7 +702,7 @@ export default function DocumentsPage() {
                           </div>
 
                           {isSelected && (
-                            <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[9px] shrink-0">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] shrink-0">
                               พรีวิว
                             </span>
                           )}
@@ -900,7 +900,7 @@ export default function DocumentsPage() {
                                     {tpl.name}
                                   </span>
                                   {tpl.isDefault && (
-                                    <span className="px-1.5 py-0.2 rounded bg-purple-600 text-white font-extrabold text-[9px]">
+                                    <span className="px-1.5 py-0.2 rounded bg-purple-600 text-white font-extrabold text-[10px]">
                                       Default
                                     </span>
                                   )}
@@ -912,7 +912,7 @@ export default function DocumentsPage() {
                             </div>
 
                             {isSelected && (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white font-extrabold text-[9px] shrink-0">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white font-extrabold text-[10px] shrink-0">
                                 พรีวิว
                               </span>
                             )}

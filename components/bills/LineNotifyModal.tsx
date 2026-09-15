@@ -145,7 +145,7 @@ export function LineNotifyModal({ isOpen, onClose, billData }: LineNotifyModalPr
                 {presets.map((preset) => (
                   <button key={preset.type} type="button" onClick={() => setPresetType(preset.type)} className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${presetType === preset.type ? `${preset.activeClass} font-bold shadow-sm` : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
                     <span className="flex items-center gap-1 text-[11px]">{preset.icon}{preset.label}</span>
-                    <span className="text-[9px] opacity-75">{preset.description}</span>
+                    <span className="text-[10px] opacity-75">{preset.description}</span>
                   </button>
                 ))}
               </div>

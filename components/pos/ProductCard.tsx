@@ -63,7 +63,7 @@ export function ProductCard({ product, mode = 'RENT', onClick }: ProductCardProp
           <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wide">
             {product.product_code || product.code}
           </span>
-          <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${typeBadge.classes}`}>
+          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${typeBadge.classes}`}>
             {typeBadge.icon} {typeBadge.label}
           </span>
         </div>

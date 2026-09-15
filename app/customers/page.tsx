@@ -778,7 +778,7 @@ export default function CustomersPage() {
                             alt="ID Card"
                             className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-md border border-slate-300 dark:border-slate-700 transition-transform duration-200 hover:scale-[1.02]"
                           />
-                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[9px] font-bold text-emerald-300 shadow-sm pointer-events-none">
+                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[10px] font-bold text-emerald-300 shadow-sm pointer-events-none">
                             ✓ สำเนาบัตร
                           </div>
                         </div>
@@ -1451,7 +1451,7 @@ export default function CustomersPage() {
                               <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
                                 สำเนาบัตรประจำตัวประชาชน
                               </span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                                 มีไฟล์เอกสารจริง
                               </span>
                             </div>
@@ -1517,7 +1517,7 @@ export default function CustomersPage() {
                             <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
                               {selectedCustomer.companyName || 'ข้อมูลภาษีลูกค้า'}
                             </span>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                               ข้อมูลประกอบ (Metadata)
                             </span>
                           </div>

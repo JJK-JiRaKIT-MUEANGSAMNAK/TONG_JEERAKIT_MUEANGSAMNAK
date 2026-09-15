@@ -316,7 +316,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
                             {item.title}
                           </span>
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold shrink-0 ${getBadgeStyle(
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold shrink-0 ${getBadgeStyle(
                               item
                             )}`}
                           >

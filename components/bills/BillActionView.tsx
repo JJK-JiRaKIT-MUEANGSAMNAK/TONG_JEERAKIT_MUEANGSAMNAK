@@ -1052,7 +1052,7 @@ export function BillActionView({
                             <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 overflow-hidden">
                               <div className="truncate">{item.productName}</div>
                               {item.productCode && (
-                                <span className="text-[9.5px] text-slate-400 font-mono block truncate">
+                                <span className="text-[10px] text-slate-400 font-mono block truncate">
                                   {item.productCode}
                                 </span>
                               )}
@@ -1187,7 +1187,7 @@ export function BillActionView({
                               <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 overflow-hidden">
                                 <div className="truncate">{item.productName}</div>
                                 {item.productCode && (
-                                  <span className="text-[9.5px] text-slate-400 font-mono block truncate">
+                                  <span className="text-[10px] text-slate-400 font-mono block truncate">
                                     {item.productCode}
                                   </span>
                                 )}
@@ -1640,7 +1640,7 @@ export function BillActionView({
                               <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 overflow-hidden">
                                 <div className="truncate">{item.productName}</div>
                                 {item.productCode && (
-                                  <span className="text-[9.5px] text-slate-400 font-mono block truncate">
+                                  <span className="text-[10px] text-slate-400 font-mono block truncate">
                                     {item.productCode}
                                   </span>
                                 )}

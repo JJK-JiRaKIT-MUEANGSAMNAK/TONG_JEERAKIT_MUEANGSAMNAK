@@ -341,7 +341,7 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
                 onChange={(val) => setHeaderRentalDate(val ? getLocalDateString(val) : '')}
                 className="w-full text-xs"
               />
-              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">* ไม่นำไปคำนวณเงิน</span>
+              <span className="text-[10px] text-slate-400 block truncate">* ไม่นำไปคำนวณเงิน</span>
             </div>
 
             {/* Header Return Date (Calendar Popover) */}
@@ -355,7 +355,7 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
                 onChange={(val) => setHeaderReturnDate(val ? getLocalDateString(val) : '')}
                 className="w-full text-xs"
               />
-              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">* ไม่นำไปคำนวณเงิน</span>
+              <span className="text-[10px] text-slate-400 block truncate">* ไม่นำไปคำนวณเงิน</span>
             </div>
 
             {/* Discount Amount */}
@@ -465,9 +465,9 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
                       {/* Product Name */}
                       <td className="px-1.5 py-1 font-bold text-slate-900 dark:text-slate-100 overflow-hidden">
                         <div className="truncate">{item.productName}</div>
-                        <div className="text-[9px] text-slate-400 font-mono flex items-center gap-1 mt-0.5 truncate">
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5 truncate">
                           <span
-                            className={`px-1 py-0.2 rounded font-bold text-[8.5px] sm:text-[9px] shrink-0 ${
+                            className={`px-1 py-0.2 rounded font-bold text-[10px] shrink-0 ${
                               isDaily
                                 ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
                                 : item.rentalType === 'SALE'
