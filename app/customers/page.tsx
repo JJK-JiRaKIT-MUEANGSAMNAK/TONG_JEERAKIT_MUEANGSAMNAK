@@ -402,9 +402,9 @@ export default function CustomersPage() {
     <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2 sm:gap-2.5">
 
       {/* Customer Selector & 7 Sub-tabs Workspace */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 overflow-hidden">
+      <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col ${active360Tab === 'GENERAL' ? 'flex-1 min-h-0' : 'shrink-0'}`}>
         {/* Customer Selector & Add Action Toolbar */}
-        <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+        <div className="p-2.5 sm:p-3 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
           <div className="flex-1 min-w-0">
             <CustomSelect
               value={selectedCustomerId}
@@ -431,7 +431,7 @@ export default function CustomersPage() {
         </div>
 
         {/* Sub-tabs Navigation Bar */}
-        <div className="p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30">
+        <div className={`p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30 shrink-0 ${active360Tab === 'GENERAL' ? 'border-b border-slate-200 dark:border-slate-700' : ''}`}>
           <div className="bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
             <button
               onClick={() => setActive360Tab('GENERAL')}
@@ -518,32 +518,11 @@ export default function CustomersPage() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content Area */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <RefreshCw className="w-8 h-8 animate-spin mb-3" />
-          <span className="text-sm font-semibold">กำลังโหลดข้อมูลลูกค้า...</span>
-        </div>
-      )}
-      {!isLoading && (
-        <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
-          {/* Customer Tab Content Body */}
-          <div
-            className={`flex-1 min-h-0 text-xs flex flex-col overflow-hidden ${
-              active360Tab === 'RENTAL_HISTORY' ||
-              active360Tab === 'PAYMENT_HISTORY' ||
-              active360Tab === 'OUTSTANDING_ITEMS'
-                ? 'p-0 bg-transparent border-0 shadow-none'
-                : 'bg-white dark:bg-slate-800 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm'
-            }`}
-          >
-
-            {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร (Flat Information Layout) */}
-            {active360Tab === 'GENERAL' && (
-              <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden">
-                {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
+        {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร (อยู่ในกรอบเดียวกับแถบแท็บ ไม่ลอยแยก) */}
+        {active360Tab === 'GENERAL' && (
+          <div className="flex-1 min-h-0 text-xs p-3 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
+            {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -910,8 +889,30 @@ export default function CustomersPage() {
                 </div>
               </div>
             )}
+      </div>
 
-            {/* TAB 2: ประวัติการเช่า */}
+      {/* Main Content Area for Other Tabs */}
+      {active360Tab !== 'GENERAL' && (
+        <>
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <RefreshCw className="w-8 h-8 animate-spin mb-3" />
+              <span className="text-sm font-semibold">กำลังโหลดข้อมูลลูกค้า...</span>
+            </div>
+          )}
+          {!isLoading && (
+            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
+              {/* Customer Tab Content Body */}
+              <div
+                className={`flex-1 min-h-0 text-xs flex flex-col overflow-hidden ${
+                  active360Tab === 'RENTAL_HISTORY' ||
+                  active360Tab === 'PAYMENT_HISTORY' ||
+                  active360Tab === 'OUTSTANDING_ITEMS'
+                    ? 'p-0 bg-transparent border-0 shadow-none'
+                    : 'bg-white dark:bg-slate-800 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm'
+                }`}
+              >
+                {/* TAB 2: ประวัติการเช่า */}
             {active360Tab === 'RENTAL_HISTORY' && (
               <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                 {/* 4 Stat Cards */}
@@ -937,7 +938,7 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Filter & Search Bar inside Workspace */}
-                <div className="px-3 sm:px-3.5 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                <div className="px-3 sm:px-3.5 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 border-b border-slate-200 dark:border-slate-700">
                   <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                     ประวัติบิลการเช่าย้อนหลังทั้งหมด ({customerBills.length} รายการ)
                   </h4>
@@ -1136,7 +1137,7 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Header */}
-                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-200 dark:border-slate-700">
                   <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                     ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
                   </h4>
@@ -1290,7 +1291,7 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Header */}
-                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-200 dark:border-slate-700">
                   <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                     รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
                   </h4>
@@ -1639,6 +1640,8 @@ export default function CustomersPage() {
 
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* Add / Edit Customer Modal */}

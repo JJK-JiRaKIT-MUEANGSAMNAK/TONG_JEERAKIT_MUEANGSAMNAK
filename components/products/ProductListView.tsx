@@ -73,7 +73,7 @@ export function ProductListView({
   return (
     <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
       {/* Table Toolbar */}
-      <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 shrink-0">
+      <div className="p-2 sm:p-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* View Mode Tabs: สินค้าทั้งหมด / สินค้าชำรุด */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl shrink-0">
