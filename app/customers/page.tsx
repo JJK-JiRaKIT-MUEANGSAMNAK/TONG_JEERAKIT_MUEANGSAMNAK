@@ -910,45 +910,45 @@ export default function CustomersPage() {
 
             {/* TAB 2: ประวัติการเช่า */}
             {active360Tab === 'RENTAL_HISTORY' && (
-              <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
+              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                 {/* 4 Stat Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs shrink-0">
-                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-600 dark:text-slate-400 block text-[11px] font-bold">จำนวนบิลทั้งหมด</span>
-                    <span className="text-base font-extrabold text-slate-700 dark:text-slate-200">{totalBills} บิล</span>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                    <span className="text-emerald-700 dark:text-emerald-300 block text-[11px] font-bold">ยอดเช่ารวม</span>
-                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">฿{totalSpent.toLocaleString('th-TH')}</span>
-                  </div>
-                  <div className="bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-800">
-                    <span className="text-red-700 dark:text-red-300 block text-[11px] font-bold">หนี้ค้างชำระ</span>
-                    <span className="text-base font-extrabold text-red-600 dark:text-red-400">฿{totalOutstanding.toLocaleString('th-TH')}</span>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-950/40 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800">
-                    <span className="text-blue-700 dark:text-blue-300 block text-[11px] font-bold">กำลังเช่าอยู่</span>
-                    <span className="text-base font-extrabold text-blue-600 dark:text-blue-400">{activeRentingBills} บิล</span>
+                <div className="px-3 pt-2.5 pb-1.5 shrink-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-xs">
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-center h-full">
+                      <span className="text-slate-600 dark:text-slate-400 block text-[10px] font-bold truncate">จำนวนบิลทั้งหมด</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 truncate mt-0.5">{totalBills} บิล</span>
+                    </div>
+                    <div className="bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 flex flex-col justify-center h-full">
+                      <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] font-bold truncate">ยอดเช่ารวม</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 truncate mt-0.5">฿{totalSpent.toLocaleString('th-TH')}</span>
+                    </div>
+                    <div className="bg-red-50/60 dark:bg-red-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-red-200 dark:border-red-800 flex flex-col justify-center h-full">
+                      <span className="text-red-700 dark:text-red-300 block text-[10px] font-bold truncate">หนี้ค้างชำระ</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-red-600 dark:text-red-400 truncate mt-0.5">฿{totalOutstanding.toLocaleString('th-TH')}</span>
+                    </div>
+                    <div className="bg-blue-50/60 dark:bg-blue-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-blue-200 dark:border-blue-800 flex flex-col justify-center h-full">
+                      <span className="text-blue-700 dark:text-blue-300 block text-[10px] font-bold truncate">กำลังเช่าอยู่</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-blue-600 dark:text-blue-400 truncate mt-0.5">{activeRentingBills} บิล</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Workspace Card: พื้นขาวครอบหัวข้อ + ช่องค้นหา + หัวตาราง + พื้นที่รายการ + Pagination เป็น Workspace เดียวต่อเนื่องกัน */}
-                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
-                  {/* Filter & Search Bar inside Workspace */}
-                  <div className="px-3 sm:px-3.5 py-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                      ประวัติบิลการเช่าย้อนหลังทั้งหมด ({customerBills.length} รายการ)
-                    </h4>
-                    <div className="relative w-full sm:w-64">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="ค้นหาเลขที่บิล..."
-                        value={billSearchTerm}
-                        onChange={(e) => setBillSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900 dark:text-slate-100"
-                      />
-                    </div>
+                {/* Filter & Search Bar inside Workspace */}
+                <div className="px-3 sm:px-3.5 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                    ประวัติบิลการเช่าย้อนหลังทั้งหมด ({customerBills.length} รายการ)
+                  </h4>
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาเลขที่บิล..."
+                      value={billSearchTerm}
+                      onChange={(e) => setBillSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900 dark:text-slate-100"
+                    />
                   </div>
+                </div>
 
                   {/* Table Area: Fills 100% of remaining vertical height */}
                   <div
@@ -1109,41 +1109,40 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
-            </div>
             )}
 
             {/* TAB 3: ประวัติการชำระเงิน */}
             {active360Tab === 'PAYMENT_HISTORY' && (
-              <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
+              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs shrink-0">
-                  <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                    <span className="text-emerald-700 dark:text-emerald-300 block text-[11px] font-bold">ยอดรับชำระเงินสะสมรวม</span>
-                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
-                      ฿{customerPayments.filter((p) => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-400 block text-[11px]">จำนวนรายการชำระเงิน</span>
-                    <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                      {customerPayments.length} รายการ
-                    </span>
+                <div className="px-3 pt-2.5 pb-1.5 shrink-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs">
+                    <div className="bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 flex flex-col justify-center h-full">
+                      <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] font-bold truncate">ยอดรับชำระเงินสะสมรวม</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+                        ฿{customerPayments.filter((p) => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-center h-full">
+                      <span className="text-slate-600 dark:text-slate-400 block text-[10px] font-bold truncate">จำนวนรายการชำระเงิน</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                        {customerPayments.length} รายการ
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Unified Table Workspace Card */}
-                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="px-3 sm:px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                      ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
-                    </h4>
-                    {isLoadingCustomerDetails && (
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
-                      </span>
-                    )}
-                  </div>
+                {/* Header */}
+                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                    ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
+                  </h4>
+                  {isLoadingCustomerDetails && (
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
+                    </span>
+                  )}
+                </div>
 
                   {/* Table Area */}
                   <div
@@ -1258,47 +1257,46 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
-            </div>
             )}
 
             {/* TAB 4: สินค้าค้างคืน */}
             {active360Tab === 'OUTSTANDING_ITEMS' && (
-              <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
+              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                 {/* 3 Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs shrink-0">
-                  <div className="bg-amber-50/60 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800">
-                    <span className="text-amber-800 dark:text-amber-300 block text-[11px] font-bold">จำนวนสินค้าค้างคืนรวม</span>
-                    <span className="text-base font-extrabold text-amber-600 dark:text-amber-400">
-                      {customerOutstandingItems.reduce((sum, i) => sum + i.outstandingQuantity, 0)} ชิ้น
-                    </span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-400 block text-[11px]">จำนวนบิลที่มีของค้าง</span>
-                    <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-                      {new Set(customerOutstandingItems.map((i) => i.billId)).size} บิล
-                    </span>
-                  </div>
-                  <div className="bg-red-50/60 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-800">
-                    <span className="text-red-800 dark:text-red-300 block text-[11px] font-bold">สินค้าที่เลยกำหนดคืน</span>
-                    <span className="text-base font-extrabold text-red-600 dark:text-red-400">
-                      {customerOutstandingItems.filter((i) => i.isOverdue).reduce((sum, i) => sum + i.outstandingQuantity, 0)} ชิ้น
-                    </span>
+                <div className="px-3 pt-2.5 pb-1.5 shrink-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 text-xs">
+                    <div className="bg-amber-50/60 dark:bg-amber-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-amber-200 dark:border-amber-800 flex flex-col justify-center h-full">
+                      <span className="text-amber-800 dark:text-amber-300 block text-[10px] font-bold truncate">จำนวนสินค้าค้างคืนรวม</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-amber-600 dark:text-amber-400 truncate mt-0.5">
+                        {customerOutstandingItems.reduce((sum, i) => sum + i.outstandingQuantity, 0)} ชิ้น
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-center h-full">
+                      <span className="text-slate-600 dark:text-slate-400 block text-[10px] font-bold truncate">จำนวนบิลที่มีของค้าง</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                        {new Set(customerOutstandingItems.map((i) => i.billId)).size} บิล
+                      </span>
+                    </div>
+                    <div className="bg-red-50/60 dark:bg-red-950/40 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-red-200 dark:border-red-800 flex flex-col justify-center h-full">
+                      <span className="text-red-800 dark:text-red-300 block text-[10px] font-bold truncate">สินค้าที่เลยกำหนดคืน</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-red-600 dark:text-red-400 truncate mt-0.5">
+                        {customerOutstandingItems.filter((i) => i.isOverdue).reduce((sum, i) => sum + i.outstandingQuantity, 0)} ชิ้น
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Unified Table Workspace Card */}
-                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="px-3 sm:px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                      รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
-                    </h4>
-                    {isLoadingCustomerDetails && (
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
-                      </span>
-                    )}
-                  </div>
+                {/* Header */}
+                <div className="px-3 sm:px-3.5 py-2 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                    รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
+                  </h4>
+                  {isLoadingCustomerDetails && (
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
+                    </span>
+                  )}
+                </div>
 
                   {/* Table Area */}
                   <div
@@ -1411,7 +1409,6 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
-            </div>
             )}
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}
