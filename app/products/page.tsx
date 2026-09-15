@@ -528,8 +528,8 @@ export default function ProductsPage() {
 
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 gap-2.5 sm:gap-3">
-      {/* AREA 1: สรุปภาพรวม + เมนูนำทางหลัก */}
-      <div className="shrink-0 flex flex-col gap-2 sm:gap-2.5">
+      {/* AREA 1: การ์ดสรุปภาพรวม 6 ใบ */}
+      <div className="shrink-0">
         {/* Stock Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-2.5">
           <div
@@ -571,7 +571,10 @@ export default function ProductsPage() {
             <span className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5 block">{lowStockCount.toLocaleString()}</span>
           </div>
         </div>
+      </div>
 
+      {/* AREA 2: แถบ 4 ปุ่มหลัก + พื้นที่ทำงานของ activeMainTab */}
+      <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5">
         {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
         <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex items-center gap-1.5 overflow-x-auto max-w-full shrink-0">
           <ActionButton
@@ -617,86 +620,86 @@ export default function ProductsPage() {
             นับสต็อก
           </ActionButton>
         </div>
+
+        {/* พื้นที่ของ LIST / ADD / SETTINGS / COUNT */}
+        {activeMainTab === 'LIST' && (
+          <ProductListView
+            products={filteredProducts}
+            isLoading={isLoading}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            categoryFilter={categoryFilter}
+            setCategoryFilter={setCategoryFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            activeViewTab={activeViewTab}
+            setActiveViewTab={setActiveViewTab}
+            categories={categories}
+            damagedProductsCount={damagedProductsCount}
+            defaultMinStock={defaultMinStock}
+            onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
+            onTransformDamaged={(p) => setTransformTargetProduct(p)}
+            onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
+            onDeleteProduct={(p) => setProductToDelete(p)}
+          />
+        )}
+
+        {activeMainTab === 'ADD' && (
+          <ProductCreateView
+            rows={createDraftRows}
+            setRows={setCreateDraftRows}
+            categories={productCategories}
+            compositeRules={compositeRules}
+            categoryRules={categoryRules}
+            units={masterUnits}
+            isSubmitting={isCreatingSubmitting}
+            onSubmit={handleCreateSubmit}
+            onClearDraft={handleClearDraft}
+            onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
+            onQuickAddCategory={handleQuickAddCategory}
+            onQuickAddUnit={handleQuickAddUnit}
+          />
+        )}
+
+        {activeMainTab === 'SETTINGS' && (
+          <ProductSettingsView
+            categories={productCategories}
+            setCategories={setProductCategories}
+            compositeRules={compositeRules}
+            setCompositeRules={setCompositeRules}
+            categoryRules={categoryRules}
+            setCategoryRules={setCategoryRules}
+            masterUnits={masterUnits}
+            setMasterUnits={setMasterUnits}
+            allProducts={products}
+            onShowToast={(title, msg, type) => showToast(title, msg, type)}
+          />
+        )}
+
+        {activeMainTab === 'COUNT' && (
+          <ProductStockCountView
+            products={products}
+            onSuccess={(updated) => {
+              saveStorageProducts(updated)
+              setProducts(updated)
+              const correlationId = generateCorrelationId()
+              const actorUserId = user?.userId || 'system'
+              const actorDisplayName = user?.displayName || 'ระบบ'
+              recordAuditLog({
+                userId: actorUserId,
+                displayName: actorDisplayName,
+                action: 'STOCK_COUNT_UPDATE',
+                entityType: 'STOCK',
+                entityId: 'ALL_PRODUCTS',
+                before: { totalProducts: products.length },
+                after: { totalProducts: updated.length },
+                correlationId,
+              })
+            }}
+            onNavigateToList={() => setActiveMainTab('LIST')}
+          />
+        )}
       </div>
-
-      {/* AREA 2: พื้นที่ทำงานของแท็บที่เลือก */}
-      {activeMainTab === 'LIST' && (
-        <ProductListView
-          products={filteredProducts}
-          isLoading={isLoading}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={setCategoryFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          activeViewTab={activeViewTab}
-          setActiveViewTab={setActiveViewTab}
-          categories={categories}
-          damagedProductsCount={damagedProductsCount}
-          defaultMinStock={defaultMinStock}
-          onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
-          onTransformDamaged={(p) => setTransformTargetProduct(p)}
-          onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
-          onDeleteProduct={(p) => setProductToDelete(p)}
-        />
-      )}
-
-      {activeMainTab === 'ADD' && (
-        <ProductCreateView
-          rows={createDraftRows}
-          setRows={setCreateDraftRows}
-          categories={productCategories}
-          compositeRules={compositeRules}
-          categoryRules={categoryRules}
-          units={masterUnits}
-          isSubmitting={isCreatingSubmitting}
-          onSubmit={handleCreateSubmit}
-          onClearDraft={handleClearDraft}
-          onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
-          onQuickAddCategory={handleQuickAddCategory}
-          onQuickAddUnit={handleQuickAddUnit}
-        />
-      )}
-
-      {activeMainTab === 'SETTINGS' && (
-        <ProductSettingsView
-          categories={productCategories}
-          setCategories={setProductCategories}
-          compositeRules={compositeRules}
-          setCompositeRules={setCompositeRules}
-          categoryRules={categoryRules}
-          setCategoryRules={setCategoryRules}
-          masterUnits={masterUnits}
-          setMasterUnits={setMasterUnits}
-          allProducts={products}
-          onShowToast={(title, msg, type) => showToast(title, msg, type)}
-        />
-      )}
-
-      {activeMainTab === 'COUNT' && (
-        <ProductStockCountView
-          products={products}
-          onSuccess={(updated) => {
-            saveStorageProducts(updated)
-            setProducts(updated)
-            const correlationId = generateCorrelationId()
-            const actorUserId = user?.userId || 'system'
-            const actorDisplayName = user?.displayName || 'ระบบ'
-            recordAuditLog({
-              userId: actorUserId,
-              displayName: actorDisplayName,
-              action: 'STOCK_COUNT_UPDATE',
-              entityType: 'STOCK',
-              entityId: 'ALL_PRODUCTS',
-              before: { totalProducts: products.length },
-              after: { totalProducts: updated.length },
-              correlationId,
-            })
-          }}
-          onNavigateToList={() => setActiveMainTab('LIST')}
-        />
-      )}
 
       {/* Centralized New / Manage Product Modal */}
       <NewProductModal

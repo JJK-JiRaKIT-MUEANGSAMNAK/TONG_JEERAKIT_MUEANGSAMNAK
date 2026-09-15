@@ -463,7 +463,7 @@ export function ProductCreateView({
               type="button"
               onClick={handleAddRow}
               variant="dashed"
-              icon={<Plus className="w-3.5 h-3.5" />}
+              icon={<Plus />}
             >
               เพิ่มแถวสินค้า
             </ActionButton>
@@ -585,7 +585,7 @@ export function ProductCreateView({
               type="submit"
               disabled={!quickCatName.trim()}
               variant="primary"
-              icon={<Plus className="w-3.5 h-3.5" />}
+              icon={<Plus />}
             >
               บันทึกและเลือกใช้ทันที
             </ActionButton>
@@ -651,7 +651,7 @@ export function ProductCreateView({
               type="submit"
               disabled={!quickUnitName.trim()}
               variant="primary"
-              icon={<Plus className="w-3.5 h-3.5" />}
+              icon={<Plus />}
             >
               บันทึกและเลือกใช้ทันที
             </ActionButton>

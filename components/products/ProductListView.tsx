@@ -9,6 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
+import { ActionButton } from '@/components/common/ActionButton'
 import { Product } from '@/lib/types/rental-pos'
 import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
@@ -77,39 +78,38 @@ export function ProductListView({
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           {/* View Mode Tabs: สินค้าทั้งหมด / สินค้าชำรุด */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl shrink-0">
-            <button
+            <ActionButton
               type="button"
               onClick={() => setActiveViewTab('ALL')}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
-                activeViewTab === 'ALL'
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+              variant={activeViewTab === 'ALL' ? 'active' : 'ghost'}
             >
               สินค้าทั้งหมด
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => setActiveViewTab('DAMAGED')}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
+              variant={activeViewTab === 'DAMAGED' ? 'active' : 'ghost'}
+              className={
                 activeViewTab === 'DAMAGED'
-                  ? 'bg-amber-500 text-white shadow-xs'
+                  ? '!bg-amber-500 !text-white hover:!bg-amber-600'
                   : 'text-slate-500 hover:text-amber-600 dark:hover:text-amber-400'
-              }`}
+              }
+              badge={
+                damagedProductsCount > 0 ? (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
+                      activeViewTab === 'DAMAGED'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                    }`}
+                  >
+                    {damagedProductsCount}
+                  </span>
+                ) : undefined
+              }
             >
-              <span>สินค้าชำรุด</span>
-              {damagedProductsCount > 0 && (
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                    activeViewTab === 'DAMAGED'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                  }`}
-                >
-                  {damagedProductsCount}
-                </span>
-              )}
-            </button>
+              สินค้าชำรุด
+            </ActionButton>
           </div>
 
           <div className="relative min-w-[140px] flex-1 max-w-xs">

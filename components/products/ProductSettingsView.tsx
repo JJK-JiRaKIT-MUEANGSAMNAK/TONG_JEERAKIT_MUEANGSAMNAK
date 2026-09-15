@@ -347,8 +347,8 @@ export function ProductSettingsView({
               onClick={handleCategoryAdd}
               disabled={!newCatName.trim()}
               variant="primary"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              className="h-8 py-0 px-3 rounded-xl shrink-0"
+              icon={<Plus />}
+              className="shrink-0"
             >
               เพิ่มหมวดหมู่
             </ActionButton>
@@ -510,7 +510,6 @@ export function ProductSettingsView({
               onClick={() => setCatPage((p) => Math.max(1, p - 1))}
               disabled={catPage <= 1}
               variant="outline"
-              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
             >
               ก่อนหน้า
             </ActionButton>
@@ -522,7 +521,6 @@ export function ProductSettingsView({
               onClick={() => setCatPage((p) => Math.min(catTotalPages, p + 1))}
               disabled={catPage >= catTotalPages}
               variant="outline"
-              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
             >
               ถัดไป
             </ActionButton>
@@ -548,8 +546,8 @@ export function ProductSettingsView({
               onClick={handleUnitAdd}
               disabled={!newUnitName.trim()}
               variant="primary"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              className="h-8 py-0 px-3 rounded-xl shrink-0"
+              icon={<Plus />}
+              className="shrink-0"
             >
               เพิ่มหน่วยนับ
             </ActionButton>
@@ -711,7 +709,6 @@ export function ProductSettingsView({
               onClick={() => setUnitPage((p) => Math.max(1, p - 1))}
               disabled={unitPage <= 1}
               variant="outline"
-              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
             >
               ก่อนหน้า
             </ActionButton>
@@ -723,7 +720,6 @@ export function ProductSettingsView({
               onClick={() => setUnitPage((p) => Math.min(unitTotalPages, p + 1))}
               disabled={unitPage >= unitTotalPages}
               variant="outline"
-              className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
             >
               ถัดไป
             </ActionButton>
@@ -978,8 +974,7 @@ export function ProductSettingsView({
                 onClick={handleStartAddCompositeRow}
                 disabled={isAddingCompositeRow || categories.length === 0}
                 variant="dashed"
-                icon={<Plus className="w-3.5 h-3.5" />}
-                className="h-8 py-0 px-3 rounded-xl border-dashed"
+                icon={<Plus />}
               >
                 + เพิ่มแถว
               </ActionButton>
@@ -991,7 +986,6 @@ export function ProductSettingsView({
                 onClick={() => setCompPage((p) => Math.max(1, p - 1))}
                 disabled={compPage <= 1}
                 variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ก่อนหน้า
               </ActionButton>
@@ -1003,7 +997,6 @@ export function ProductSettingsView({
                 onClick={() => setCompPage((p) => Math.min(compTotalPages, p + 1))}
                 disabled={compPage >= compTotalPages}
                 variant="outline"
-                className="h-7 px-2.5 py-0 text-xs rounded-lg font-bold"
               >
                 ถัดไป
               </ActionButton>

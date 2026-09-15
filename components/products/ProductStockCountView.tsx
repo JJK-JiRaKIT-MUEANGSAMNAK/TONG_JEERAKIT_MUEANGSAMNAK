@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomSelect } from '@/components/common/CustomSelect'
+import { ActionButton } from '@/components/common/ActionButton'
 import { Product } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -229,51 +230,43 @@ export function ProductStockCountView({
         {/* Action Buttons: Clear, Print, Save */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {modifiedItems.length > 0 && (
-            <button
+            <ActionButton
               type="button"
               onClick={handleClearAll}
               disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+              variant="outline"
+              icon={<RotateCcw />}
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              <span>ล้างค่า</span>
-            </button>
+              ล้างค่า
+            </ActionButton>
           )}
 
-          <button
+          <ActionButton
             type="button"
             onClick={handlePrintTable}
             disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+            variant="outline"
+            icon={<Printer />}
           >
-            <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
-            <span>พิมพ์ตารางตรวจนับ</span>
-          </button>
+            พิมพ์ตารางตรวจนับ
+          </ActionButton>
 
-          <button
+          <ActionButton
             type="button"
             onClick={handleConfirmStockCount}
             disabled={isSubmitting || modifiedItems.length === 0}
-            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs whitespace-nowrap ${
-              modifiedItems.length > 0
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
-                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
-            }`}
+            variant="primary"
+            icon={isSubmitting ? undefined : <CheckCircle2 />}
+            badge={
+              !isSubmitting && modifiedItems.length > 0 ? (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono font-black">
+                  {modifiedItems.length}
+                </span>
+              ) : undefined
+            }
           >
-            {isSubmitting ? (
-              <span>กำลังบันทึก...</span>
-            ) : (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>บันทึกการนับสต็อก</span>
-                {modifiedItems.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono font-black">
-                    {modifiedItems.length}
-                  </span>
-                )}
-              </>
-            )}
-          </button>
+            {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกการนับสต็อก'}
+          </ActionButton>
         </div>
       </div>
 
