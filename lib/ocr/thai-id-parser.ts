@@ -270,24 +270,21 @@ export function parseThaiIdCardText(rawText: string): ParsedThaiIdCard {
 }
 
 /**
- * Detects if the current execution environment is production or Cloudflare Workers.
+ * Detects if the current execution environment is production.
  */
-export function isProductionOrCloudflare(env: Record<string, string | undefined> = process.env): boolean {
-  if (env.NODE_ENV === 'production') return true
-  if (Boolean(env.CF_PAGES || env.CLOUDFLARE_WORKERS)) return true
-  if (typeof navigator !== 'undefined' && (navigator as any).userAgent === 'Cloudflare-Workers') return true
-  return false
+export function isProduction(env: Record<string, string | undefined> = process.env): boolean {
+  return env.NODE_ENV === 'production'
 }
 
 /**
  * Resolves external OCR service URL.
- * Never defaults to 127.0.0.1 in production or Cloudflare Workers.
+ * Defaults to http://127.0.0.1:8000 in local development.
  */
 export function getOcrServiceUrl(env: Record<string, string | undefined> = process.env): string | null {
   const envUrl = env.OCR_SERVICE_URL?.trim()
   if (envUrl) return envUrl
 
-  if (isProductionOrCloudflare(env)) {
+  if (isProduction(env)) {
     return null
   }
 
@@ -296,9 +293,8 @@ export function getOcrServiceUrl(env: Record<string, string | undefined> = proce
 
 /**
  * Determines whether local Tesseract.js fallback is permitted.
- * Strictly forbidden in production and Cloudflare Workers to prevent memory limits/crashes.
  */
 export function shouldAllowTesseractFallback(env: Record<string, string | undefined> = process.env): boolean {
-  return !isProductionOrCloudflare(env)
+  return !isProduction(env)
 }
 
