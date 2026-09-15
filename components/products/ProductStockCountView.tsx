@@ -291,7 +291,7 @@ export function ProductStockCountView({
               <col className="w-14 sm:w-16" />
               <col className="w-24 sm:w-36" />
             </colgroup>
-            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-[11px] border-b border-slate-200 dark:border-slate-700 shadow-xs">
+            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-xs border-b border-slate-200 dark:border-slate-700 shadow-xs">
               <tr>
                 <th className="w-9 sm:w-10 py-2 px-2 text-center whitespace-nowrap">ลำดับ</th>
                 <th className="py-2 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>

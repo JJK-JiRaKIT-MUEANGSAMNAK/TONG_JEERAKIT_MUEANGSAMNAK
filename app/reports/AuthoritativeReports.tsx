@@ -332,7 +332,7 @@ export default function AuthoritativeReports() {
                 <div className="text-sm text-slate-500">ไม่มีรายการในช่วงเวลาที่เลือก</div>
               ) : (
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="text-xs font-bold">
                     <tr className="text-left border-b">
                       <th className="py-2">วันที่</th>
                       <th>รายรับ</th>

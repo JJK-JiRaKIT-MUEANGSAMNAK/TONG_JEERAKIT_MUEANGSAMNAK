@@ -432,7 +432,7 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
                 <col className="w-[40px] sm:w-[48px]" />  {/* รอบ */}
                 <col className="w-[38px] sm:w-[44px]" />  {/* จัดการ */}
               </colgroup>
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider text-[9px] sm:text-[10px]">
+              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider text-xs">
                 <tr>
                   <th className="px-1.5 py-1.5 whitespace-nowrap">รายการสินค้า</th>
                   <th className="px-1 py-1.5 text-right whitespace-nowrap">คืนแล้ว</th>

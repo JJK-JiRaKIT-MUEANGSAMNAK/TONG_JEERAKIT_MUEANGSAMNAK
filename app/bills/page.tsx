@@ -709,8 +709,8 @@ export default function BillsPage() {
                   <col className="w-[64px] sm:w-[72px] lg:w-[80px]" />
                   <col className="w-[58px] sm:w-[76px] lg:w-[104px]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-[11px]">
-                  <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[8.5px] sm:text-[9.5px]">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
+                  <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-xs">
                     <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">เลขที่บิล</th>
                     <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">ลูกค้า / เบอร์</th>
                     <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">กำหนดคืน</th>

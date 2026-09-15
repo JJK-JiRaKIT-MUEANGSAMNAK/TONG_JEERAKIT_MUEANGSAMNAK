@@ -382,7 +382,7 @@ export default function OwnerPermissionsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 dark:border-[#263954] bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+                      <tr className="border-b border-slate-200 dark:border-[#263954] bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
                         <th className="py-3 px-4">รหัสผู้ใช้</th>
                         <th className="py-3 px-4">ชื่อแสดงผล</th>
                         <th className="py-3 px-4">ชื่อเข้าสู่ระบบ (Username)</th>
@@ -726,7 +726,7 @@ export default function OwnerPermissionsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 dark:border-[#263954] bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+                      <tr className="border-b border-slate-200 dark:border-[#263954] bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
                         <th className="py-3 px-4 w-14 text-center">ลำดับ</th>
                         <th className="py-3 px-4 text-center">การกระทำ</th>
                         <th className="py-3 px-4">หมวดหมู่</th>

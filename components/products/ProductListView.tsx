@@ -160,7 +160,7 @@ export function ProductListView({
           <table className="w-full text-xs text-left border-collapse table-fixed">
             {activeViewTab === 'DAMAGED' ? (
               <>
-                <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-[11px]">
+                <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-xs">
                   <tr>
                     <th className="py-2 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
                     <th className="py-2 px-3 w-28 text-left whitespace-nowrap">หมวดหมู่</th>
@@ -238,7 +238,7 @@ export function ProductListView({
               </>
             ) : (
               <>
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-[11px]">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
                   <tr>
                     <th className="py-2 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
                     <th className="py-2 px-3 w-24 text-left whitespace-nowrap">หมวดหมู่</th>

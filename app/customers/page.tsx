@@ -961,7 +961,7 @@ export default function CustomersPage() {
                   >
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
-                      <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
+                      <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs text-xs">
                         <tr>
                           <th className="w-[145px] min-w-[145px] max-w-[145px] px-2 py-2.5 whitespace-nowrap">เลขที่บิล</th>
                           <th className="px-1.5 sm:px-2 py-2.5 whitespace-nowrap">วันที่ออกบิล</th>
@@ -1155,7 +1155,7 @@ export default function CustomersPage() {
                   >
                     <div className="flex-1 min-h-0 overflow-hidden">
                       <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
-                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs text-xs">
                           <tr>
                           <th className="px-2 py-2.5 whitespace-nowrap">วันที่ชำระ</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">เลขที่ใบเสร็จ / การชำระ</th>
@@ -1309,7 +1309,7 @@ export default function CustomersPage() {
                   >
                     <div className="flex-1 min-h-0 overflow-hidden">
                       <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
-                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs text-xs">
                           <tr>
                           <th className="px-2 py-2.5 whitespace-nowrap">สินค้า</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">เลขที่บิล</th>

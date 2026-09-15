@@ -388,7 +388,7 @@ export default function StatementPage() {
         {/* Table Content */}
         <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-[11px] font-bold z-10">
+            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold z-10">
               <tr>
                 <th className="py-2.5 px-3 whitespace-nowrap w-[130px]">วัน-เวลา</th>
                 <th className="py-2.5 px-3 whitespace-nowrap w-[150px]">เลขที่เอกสาร</th>

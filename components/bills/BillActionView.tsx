@@ -1002,7 +1002,7 @@ export function BillActionView({
                       <col className="w-[104px] sm:w-[125px]" /> {/* วันคืนจริง */}
                       <col className="w-[56px] sm:w-[68px]" />  {/* วันใช้จริง */}
                     </colgroup>
-                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-[9px] sm:text-xs">
+                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-xs">
                       <tr>
                         <th className="py-2 px-1 text-center bg-slate-800 dark:bg-slate-900 text-white">
                           <input
@@ -1155,7 +1155,7 @@ export function BillActionView({
                       <col className="w-[54px] sm:w-[68px]" />  {/* ชำรุด */}
                       <col className="w-[54px] sm:w-[68px]" />  {/* หาย */}
                     </colgroup>
-                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-[9px] sm:text-xs">
+                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-xs">
                       <tr>
                         <th className="py-2 px-1 text-center bg-slate-800 dark:bg-slate-900 text-white">ลำดับ</th>
                         <th className="py-2 px-1.5 bg-slate-800 dark:bg-slate-900 text-white">รายการ</th>
@@ -1579,7 +1579,7 @@ export function BillActionView({
                       <col className="w-[56px] sm:w-[68px]" />  {/* วันใช้จริง */}
                       <col className="w-[72px] sm:w-[88px]" />  {/* รวมค่าเช่า */}
                     </colgroup>
-                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-[9px] sm:text-xs">
+                    <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-xs">
                       <tr>
                         <th className="py-2 px-1 text-center bg-slate-800 dark:bg-slate-900 text-white">
                           <input
