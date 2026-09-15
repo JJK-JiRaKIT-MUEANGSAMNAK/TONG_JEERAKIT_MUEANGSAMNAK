@@ -573,7 +573,7 @@ export default function ProductsPage() {
         </div>
 
         {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full">
           <ActionButton
             onClick={() => setActiveMainTab('LIST')}
             variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}

@@ -202,7 +202,7 @@ export function ProductStockCountView({
   return (
     <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
       {/* Table Toolbar */}
-      <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+      <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
           {/* Search Box */}
           <div className="relative min-w-[140px] flex-1 max-w-xs">
@@ -212,7 +212,7 @@ export function ProductStockCountView({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาชื่อสินค้าที่ต้องการนับ..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-400"
+              className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-400"
             />
           </div>
 
@@ -293,14 +293,14 @@ export function ProductStockCountView({
             </colgroup>
             <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-[11px] border-b border-slate-200 dark:border-slate-700 shadow-xs">
               <tr>
-                <th className="w-9 sm:w-10 py-2.5 px-2 text-center whitespace-nowrap">ลำดับ</th>
-                <th className="py-2.5 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                <th className="w-14 sm:w-16 py-2.5 px-1.5 text-center whitespace-nowrap">ยอดเดิม</th>
-                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-emerald-600 dark:text-emerald-400 whitespace-nowrap">ปกติ</th>
-                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-red-600 dark:text-red-400 whitespace-nowrap">สูญหาย</th>
-                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-amber-600 dark:text-amber-400 whitespace-nowrap">ชำรุด</th>
-                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-purple-600 dark:text-purple-400 whitespace-nowrap">ขายออก</th>
-                <th className="w-24 sm:w-36 py-2.5 px-3 text-left whitespace-nowrap">หมายเหตุ</th>
+                <th className="w-9 sm:w-10 py-2 px-2 text-center whitespace-nowrap">ลำดับ</th>
+                <th className="py-2 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
+                <th className="w-14 sm:w-16 py-2 px-1.5 text-center whitespace-nowrap">ยอดเดิม</th>
+                <th className="w-14 sm:w-16 py-2 px-1 text-center text-emerald-600 dark:text-emerald-400 whitespace-nowrap">ปกติ</th>
+                <th className="w-14 sm:w-16 py-2 px-1 text-center text-red-600 dark:text-red-400 whitespace-nowrap">สูญหาย</th>
+                <th className="w-14 sm:w-16 py-2 px-1 text-center text-amber-600 dark:text-amber-400 whitespace-nowrap">ชำรุด</th>
+                <th className="w-14 sm:w-16 py-2 px-1 text-center text-purple-600 dark:text-purple-400 whitespace-nowrap">ขายออก</th>
+                <th className="w-24 sm:w-36 py-2 px-3 text-left whitespace-nowrap">หมายเหตุ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
