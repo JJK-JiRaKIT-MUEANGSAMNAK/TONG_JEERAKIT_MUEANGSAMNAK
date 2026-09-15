@@ -35,14 +35,12 @@ interface ProductStockCountViewProps {
   products: Product[]
   onSuccess?: (updatedProducts: Product[]) => void
   onNavigateToList?: () => void
-  mainTabs?: React.ReactNode
 }
 
 export function ProductStockCountView({
   products,
   onSuccess,
   onNavigateToList,
-  mainTabs,
 }: ProductStockCountViewProps) {
   const { showToast } = useToast()
   const { user } = useAuth()
@@ -203,13 +201,6 @@ export function ProductStockCountView({
 
   return (
     <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
-      {/* Main Tabs (Task 4) */}
-      {mainTabs && (
-        <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 shrink-0">
-          {mainTabs}
-        </div>
-      )}
-
       {/* Table Toolbar */}
       <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">

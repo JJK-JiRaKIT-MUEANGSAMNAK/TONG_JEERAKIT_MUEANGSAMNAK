@@ -528,197 +528,175 @@ export default function ProductsPage() {
 
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 gap-2.5 sm:gap-3">
-      {/* Stock Summary Cards */}
-      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-2.5">
-        <div
-          onClick={() => setActiveViewTab('ALL')}
-          className={`p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-2xl border shadow-xs cursor-pointer transition-all ${
-            activeViewTab === 'ALL'
-              ? 'border-slate-800 dark:border-slate-400 ring-2 ring-slate-400/20'
-              : 'border-slate-200 dark:border-slate-800 hover:border-slate-400'
-          }`}
-        >
-          <span className="text-[11px] text-slate-500 font-semibold block">สต็อกรวม</span>
-          <span className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5 block">{totalItems.toLocaleString()}</span>
+      {/* AREA 1: สรุปภาพรวม + เมนูนำทางหลัก */}
+      <div className="shrink-0 flex flex-col gap-2 sm:gap-2.5">
+        {/* Stock Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-2.5">
+          <div
+            onClick={() => setActiveViewTab('ALL')}
+            className={`p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-2xl border shadow-xs cursor-pointer transition-all ${
+              activeViewTab === 'ALL'
+                ? 'border-slate-800 dark:border-slate-400 ring-2 ring-slate-400/20'
+                : 'border-slate-200 dark:border-slate-800 hover:border-slate-400'
+            }`}
+          >
+            <span className="text-[11px] text-slate-500 font-semibold block">สต็อกรวม</span>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5 block">{totalItems.toLocaleString()}</span>
+          </div>
+          <div className="p-2.5 sm:p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 shadow-xs">
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold block">พร้อมให้เช่า</span>
+            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{totalAvailable.toLocaleString()}</span>
+          </div>
+          <div className="p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl border border-blue-200/60 dark:border-blue-900/40 shadow-xs">
+            <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold block">อยู่ระหว่างเช่า</span>
+            <span className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5 block">{totalRented.toLocaleString()}</span>
+          </div>
+          <div
+            onClick={() => setActiveViewTab('DAMAGED')}
+            className={`p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border shadow-xs cursor-pointer transition-all ${
+              activeViewTab === 'DAMAGED'
+                ? 'border-amber-500 ring-2 ring-amber-500/30'
+                : 'border-amber-200/60 dark:border-amber-900/40 hover:border-amber-400'
+            }`}
+          >
+            <span className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold block">ชำรุด</span>
+            <span className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{totalDamaged.toLocaleString()}</span>
+          </div>
+          <div className="p-2.5 sm:p-3 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200/60 dark:border-red-900/40 shadow-xs">
+            <span className="text-[11px] text-red-700 dark:text-red-300 font-semibold block">สูญหาย</span>
+            <span className="text-lg font-black text-red-600 dark:text-red-400 mt-0.5 block">{totalLost.toLocaleString()}</span>
+          </div>
+          <div className="p-2.5 sm:p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border border-purple-200/60 dark:border-purple-900/40 shadow-xs">
+            <span className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold block">สินค้าใกล้หมด</span>
+            <span className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5 block">{lowStockCount.toLocaleString()}</span>
+          </div>
         </div>
-        <div className="p-2.5 sm:p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 shadow-xs">
-          <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold block">พร้อมให้เช่า</span>
-          <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{totalAvailable.toLocaleString()}</span>
-        </div>
-        <div className="p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl border border-blue-200/60 dark:border-blue-900/40 shadow-xs">
-          <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold block">อยู่ระหว่างเช่า</span>
-          <span className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5 block">{totalRented.toLocaleString()}</span>
-        </div>
-        <div
-          onClick={() => setActiveViewTab('DAMAGED')}
-          className={`p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border shadow-xs cursor-pointer transition-all ${
-            activeViewTab === 'DAMAGED'
-              ? 'border-amber-500 ring-2 ring-amber-500/30'
-              : 'border-amber-200/60 dark:border-amber-900/40 hover:border-amber-400'
-          }`}
-        >
-          <span className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold block">ชำรุด</span>
-          <span className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{totalDamaged.toLocaleString()}</span>
-        </div>
-        <div className="p-2.5 sm:p-3 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200/60 dark:border-red-900/40 shadow-xs">
-          <span className="text-[11px] text-red-700 dark:text-red-300 font-semibold block">สูญหาย</span>
-          <span className="text-lg font-black text-red-600 dark:text-red-400 mt-0.5 block">{totalLost.toLocaleString()}</span>
-        </div>
-        <div className="p-2.5 sm:p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border border-purple-200/60 dark:border-purple-900/40 shadow-xs">
-          <span className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold block">สินค้าใกล้หมด</span>
-          <span className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5 block">{lowStockCount.toLocaleString()}</span>
+
+        {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
+          <ActionButton
+            onClick={() => setActiveMainTab('LIST')}
+            variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
+            icon={<Layers className="text-blue-600 dark:text-blue-400" />}
+            badge={
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
+                {products.length}
+              </span>
+            }
+          >
+            รายการสินค้า
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => setActiveMainTab('ADD')}
+            variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
+            className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
+            icon={<PackagePlus />}
+            badge={
+              createDraftRows.some((r) => r.name.trim() !== '') ? (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
+              ) : undefined
+            }
+          >
+            เพิ่มสินค้า
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => setActiveMainTab('SETTINGS')}
+            variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
+            icon={<Settings className="text-purple-600 dark:text-purple-400" />}
+          >
+            ตั้งค่าเสริม
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => setActiveMainTab('COUNT')}
+            variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
+            icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
+          >
+            นับสต็อก
+          </ActionButton>
         </div>
       </div>
 
-      {/* Main Tab Workspace View */}
-      {(() => {
-        const mainTabsBar = (
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
-            <ActionButton
-              onClick={() => setActiveMainTab('LIST')}
-              variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
-              icon={<Layers className="text-blue-600 dark:text-blue-400" />}
-              badge={
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
-                  {products.length}
-                </span>
-              }
-            >
-              รายการสินค้า
-            </ActionButton>
+      {/* AREA 2: พื้นที่ทำงานของแท็บที่เลือก */}
+      {activeMainTab === 'LIST' && (
+        <ProductListView
+          products={filteredProducts}
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          activeViewTab={activeViewTab}
+          setActiveViewTab={setActiveViewTab}
+          categories={categories}
+          damagedProductsCount={damagedProductsCount}
+          defaultMinStock={defaultMinStock}
+          onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
+          onTransformDamaged={(p) => setTransformTargetProduct(p)}
+          onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
+          onDeleteProduct={(p) => setProductToDelete(p)}
+        />
+      )}
 
-            <ActionButton
-              onClick={() => setActiveMainTab('ADD')}
-              variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
-              className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
-              icon={<PackagePlus />}
-              badge={
-                createDraftRows.some((r) => r.name.trim() !== '') ? (
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
-                ) : undefined
-              }
-            >
-              เพิ่มสินค้า
-            </ActionButton>
+      {activeMainTab === 'ADD' && (
+        <ProductCreateView
+          rows={createDraftRows}
+          setRows={setCreateDraftRows}
+          categories={productCategories}
+          compositeRules={compositeRules}
+          categoryRules={categoryRules}
+          units={masterUnits}
+          isSubmitting={isCreatingSubmitting}
+          onSubmit={handleCreateSubmit}
+          onClearDraft={handleClearDraft}
+          onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
+          onQuickAddCategory={handleQuickAddCategory}
+          onQuickAddUnit={handleQuickAddUnit}
+        />
+      )}
 
-            <ActionButton
-              onClick={() => setActiveMainTab('SETTINGS')}
-              variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
-              icon={<Settings className="text-purple-600 dark:text-purple-400" />}
-            >
-              ตั้งค่าเสริม
-            </ActionButton>
+      {activeMainTab === 'SETTINGS' && (
+        <ProductSettingsView
+          categories={productCategories}
+          setCategories={setProductCategories}
+          compositeRules={compositeRules}
+          setCompositeRules={setCompositeRules}
+          categoryRules={categoryRules}
+          setCategoryRules={setCategoryRules}
+          masterUnits={masterUnits}
+          setMasterUnits={setMasterUnits}
+          allProducts={products}
+          onShowToast={(title, msg, type) => showToast(title, msg, type)}
+        />
+      )}
 
-            <ActionButton
-              onClick={() => setActiveMainTab('COUNT')}
-              variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
-              icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
-            >
-              นับสต็อก
-            </ActionButton>
-          </div>
-        )
-
-        if (activeMainTab === 'LIST') {
-          return (
-            <ProductListView
-              mainTabs={mainTabsBar}
-              products={filteredProducts}
-              isLoading={isLoading}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              categoryFilter={categoryFilter}
-              setCategoryFilter={setCategoryFilter}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              activeViewTab={activeViewTab}
-              setActiveViewTab={setActiveViewTab}
-              categories={categories}
-              damagedProductsCount={damagedProductsCount}
-              defaultMinStock={defaultMinStock}
-              onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
-              onTransformDamaged={(p) => setTransformTargetProduct(p)}
-              onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
-              onDeleteProduct={(p) => setProductToDelete(p)}
-            />
-          )
-        }
-
-        if (activeMainTab === 'ADD') {
-          return (
-            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
-              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
-                {mainTabsBar}
-              </div>
-              <ProductCreateView
-                rows={createDraftRows}
-                setRows={setCreateDraftRows}
-                categories={productCategories}
-                compositeRules={compositeRules}
-                categoryRules={categoryRules}
-                units={masterUnits}
-                isSubmitting={isCreatingSubmitting}
-                onSubmit={handleCreateSubmit}
-                onClearDraft={handleClearDraft}
-                onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
-                onQuickAddCategory={handleQuickAddCategory}
-                onQuickAddUnit={handleQuickAddUnit}
-              />
-            </div>
-          )
-        }
-
-        if (activeMainTab === 'SETTINGS') {
-          return (
-            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
-              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
-                {mainTabsBar}
-              </div>
-              <ProductSettingsView
-                categories={productCategories}
-                setCategories={setProductCategories}
-                compositeRules={compositeRules}
-                setCompositeRules={setCompositeRules}
-                categoryRules={categoryRules}
-                setCategoryRules={setCategoryRules}
-                masterUnits={masterUnits}
-                setMasterUnits={setMasterUnits}
-                allProducts={products}
-                onShowToast={(title, msg, type) => showToast(title, msg, type)}
-              />
-            </div>
-          )
-        }
-
-        if (activeMainTab === 'COUNT') {
-          return (
-            <ProductStockCountView
-              mainTabs={mainTabsBar}
-              products={products}
-              onSuccess={(updated) => {
-                saveStorageProducts(updated)
-                setProducts(updated)
-                const correlationId = generateCorrelationId()
-                const actorUserId = user?.userId || 'system'
-                const actorDisplayName = user?.displayName || 'ระบบ'
-                recordAuditLog({
-                  userId: actorUserId,
-                  displayName: actorDisplayName,
-                  action: 'STOCK_COUNT_UPDATE',
-                  entityType: 'STOCK',
-                  entityId: 'ALL_PRODUCTS',
-                  before: { totalProducts: products.length },
-                  after: { totalProducts: updated.length },
-                  correlationId,
-                })
-              }}
-              onNavigateToList={() => setActiveMainTab('LIST')}
-            />
-          )
-        }
-
-        return null
-      })()}
+      {activeMainTab === 'COUNT' && (
+        <ProductStockCountView
+          products={products}
+          onSuccess={(updated) => {
+            saveStorageProducts(updated)
+            setProducts(updated)
+            const correlationId = generateCorrelationId()
+            const actorUserId = user?.userId || 'system'
+            const actorDisplayName = user?.displayName || 'ระบบ'
+            recordAuditLog({
+              userId: actorUserId,
+              displayName: actorDisplayName,
+              action: 'STOCK_COUNT_UPDATE',
+              entityType: 'STOCK',
+              entityId: 'ALL_PRODUCTS',
+              before: { totalProducts: products.length },
+              after: { totalProducts: updated.length },
+              correlationId,
+            })
+          }}
+          onNavigateToList={() => setActiveMainTab('LIST')}
+        />
+      )}
 
       {/* Centralized New / Manage Product Modal */}
       <NewProductModal

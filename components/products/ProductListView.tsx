@@ -36,7 +36,6 @@ interface ProductListViewProps {
   onTransformDamaged: (product: Product) => void
   onOpenHistory: (product: Product) => void
   onDeleteProduct: (product: Product) => void
-  mainTabs?: React.ReactNode
 }
 
 export function ProductListView({
@@ -57,7 +56,6 @@ export function ProductListView({
   onTransformDamaged,
   onOpenHistory,
   onDeleteProduct,
-  mainTabs,
 }: ProductListViewProps) {
   const autoFit = useAutoFitPageSize({
     totalItems: products.length,
@@ -74,13 +72,6 @@ export function ProductListView({
   const effectivePaginatedProducts = products.slice(autoFit.startIndex, autoFit.endIndex)
   return (
     <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
-      {/* Main Tabs (if provided) */}
-      {mainTabs && (
-        <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 shrink-0">
-          {mainTabs}
-        </div>
-      )}
-
       {/* Table Toolbar */}
       <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
