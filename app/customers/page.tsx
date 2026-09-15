@@ -529,7 +529,9 @@ export default function CustomersPage() {
           {/* Customer Tab Content Body */}
           <div
             className={`flex-1 min-h-0 text-xs flex flex-col overflow-hidden ${
-              active360Tab === 'RENTAL_HISTORY'
+              active360Tab === 'RENTAL_HISTORY' ||
+              active360Tab === 'PAYMENT_HISTORY' ||
+              active360Tab === 'OUTSTANDING_ITEMS'
                 ? 'p-0 bg-transparent border-0 shadow-none'
                 : 'bg-white dark:bg-slate-800 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm'
             }`}
@@ -911,46 +913,48 @@ export default function CustomersPage() {
               <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
                 {/* 4 Stat Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs shrink-0">
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                    <span className="text-slate-400 block text-[11px]">จำนวนบิลทั้งหมด</span>
-                    <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">{totalBills} บิล</span>
+                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400 block text-[11px] font-bold">จำนวนบิลทั้งหมด</span>
+                    <span className="text-base font-extrabold text-slate-700 dark:text-slate-200">{totalBills} บิล</span>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                    <span className="text-slate-400 block text-[11px]">ยอดเช่ารวม</span>
-                    <span className="text-base font-extrabold text-emerald-500">฿{totalSpent.toLocaleString('th-TH')}</span>
+                  <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                    <span className="text-emerald-700 dark:text-emerald-300 block text-[11px] font-bold">ยอดเช่ารวม</span>
+                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">฿{totalSpent.toLocaleString('th-TH')}</span>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                    <span className="text-slate-400 block text-[11px]">หนี้ค้างชำระ</span>
-                    <span className="text-base font-extrabold text-red-500">฿{totalOutstanding.toLocaleString('th-TH')}</span>
+                  <div className="bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-800">
+                    <span className="text-red-700 dark:text-red-300 block text-[11px] font-bold">หนี้ค้างชำระ</span>
+                    <span className="text-base font-extrabold text-red-600 dark:text-red-400">฿{totalOutstanding.toLocaleString('th-TH')}</span>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                    <span className="text-slate-400 block text-[11px]">กำลังเช่าอยู่</span>
-                    <span className="text-base font-extrabold text-blue-500">{activeRentingBills} บิล</span>
-                  </div>
-                </div>
-
-                {/* Filter & Search Bar */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                    ประวัติบิลการเช่าย้อนหลังทั้งหมด ({customerBills.length} รายการ)
-                  </h4>
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาเลขที่บิล..."
-                      value={billSearchTerm}
-                      onChange={(e) => setBillSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-                    />
+                  <div className="bg-blue-50 dark:bg-blue-950/40 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800">
+                    <span className="text-blue-700 dark:text-blue-300 block text-[11px] font-bold">กำลังเช่าอยู่</span>
+                    <span className="text-base font-extrabold text-blue-600 dark:text-blue-400">{activeRentingBills} บิล</span>
                   </div>
                 </div>
 
-                {/* Table Area: Fills 100% of remaining vertical height */}
-                <div
-                  ref={rentalAutoFit.containerRef}
-                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col"
-                >
+                {/* Workspace Card: พื้นขาวครอบหัวข้อ + ช่องค้นหา + หัวตาราง + พื้นที่รายการ + Pagination เป็น Workspace เดียวต่อเนื่องกัน */}
+                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+                  {/* Filter & Search Bar inside Workspace */}
+                  <div className="px-3 sm:px-3.5 py-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                      ประวัติบิลการเช่าย้อนหลังทั้งหมด ({customerBills.length} รายการ)
+                    </h4>
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="ค้นหาเลขที่บิล..."
+                        value={billSearchTerm}
+                        onChange={(e) => setBillSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Table Area: Fills 100% of remaining vertical height */}
+                  <div
+                    ref={rentalAutoFit.containerRef}
+                    className="flex-1 min-h-0 overflow-hidden flex flex-col"
+                  >
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
                       <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
@@ -1069,7 +1073,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* Pagination footer */}
-                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
                     <div>
                       {customerBills.length > 0 ? (
                         <span>
@@ -1105,6 +1109,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+            </div>
             )}
 
             {/* TAB 3: ประวัติการชำระเงิน */}
@@ -1126,25 +1131,29 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 shrink-0">
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                    ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
-                  </h4>
-                  {isLoadingCustomerDetails && (
-                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
-                    </span>
-                  )}
-                </div>
+                {/* Unified Table Workspace Card */}
+                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+                  {/* Header */}
+                  <div className="px-3 sm:px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                      ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
+                    </h4>
+                    {isLoadingCustomerDetails && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
+                      </span>
+                    )}
+                  </div>
 
-                <div
-                  ref={paymentAutoFit.containerRef}
-                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"
-                >
-                  <div className="flex-1 min-h-0 overflow-hidden">
-                    <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700 uppercase tracking-wider">
+                  {/* Table Area */}
+                  <div
+                    ref={paymentAutoFit.containerRef}
+                    className="flex-1 min-h-0 overflow-hidden flex flex-col"
+                  >
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
+                          <tr>
                           <th className="px-2 py-2.5 whitespace-nowrap">วันที่ชำระ</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">เลขที่ใบเสร็จ / การชำระ</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">เลขที่บิลเช่า</th>
@@ -1213,7 +1222,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* Pagination footer */}
-                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
                     <div>
                       {customerPayments.length > 0 ? (
                         <span>
@@ -1249,6 +1258,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+            </div>
             )}
 
             {/* TAB 4: สินค้าค้างคืน */}
@@ -1276,25 +1286,29 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 shrink-0">
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                    รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
-                  </h4>
-                  {isLoadingCustomerDetails && (
-                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
-                    </span>
-                  )}
-                </div>
+                {/* Unified Table Workspace Card */}
+                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+                  {/* Header */}
+                  <div className="px-3 sm:px-3.5 py-2.5 flex items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-700/60">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                      รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
+                    </h4>
+                    {isLoadingCustomerDetails && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" /> กำลังโหลด...
+                      </span>
+                    )}
+                  </div>
 
-                <div
-                  ref={outstandingAutoFit.containerRef}
-                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"
-                >
-                  <div className="flex-1 min-h-0 overflow-hidden">
-                    <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700 uppercase tracking-wider">
+                  {/* Table Area */}
+                  <div
+                    ref={outstandingAutoFit.containerRef}
+                    className="flex-1 min-h-0 overflow-hidden flex flex-col"
+                  >
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
+                          <tr>
                           <th className="px-2 py-2.5 whitespace-nowrap">สินค้า</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">เลขที่บิล</th>
                           <th className="px-2 py-2.5 whitespace-nowrap">วันที่เช่า</th>
@@ -1361,7 +1375,7 @@ export default function CustomersPage() {
                   </div>
 
                   {/* Pagination footer */}
-                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
                     <div>
                       {customerOutstandingItems.length > 0 ? (
                         <span>
@@ -1397,6 +1411,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+            </div>
             )}
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}

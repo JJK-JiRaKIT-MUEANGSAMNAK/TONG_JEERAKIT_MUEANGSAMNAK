@@ -45,12 +45,12 @@ export function ProductCard({ product, mode = 'RENT', onClick }: ProductCardProp
       ? {
           classes: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
           icon: <Clock className="w-3 h-3" />,
-          label: product.calculationLabel || 'รายวัน',
+          label: 'รายวัน',
         }
       : {
           classes: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
           icon: <RefreshCw className="w-3 h-3" />,
-          label: product.calculationLabel || 'รายรอบ',
+          label: 'รายรอบ',
         }
 
   return (

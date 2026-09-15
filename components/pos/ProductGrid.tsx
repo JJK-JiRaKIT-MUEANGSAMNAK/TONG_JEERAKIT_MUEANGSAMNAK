@@ -80,9 +80,9 @@ export function ProductGrid({
   }, [modeProducts, searchTerm, selectedCategory])
 
   return (
-    <div className="flex flex-col h-full min-h-0 space-y-3">
+    <div className="flex flex-col h-full min-h-0 min-w-0 max-w-full space-y-3 overflow-hidden">
       {/* Header controls: Mode Switcher + Search & Category Dropdown */}
-      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 flex-wrap sm:flex-nowrap">
+      <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 min-w-0 max-w-full">
         {/* Mode Toggle: [ เช่า ] [ ขาย ] */}
         <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
           <button
@@ -112,7 +112,7 @@ export function ProductGrid({
         </div>
 
         {/* Search */}
-        <div className="relative flex-1 min-w-[140px]">
+        <div className="relative flex-1 min-w-[140px] max-w-full">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -124,7 +124,7 @@ export function ProductGrid({
         </div>
 
         {/* Category Dropdown */}
-        <div className="w-36 sm:w-44 shrink-0">
+        <div className="w-full sm:w-44 min-w-0 max-w-full sm:shrink-0 flex-1 sm:flex-initial">
           <CustomSelect
             value={selectedCategory}
             onChange={(val) => setSelectedCategory(String(val))}
@@ -144,7 +144,7 @@ export function ProductGrid({
           <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรองหมวดหมู่สินค้า</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-2.5 overflow-y-auto pr-1">
+        <div className="flex-1 min-h-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-2.5 overflow-y-auto overflow-x-hidden no-scrollbar pr-0.5 pb-2 content-start">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
