@@ -570,132 +570,155 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Main 3 Tabs Navigation: [รายการสินค้า] [เพิ่มสินค้า] [ตั้งค่าเสริม] */}
-      <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
-          <ActionButton
-            onClick={() => setActiveMainTab('LIST')}
-            variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
-            icon={<Layers className="text-blue-600 dark:text-blue-400" />}
-            badge={
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
-                {products.length}
-              </span>
-            }
-          >
-            รายการสินค้า
-          </ActionButton>
-
-          <ActionButton
-            onClick={() => setActiveMainTab('ADD')}
-            variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
-            className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
-            icon={<PackagePlus />}
-            badge={
-              createDraftRows.some((r) => r.name.trim() !== '') ? (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
-              ) : undefined
-            }
-          >
-            เพิ่มสินค้า
-          </ActionButton>
-
-          <ActionButton
-            onClick={() => setActiveMainTab('SETTINGS')}
-            variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
-            icon={<Settings className="text-purple-600 dark:text-purple-400" />}
-          >
-            ตั้งค่าเสริม
-          </ActionButton>
-
-          <ActionButton
-            onClick={() => setActiveMainTab('COUNT')}
-            variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
-            icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
-          >
-            นับสต็อก
-          </ActionButton>
-        </div>
-      </div>
-
       {/* Main Tab Workspace View */}
-      {activeMainTab === 'LIST' && (
-        <ProductListView
-          products={filteredProducts}
-          isLoading={isLoading}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={setCategoryFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          activeViewTab={activeViewTab}
-          setActiveViewTab={setActiveViewTab}
-          categories={categories}
-          damagedProductsCount={damagedProductsCount}
-          defaultMinStock={defaultMinStock}
-          onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
-          onTransformDamaged={(p) => setTransformTargetProduct(p)}
-          onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
-          onDeleteProduct={(p) => setProductToDelete(p)}
-        />
-      )}
+      {(() => {
+        const mainTabsBar = (
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto max-w-full">
+            <ActionButton
+              onClick={() => setActiveMainTab('LIST')}
+              variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
+              icon={<Layers className="text-blue-600 dark:text-blue-400" />}
+              badge={
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
+                  {products.length}
+                </span>
+              }
+            >
+              รายการสินค้า
+            </ActionButton>
 
-      {activeMainTab === 'ADD' && (
-        <ProductCreateView
-          rows={createDraftRows}
-          setRows={setCreateDraftRows}
-          categories={productCategories}
-          compositeRules={compositeRules}
-          categoryRules={categoryRules}
-          units={masterUnits}
-          isSubmitting={isCreatingSubmitting}
-          onSubmit={handleCreateSubmit}
-          onClearDraft={handleClearDraft}
-          onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
-          onQuickAddCategory={handleQuickAddCategory}
-          onQuickAddUnit={handleQuickAddUnit}
-        />
-      )}
+            <ActionButton
+              onClick={() => setActiveMainTab('ADD')}
+              variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
+              className={activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}
+              icon={<PackagePlus />}
+              badge={
+                createDraftRows.some((r) => r.name.trim() !== '') ? (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
+                ) : undefined
+              }
+            >
+              เพิ่มสินค้า
+            </ActionButton>
 
-      {activeMainTab === 'SETTINGS' && (
-        <ProductSettingsView
-          categories={productCategories}
-          setCategories={setProductCategories}
-          compositeRules={compositeRules}
-          setCompositeRules={setCompositeRules}
-          categoryRules={categoryRules}
-          setCategoryRules={setCategoryRules}
-          masterUnits={masterUnits}
-          setMasterUnits={setMasterUnits}
-          allProducts={products}
-          onShowToast={(title, msg, type) => showToast(title, msg, type)}
-        />
-      )}
+            <ActionButton
+              onClick={() => setActiveMainTab('SETTINGS')}
+              variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
+              icon={<Settings className="text-purple-600 dark:text-purple-400" />}
+            >
+              ตั้งค่าเสริม
+            </ActionButton>
 
-      {activeMainTab === 'COUNT' && (
-        <ProductStockCountView
-          products={products}
-          onSuccess={(updated) => {
-            saveStorageProducts(updated)
-            setProducts(updated)
-            const correlationId = generateCorrelationId()
-            const actorUserId = user?.userId || 'system'
-            const actorDisplayName = user?.displayName || 'ระบบ'
-            recordAuditLog({
-              userId: actorUserId,
-              displayName: actorDisplayName,
-              action: 'STOCK_COUNT_UPDATE',
-              entityType: 'STOCK',
-              entityId: 'ALL_PRODUCTS',
-              before: { totalProducts: products.length },
-              after: { totalProducts: updated.length },
-              correlationId,
-            })
-          }}
-          onNavigateToList={() => setActiveMainTab('LIST')}
-        />
-      )}
+            <ActionButton
+              onClick={() => setActiveMainTab('COUNT')}
+              variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
+              icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
+            >
+              นับสต็อก
+            </ActionButton>
+          </div>
+        )
+
+        if (activeMainTab === 'LIST') {
+          return (
+            <ProductListView
+              mainTabs={mainTabsBar}
+              products={filteredProducts}
+              isLoading={isLoading}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              activeViewTab={activeViewTab}
+              setActiveViewTab={setActiveViewTab}
+              categories={categories}
+              damagedProductsCount={damagedProductsCount}
+              defaultMinStock={defaultMinStock}
+              onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
+              onTransformDamaged={(p) => setTransformTargetProduct(p)}
+              onOpenHistory={(p) => openProductHistory(p, 'CURRENT')}
+              onDeleteProduct={(p) => setProductToDelete(p)}
+            />
+          )
+        }
+
+        if (activeMainTab === 'ADD') {
+          return (
+            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
+              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
+                {mainTabsBar}
+              </div>
+              <ProductCreateView
+                rows={createDraftRows}
+                setRows={setCreateDraftRows}
+                categories={productCategories}
+                compositeRules={compositeRules}
+                categoryRules={categoryRules}
+                units={masterUnits}
+                isSubmitting={isCreatingSubmitting}
+                onSubmit={handleCreateSubmit}
+                onClearDraft={handleClearDraft}
+                onNavigateToSettings={() => setActiveMainTab('SETTINGS')}
+                onQuickAddCategory={handleQuickAddCategory}
+                onQuickAddUnit={handleQuickAddUnit}
+              />
+            </div>
+          )
+        }
+
+        if (activeMainTab === 'SETTINGS') {
+          return (
+            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
+              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-wrap sm:flex-nowrap">
+                {mainTabsBar}
+              </div>
+              <ProductSettingsView
+                categories={productCategories}
+                setCategories={setProductCategories}
+                compositeRules={compositeRules}
+                setCompositeRules={setCompositeRules}
+                categoryRules={categoryRules}
+                setCategoryRules={setCategoryRules}
+                masterUnits={masterUnits}
+                setMasterUnits={setMasterUnits}
+                allProducts={products}
+                onShowToast={(title, msg, type) => showToast(title, msg, type)}
+              />
+            </div>
+          )
+        }
+
+        if (activeMainTab === 'COUNT') {
+          return (
+            <ProductStockCountView
+              mainTabs={mainTabsBar}
+              products={products}
+              onSuccess={(updated) => {
+                saveStorageProducts(updated)
+                setProducts(updated)
+                const correlationId = generateCorrelationId()
+                const actorUserId = user?.userId || 'system'
+                const actorDisplayName = user?.displayName || 'ระบบ'
+                recordAuditLog({
+                  userId: actorUserId,
+                  displayName: actorDisplayName,
+                  action: 'STOCK_COUNT_UPDATE',
+                  entityType: 'STOCK',
+                  entityId: 'ALL_PRODUCTS',
+                  before: { totalProducts: products.length },
+                  after: { totalProducts: updated.length },
+                  correlationId,
+                })
+              }}
+              onNavigateToList={() => setActiveMainTab('LIST')}
+            />
+          )
+        }
+
+        return null
+      })()}
 
       {/* Centralized New / Manage Product Modal */}
       <NewProductModal

@@ -401,30 +401,122 @@ export default function CustomersPage() {
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2 sm:gap-2.5">
 
-      {/* Customer Selector & Add Action Toolbar */}
-      <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-        <div className="flex-1 min-w-0">
-          <CustomSelect
-            value={selectedCustomerId}
-            onChange={(val) => setSelectedCustomerId(String(val))}
-            placeholder="กรุณาเลือกลูกค้าเพื่อแสดงข้อมูลลูกค้า (พิมพ์ชื่อ รหัส หรือเบอร์โทร)..."
-            searchable={true}
-            options={customers.map((c) => ({
-              value: c.id,
-              label: c.customerName || '',
-              sublabel: `${c.customerCode || ''} | ${c.phone || ''}`,
-            }))}
-          />
+      {/* Customer Selector & 7 Sub-tabs Workspace */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 overflow-hidden">
+        {/* Customer Selector & Add Action Toolbar */}
+        <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CustomSelect
+              value={selectedCustomerId}
+              onChange={(val) => setSelectedCustomerId(String(val))}
+              placeholder="กรุณาเลือกลูกค้าเพื่อแสดงข้อมูลลูกค้า (พิมพ์ชื่อ รหัส หรือเบอร์โทร)..."
+              searchable={true}
+              options={customers.map((c) => ({
+                value: c.id,
+                label: c.customerName || '',
+                sublabel: `${c.customerCode || ''} | ${c.phone || ''}`,
+              }))}
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              onClick={handleOpenAdd}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ เพิ่มลูกค้าใหม่</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleOpenAdd}
-            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ เพิ่มลูกค้าใหม่</span>
-          </button>
+        {/* Sub-tabs Navigation Bar */}
+        <div className="p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+            <button
+              onClick={() => setActive360Tab('GENERAL')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'GENERAL'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">ข้อมูลทั่วไป & หน้าบัตร</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('RENTAL_HISTORY')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'RENTAL_HISTORY'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <History className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">ประวัติการเช่า</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('PAYMENT_HISTORY')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'PAYMENT_HISTORY'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <CreditCard className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">ประวัติการชำระเงิน</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('OUTSTANDING_ITEMS')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'OUTSTANDING_ITEMS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">สินค้าค้างคืน</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('DOCUMENTS')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'DOCUMENTS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">เอกสารส่วนตัว</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('ANALYTICS')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'ANALYTICS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">สถิติการใช้งาน</span>
+            </button>
+
+            <button
+              onClick={() => setActive360Tab('NOTES_TAGS')}
+              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+                active360Tab === 'NOTES_TAGS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">หมายเหตุ</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -436,96 +528,7 @@ export default function CustomersPage() {
         </div>
       )}
       {!isLoading && (
-        /* แสดงโครงสร้าง 360 และแท็บย่อยเสมอ */
         <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
-
-          {/* Sub-tabs Navigation Bar (Responsive Grid Wrap, No Horizontal Scroll) */}
-          <div className="bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 shrink-0">
-            <button
-              onClick={() => setActive360Tab('GENERAL')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'GENERAL'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ข้อมูลทั่วไป & หน้าบัตร</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('RENTAL_HISTORY')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'RENTAL_HISTORY'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <History className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ประวัติการเช่า</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('PAYMENT_HISTORY')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'PAYMENT_HISTORY'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <CreditCard className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ประวัติการชำระเงิน</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('OUTSTANDING_ITEMS')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'OUTSTANDING_ITEMS'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">สินค้าค้างคืน</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('DOCUMENTS')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'DOCUMENTS'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">เอกสารส่วนตัว</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('ANALYTICS')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'ANALYTICS'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">สถิติการใช้งาน</span>
-            </button>
-
-            <button
-              onClick={() => setActive360Tab('NOTES_TAGS')}
-              className={`w-full px-2 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
-                active360Tab === 'NOTES_TAGS'
-                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Tag className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">หมายเหตุ</span>
-            </button>
-          </div>
-
           {/* Customer Tab Content Body */}
           <div
             className={`flex-1 min-h-0 text-xs flex flex-col overflow-hidden ${

@@ -35,12 +35,14 @@ interface ProductStockCountViewProps {
   products: Product[]
   onSuccess?: (updatedProducts: Product[]) => void
   onNavigateToList?: () => void
+  mainTabs?: React.ReactNode
 }
 
 export function ProductStockCountView({
   products,
   onSuccess,
   onNavigateToList,
+  mainTabs,
 }: ProductStockCountViewProps) {
   const { showToast } = useToast()
   const { user } = useAuth()
@@ -200,24 +202,31 @@ export function ProductStockCountView({
   })
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-2.5 sm:gap-3 overflow-hidden">
-      {/* Top Filter & Action Bar */}
-      <div className="shrink-0 p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+    <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
+      {/* Main Tabs (Task 4) */}
+      {mainTabs && (
+        <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 shrink-0">
+          {mainTabs}
+        </div>
+      )}
+
+      {/* Table Toolbar */}
+      <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="relative min-w-[140px] flex-1 max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาชื่อสินค้าที่ต้องการนับ..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-slate-400"
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-400"
             />
           </div>
 
           {/* Category Dropdown */}
-          <div className="w-48 shrink-0">
+          <div className="w-40 sm:w-48 shrink-0">
             <CustomSelect
               value={selectedCategory}
               onChange={(val) => setSelectedCategory(val)}
@@ -227,13 +236,13 @@ export function ProductStockCountView({
         </div>
 
         {/* Action Buttons: Clear, Print, Save */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {modifiedItems.length > 0 && (
             <button
               type="button"
               onClick={handleClearAll}
               disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               <span>ล้างค่า</span>
@@ -244,9 +253,9 @@ export function ProductStockCountView({
             type="button"
             onClick={handlePrintTable}
             disabled={isSubmitting}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
           >
-            <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+            <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
             <span>พิมพ์ตารางตรวจนับ</span>
           </button>
 
@@ -254,7 +263,7 @@ export function ProductStockCountView({
             type="button"
             onClick={handleConfirmStockCount}
             disabled={isSubmitting || modifiedItems.length === 0}
-            className={`px-4 py-1.5 rounded-xl font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs whitespace-nowrap ${
               modifiedItems.length > 0
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
@@ -264,7 +273,7 @@ export function ProductStockCountView({
               <span>กำลังบันทึก...</span>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>บันทึกการนับสต็อก</span>
                 {modifiedItems.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono font-black">
@@ -277,12 +286,12 @@ export function ProductStockCountView({
         </div>
       </div>
 
-      {/* Main Stock Count Table Card */}
-      <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col overflow-hidden">
+      {/* Main Stock Count Table Card Content */}
+      <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <table className="w-full text-left border-collapse table-fixed text-xs">
             <colgroup>
-              <col className="w-9" />
+              <col className="w-9 sm:w-10" />
               <col className="w-auto" />
               <col className="w-14 sm:w-16" />
               <col className="w-14 sm:w-16" />
@@ -291,16 +300,16 @@ export function ProductStockCountView({
               <col className="w-14 sm:w-16" />
               <col className="w-24 sm:w-36" />
             </colgroup>
-            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs border-b border-slate-200 dark:border-slate-700 shadow-xs">
+            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-[11px] border-b border-slate-200 dark:border-slate-700 shadow-xs">
               <tr>
-                <th className="w-9 sm:w-10 px-1 py-2 text-center whitespace-nowrap">ลำดับ</th>
-                <th className="px-2 py-2 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                <th className="w-14 sm:w-16 px-1 py-2 text-center whitespace-nowrap">ยอดเดิม</th>
-                <th className="w-14 sm:w-16 px-1 py-2 text-center text-emerald-700 dark:text-emerald-400 whitespace-nowrap">ปกติ</th>
-                <th className="w-14 sm:w-16 px-1 py-2 text-center text-red-600 dark:text-red-400 whitespace-nowrap">สูญหาย</th>
-                <th className="w-14 sm:w-16 px-1 py-2 text-center text-amber-600 dark:text-amber-400 whitespace-nowrap">ชำรุด</th>
-                <th className="w-14 sm:w-16 px-1 py-2 text-center text-purple-600 dark:text-purple-400 whitespace-nowrap">ขายออก</th>
-                <th className="w-24 sm:w-36 px-2 py-2 text-left whitespace-nowrap">หมายเหตุ</th>
+                <th className="w-9 sm:w-10 py-2.5 px-2 text-center whitespace-nowrap">ลำดับ</th>
+                <th className="py-2.5 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
+                <th className="w-14 sm:w-16 py-2.5 px-1.5 text-center whitespace-nowrap">ยอดเดิม</th>
+                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-emerald-600 dark:text-emerald-400 whitespace-nowrap">ปกติ</th>
+                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-red-600 dark:text-red-400 whitespace-nowrap">สูญหาย</th>
+                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-amber-600 dark:text-amber-400 whitespace-nowrap">ชำรุด</th>
+                <th className="w-14 sm:w-16 py-2.5 px-1 text-center text-purple-600 dark:text-purple-400 whitespace-nowrap">ขายออก</th>
+                <th className="w-24 sm:w-36 py-2.5 px-3 text-left whitespace-nowrap">หมายเหตุ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
@@ -407,7 +416,7 @@ export function ProductStockCountView({
         </div>
 
         {/* Workspace Footer Bar */}
-        <div className="shrink-0 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="shrink-0 px-3 py-2 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="text-slate-500 dark:text-slate-400 font-medium">
             แสดง {filteredItems.length} รายการ {modifiedItems.length > 0 && (
               <span className="text-purple-600 dark:text-purple-400 font-bold ml-1">
@@ -416,18 +425,18 @@ export function ProductStockCountView({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={handleConfirmStockCount}
               disabled={isSubmitting || modifiedItems.length === 0}
-              className={`px-4 py-1.5 rounded-xl font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs whitespace-nowrap ${
                 modifiedItems.length > 0
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
                   : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
               }`}
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>บันทึกการนับสต็อก</span>
             </button>
           </div>

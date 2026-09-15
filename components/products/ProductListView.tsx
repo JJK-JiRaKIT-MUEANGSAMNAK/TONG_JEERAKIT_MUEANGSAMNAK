@@ -36,6 +36,7 @@ interface ProductListViewProps {
   onTransformDamaged: (product: Product) => void
   onOpenHistory: (product: Product) => void
   onDeleteProduct: (product: Product) => void
+  mainTabs?: React.ReactNode
 }
 
 export function ProductListView({
@@ -56,6 +57,7 @@ export function ProductListView({
   onTransformDamaged,
   onOpenHistory,
   onDeleteProduct,
+  mainTabs,
 }: ProductListViewProps) {
   const autoFit = useAutoFitPageSize({
     totalItems: products.length,
@@ -71,18 +73,25 @@ export function ProductListView({
 
   const effectivePaginatedProducts = products.slice(autoFit.startIndex, autoFit.endIndex)
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-2.5 sm:gap-3 overflow-hidden">
-      {/* Filter / Search & Action Bar */}
-      <div className="shrink-0 p-2 sm:p-2.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+    <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
+      {/* Main Tabs (if provided) */}
+      {mainTabs && (
+        <div className="p-2 sm:p-2.5 border-b border-slate-100 dark:border-slate-700 shrink-0">
+          {mainTabs}
+        </div>
+      )}
+
+      {/* Table Toolbar */}
+      <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
           {/* View Mode Tabs: สินค้าทั้งหมด / สินค้าชำรุด */}
-          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl shrink-0">
             <button
               type="button"
               onClick={() => setActiveViewTab('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
                 activeViewTab === 'ALL'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -91,7 +100,7 @@ export function ProductListView({
             <button
               type="button"
               onClick={() => setActiveViewTab('DAMAGED')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeViewTab === 'DAMAGED'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-slate-500 hover:text-amber-600 dark:hover:text-amber-400'
@@ -112,18 +121,18 @@ export function ProductListView({
             </button>
           </div>
 
-          <div className="relative flex-1 min-w-[130px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="relative min-w-[140px] flex-1 max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={activeViewTab === 'DAMAGED' ? 'ค้นหาชื่อสินค้าชำรุด...' : 'ค้นหาชื่อสินค้า...'}
-              className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs border border-slate-200 dark:border-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          <div className="w-28 sm:w-32 md:w-36 shrink-0">
+          <div className="w-32 sm:w-36 shrink-0">
             <CustomSelect
               value={categoryFilter}
               onChange={(val) => setCategoryFilter(String(val))}
@@ -135,7 +144,7 @@ export function ProductListView({
           </div>
 
           {activeViewTab === 'ALL' && (
-            <div className="w-28 sm:w-32 md:w-36 shrink-0">
+            <div className="w-32 sm:w-36 shrink-0">
               <CustomSelect
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(String(val))}
@@ -154,47 +163,47 @@ export function ProductListView({
       {/* Products Table Area */}
       <div
         ref={autoFit.containerRef}
-        className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden"
+        className="flex-1 min-h-0 min-w-0 flex flex-col justify-between overflow-hidden"
       >
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <table className="w-full text-xs text-left border-collapse table-fixed">
             {activeViewTab === 'DAMAGED' ? (
               <>
-                <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs">
+                <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-900 text-white font-bold border-b border-slate-700 shadow-xs text-[11px]">
                   <tr>
-                    <th className="py-2 px-2.5 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                    <th className="py-2 px-1.5 w-28 text-left whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-2 px-1.5 w-24 text-center whitespace-nowrap bg-amber-900/80 text-amber-200 font-black">จำนวนชำรุด</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">กำลังเช่า</th>
-                    <th className="py-2 px-1.5 w-36 text-center whitespace-nowrap">การจัดการ</th>
+                    <th className="py-2.5 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
+                    <th className="py-2.5 px-3 w-28 text-left whitespace-nowrap">หมวดหมู่</th>
+                    <th className="py-2.5 px-3 w-24 text-center whitespace-nowrap bg-amber-900/80 text-amber-200 font-black">จำนวนชำรุด</th>
+                    <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
+                    <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">กำลังเช่า</th>
+                    <th className="py-2.5 px-3 w-36 text-center whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {effectivePaginatedProducts.map((p) => (
                     <tr key={p.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors">
-                      <td className="py-1.5 px-2.5 min-w-0">
+                      <td className="py-2.5 px-3 min-w-0">
                         <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
                           {p.name}
                         </div>
                       </td>
-                      <td className="py-1.5 px-1.5 w-28">
+                      <td className="py-2.5 px-3 w-28">
                         <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                           {p.category}
                         </span>
                       </td>
-                      <td className="py-1.5 px-1.5 w-24 text-center whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-24 text-center whitespace-nowrap">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-black text-xs border border-amber-300 dark:border-amber-800">
                           {p.damagedQuantity} {p.unit}
                         </span>
                       </td>
-                      <td className="py-1.5 px-1.5 w-20 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-20 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {p.availableQuantity} {p.unit}
                       </td>
-                      <td className="py-1.5 px-1.5 w-20 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                      <td className="py-2.5 px-3 w-20 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         {p.rentedQuantity} {p.unit}
                       </td>
-                      <td className="py-1.5 px-1.5 w-36 text-center">
+                      <td className="py-2.5 px-3 w-36 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -238,17 +247,17 @@ export function ProductListView({
               </>
             ) : (
               <>
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800 shadow-xs">
+                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-[11px]">
                   <tr>
-                    <th className="py-2 px-2.5 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                    <th className="py-2 px-1.5 w-24 text-left whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-2 px-1.5 w-24 text-right whitespace-nowrap">ราคาเช่า</th>
-                    <th className="py-2 px-1.5 w-20 text-right whitespace-nowrap">ค่าชำรุด</th>
-                    <th className="py-2 px-1.5 w-20 text-right whitespace-nowrap">ค่าสูญหาย</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
-                    <th className="py-2 px-1.5 w-20 text-center whitespace-nowrap">ทั้งหมด</th>
-                    <th className="py-2 px-1.5 w-24 text-center whitespace-nowrap">สถานะ</th>
-                    <th className="py-2 px-1.5 w-16 text-center whitespace-nowrap">การจัดการ</th>
+                    <th className="py-2.5 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
+                    <th className="py-2.5 px-3 w-24 text-left whitespace-nowrap">หมวดหมู่</th>
+                    <th className="py-2.5 px-3 w-24 text-right whitespace-nowrap">ราคาเช่า</th>
+                    <th className="py-2.5 px-3 w-20 text-right whitespace-nowrap">ค่าชำรุด</th>
+                    <th className="py-2.5 px-3 w-20 text-right whitespace-nowrap">ค่าสูญหาย</th>
+                    <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
+                    <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">ทั้งหมด</th>
+                    <th className="py-2.5 px-3 w-24 text-center whitespace-nowrap">สถานะ</th>
+                    <th className="py-2.5 px-3 w-16 text-center whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -256,17 +265,17 @@ export function ProductListView({
                     const isLow = defaultMinStock > 0 && p.availableQuantity <= defaultMinStock
                     return (
                       <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-1.5 px-2.5 min-w-0">
+                        <td className="py-2.5 px-3 min-w-0">
                           <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
                             {p.name}
                           </div>
                         </td>
-                        <td className="py-1.5 px-1.5 w-24">
+                        <td className="py-2.5 px-3 w-24">
                           <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                             {p.category}
                           </span>
                         </td>
-                        <td className="py-1.5 px-1.5 w-24 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-24 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                           {p.rentPrice !== undefined && p.rentPrice !== null ? (
                             <span>฿{p.rentPrice.toLocaleString()}{p.calculationType === 'PER_DAY' || p.rentalType === 'DAILY' ? '/วัน' : '/รอบ'}</span>
                           ) : p.salePrice !== undefined && p.salePrice !== null ? (
@@ -275,21 +284,21 @@ export function ProductListView({
                             <span>฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}</span>
                           )}
                         </td>
-                        <td className="py-1.5 px-1.5 w-20 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-20 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
                           ฿{p.defaultDamageFee.toLocaleString()}
                         </td>
-                        <td className="py-1.5 px-1.5 w-20 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-20 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
                           ฿{p.defaultLossFee.toLocaleString()}
                         </td>
-                        <td className="py-1.5 px-1.5 w-20 text-center font-mono whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-20 text-center font-mono whitespace-nowrap">
                           <span className={`font-extrabold ${p.availableQuantity === 0 ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {p.availableQuantity} {p.unit}
                           </span>
                         </td>
-                        <td className="py-1.5 px-1.5 w-20 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-20 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           <span>{p.totalQuantity} {p.unit}</span>
                         </td>
-                        <td className="py-1.5 px-1.5 w-24 text-center whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-24 text-center whitespace-nowrap">
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                               p.availableQuantity === 0
@@ -302,7 +311,7 @@ export function ProductListView({
                             {p.availableQuantity === 0 ? 'สินค้าหมด' : isLow ? 'สต็อกใกล้หมด' : 'พร้อมใช้'}
                           </span>
                         </td>
-                        <td className="py-1.5 px-1.5 w-16 text-center">
+                        <td className="py-2.5 px-3 w-16 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
