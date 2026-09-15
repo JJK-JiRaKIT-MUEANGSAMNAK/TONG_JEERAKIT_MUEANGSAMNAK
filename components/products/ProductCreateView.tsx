@@ -237,7 +237,7 @@ export function ProductCreateView({
   const activeUnits = units.filter((u) => u.isActive)
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <form onSubmit={onSubmit} className="flex flex-col h-full min-h-0">
         {/* Item Rows Area: 2-line row layout per item, fits without horizontal scroll */}
         <div className="flex-1 min-h-0 w-full overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">

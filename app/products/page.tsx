@@ -573,10 +573,10 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* AREA 2: แถบ 4 ปุ่มหลัก + พื้นที่ทำงานของ activeMainTab */}
-      <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5">
+      {/* AREA 2: กรอบเดียว ครอบแถบ 4 ปุ่มหลัก + พื้นที่ทำงาน */}
+      <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
-        <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex items-center gap-1.5 overflow-x-auto max-w-full shrink-0">
+        <div className="p-1.5 sm:p-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-1.5 overflow-x-auto max-w-full shrink-0">
           <ActionButton
             onClick={() => setActiveMainTab('LIST')}
             variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}

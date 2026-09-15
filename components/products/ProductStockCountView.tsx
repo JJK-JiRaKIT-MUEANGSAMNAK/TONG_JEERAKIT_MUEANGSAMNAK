@@ -201,7 +201,7 @@ export function ProductStockCountView({
   })
 
   return (
-    <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Table Toolbar */}
       <div className="p-2 sm:p-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
