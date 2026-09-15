@@ -35,6 +35,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
+import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
 export default function BillsPage() {
   const router = useRouter()
@@ -132,6 +133,28 @@ export default function BillsPage() {
 
     return matchesSearch && matchesRental && matchesPayment
   })
+
+  // Auto-fit pagination for Bills Table
+  const {
+    containerRef: billsTableContainerRef,
+    pageSize: billsPageSize,
+    currentPage: billsCurrentPage,
+    setCurrentPage: setBillsCurrentPage,
+    totalPages: billsTotalPages,
+    startIndex: billsStartIndex,
+    endIndex: billsEndIndex,
+  } = useAutoFitPageSize({
+    defaultRowHeight: 34,
+    defaultHeaderHeight: 34,
+    totalItems: filteredBills.length,
+  })
+
+  // Reset page when search or filters change
+  React.useEffect(() => {
+    setBillsCurrentPage(1)
+  }, [searchTerm, rentalFilter, paymentFilter, setBillsCurrentPage])
+
+  const paginatedBills = filteredBills.slice(billsStartIndex, billsEndIndex)
 
   // Metrics
   const rentingCount = bills.filter((b) => b.rentalStatus === 'RENTING').length
@@ -484,21 +507,13 @@ export default function BillsPage() {
             </div>
           )}
 
-          {/* Empty State */}
-          {!isLoading && filteredBills.length === 0 && (
-            <div className="flex-1 min-h-0 flex flex-col items-center justify-center py-16 text-slate-400">
-              <Receipt className="w-10 h-10 mb-3 opacity-40" />
-              <span className="text-sm font-semibold">ไม่พบรายการบิล</span>
-              <span className="text-xs mt-1 text-slate-500">ลองปรับตัวกรองหรือเพิ่มบิลใหม่จาก POS</span>
-            </div>
-          )}
-
           {/* Responsive Bills View */}
-          {!isLoading && filteredBills.length > 0 && (
+          {!isLoading && (
             <>
           {/* 1. Mobile Card View (< md screens) */}
-          <div className="md:hidden flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1">
-            {filteredBills.map((b) => {
+          <div className="md:hidden flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
+            <div className="flex-1 min-h-0 overflow-hidden space-y-2.5 pr-1">
+            {paginatedBills.map((b) => {
               const overdue = isOverdueBill(b)
               const overdueDays = getOverdueDays(b)
 
@@ -645,12 +660,43 @@ export default function BillsPage() {
                 </div>
               )
             })}
+            {paginatedBills.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-slate-400">
+                <Receipt className="w-8 h-8 opacity-40 mb-1" />
+                <span className="text-xs font-semibold">ไม่พบรายการบิล</span>
+                <span className="text-[10px] mt-1 text-slate-500">ลองปรับตัวกรองหรือเพิ่มบิลใหม่จาก POS</span>
+              </div>
+            )}
+            </div>
+
+            {/* Mobile Pagination */}
+            <div className="shrink-0 pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500">
+              <span>หน้า {billsCurrentPage} / {billsTotalPages}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setBillsCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={billsCurrentPage === 1}
+                  className="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 font-bold"
+                >
+                  ก่อนหน้า
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillsCurrentPage((p) => Math.min(billsTotalPages, p + 1))}
+                  disabled={billsCurrentPage === billsTotalPages || billsTotalPages === 0}
+                  className="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 font-bold"
+                >
+                  ถัดไป
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 2. Compact Table View (>= md screens) */}
-          <div className="hidden md:flex flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex-col">
-            <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
-              <table className="w-full text-left border-collapse text-[10px] leading-tight">
+          <div className="hidden md:flex flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex-col justify-between">
+            <div ref={billsTableContainerRef} className="flex-1 min-h-0 min-w-0 overflow-hidden">
+              <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
                 <colgroup>
                   <col className="w-[88px] sm:w-[96px] lg:w-[108px]" />
                   <col className="w-auto" />
@@ -678,7 +724,7 @@ export default function BillsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {filteredBills.map((b) => {
+                  {paginatedBills.map((b) => {
                     const overdue = isOverdueBill(b)
                     const overdueDays = getOverdueDays(b)
                     const isClosed = b.rentalStatus === 'CLOSED' || b.rentalStatus === 'CANCELLED'
@@ -880,8 +926,47 @@ export default function BillsPage() {
                       </tr>
                     )
                   })}
+                  {paginatedBills.length === 0 && (
+                    <tr data-empty-row="true">
+                      <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <Receipt className="w-8 h-8 opacity-40 mb-1" />
+                          <span className="font-semibold">ยังไม่มีรายการบิล</span>
+                          <span className="text-[11px] text-slate-400">ลองปรับตัวกรองหรือเพิ่มบิลใหม่จาก POS</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Desktop Pagination Footer */}
+            <div className="shrink-0 p-2 sm:p-2.5 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="truncate">
+                แสดง {filteredBills.length > 0 ? billsStartIndex + 1 : 0} ถึง {Math.min(billsEndIndex, filteredBills.length)} จากทั้งหมด {filteredBills.length} รายการ
+              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setBillsCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={billsCurrentPage === 1}
+                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 font-bold transition-colors cursor-pointer"
+                >
+                  ก่อนหน้า
+                </button>
+                <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
+                  {billsCurrentPage} / {billsTotalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setBillsCurrentPage((p) => Math.min(billsTotalPages, p + 1))}
+                  disabled={billsCurrentPage === billsTotalPages || billsTotalPages === 0}
+                  className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 font-bold transition-colors cursor-pointer"
+                >
+                  ถัดไป
+                </button>
+              </div>
             </div>
           </div>
         </>

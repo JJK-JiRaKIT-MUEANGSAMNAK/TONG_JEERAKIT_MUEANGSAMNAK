@@ -24,6 +24,8 @@ import {
   Receipt,
   Save,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import {
@@ -44,6 +46,7 @@ import { loadTransactions } from '@/lib/finance-storage'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
 import { cancelOrVoidBillWorkflow } from '@/lib/bill-workflow-service'
+import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
 export default function CustomersPage() {
   const { showToast } = useToast()
@@ -63,20 +66,20 @@ export default function CustomersPage() {
     onTimeReturnedItems: 0,
     onTimeRatePercent: null,
   })
-  const [isLoadingCustomerDetails, setIsLoadingCustomerDetails] = useState<boolean>(false)
   const [customerNoteInput, setCustomerNoteInput] = useState<string>('')
-  const [isSavingNote, setIsSavingNote] = useState<boolean>(false)
+  const [isSavingNote, setIsSavingNote] = useState(false)
+  const [isLoadingCustomerDetails, setIsLoadingCustomerDetails] = useState(false)
+
+  // Zoom ID Card Modal State
+  const [zoomIDCardUrl, setZoomIDCardUrl] = useState<string | null>(null)
 
   // Add / Edit Modal State
   const [showAddEditModal, setShowAddEditModal] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
 
-  // Delete Confirmation Modal State
+  // Delete Customer Confirmation State
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
-  const [customerDeleteReason, setCustomerDeleteReason] = useState<string>('')
-
-  // Zoom ID Card Modal State
-  const [zoomIDCardUrl, setZoomIDCardUrl] = useState<string | null>(null)
+  const [customerDeleteReason, setCustomerDeleteReason] = useState('')
 
   // Active Tab State inside Customer Details
   const [active360Tab, setActive360Tab] = useState<
@@ -96,13 +99,10 @@ export default function CustomersPage() {
       const b = loadRentalBills()
       setCustomers(c)
       setBills(b)
-      if (c.length > 0 && !selectedCustomerId) {
-        setSelectedCustomerId(c[0].id)
-      }
     } finally {
       setIsLoading(false)
     }
-  }, [selectedCustomerId])
+  }, [])
 
   useEffect(() => {
     loadData()
@@ -194,6 +194,34 @@ export default function CustomersPage() {
   const totalSpent = customerBills.reduce((sum, b) => sum + b.grandTotal, 0)
   const totalOutstanding = customerBills.reduce((sum, b) => sum + b.outstandingAmount, 0)
   const activeRentingBills = customerBills.filter((b) => b.rentalStatus === 'RENTING').length
+
+  // Auto-fit pagination for customer tabs
+  const rentalAutoFit = useAutoFitPageSize({
+    totalItems: customerBills.length,
+    activeKey: active360Tab,
+    defaultRowHeight: 40,
+    defaultHeaderHeight: 38,
+  })
+  const paginatedCustomerBills = customerBills.slice(rentalAutoFit.startIndex, rentalAutoFit.endIndex)
+
+  const paymentAutoFit = useAutoFitPageSize({
+    totalItems: customerPayments.length,
+    activeKey: active360Tab,
+    defaultRowHeight: 40,
+    defaultHeaderHeight: 38,
+  })
+  const paginatedCustomerPayments = customerPayments.slice(paymentAutoFit.startIndex, paymentAutoFit.endIndex)
+
+  const outstandingAutoFit = useAutoFitPageSize({
+    totalItems: customerOutstandingItems.length,
+    activeKey: active360Tab,
+    defaultRowHeight: 40,
+    defaultHeaderHeight: 38,
+  })
+  const paginatedCustomerOutstandingItems = customerOutstandingItems.slice(
+    outstandingAutoFit.startIndex,
+    outstandingAutoFit.endIndex
+  )
 
   // Bill Delete Confirmation State
   const [billToDelete, setBillToDelete] = useState<RentalBill | null>(null)
@@ -414,20 +442,8 @@ export default function CustomersPage() {
           <span className="text-xs mt-1 text-slate-500">เพิ่มลูกค้าใหม่ผ่านปุ่มเพิ่มลูกค้า</span>
         </div>
       )}
-      {!isLoading && customers.length > 0 && !selectedCustomerId && (
-        /* ยังไม่ได้เลือกลูกค้า */
-        <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 p-8 sm:p-12 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center space-y-2.5">
-          <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center mx-auto">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยังไม่ได้เลือกลูกค้า</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            กรุณาเลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อเรียกดูสรุปยอดและประวัติข้อมูลลูกค้าทั้งหมด
-          </p>
-        </div>
-      )}
-      {!isLoading && customers.length > 0 && selectedCustomerId && selectedCustomer && (
-        /* แสดงข้อมูลลูกค้า */
+      {!isLoading && customers.length > 0 && (
+        /* แสดงโครงสร้าง 360 และแท็บย่อยเสมอ */
         <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
 
           {/* Sub-tabs Navigation Bar (Responsive Grid Wrap, No Horizontal Scroll) */}
@@ -528,6 +544,17 @@ export default function CustomersPage() {
 
             {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร (Flat Information Layout) */}
             {active360Tab === 'GENERAL' && (
+              !selectedCustomer ? (
+                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 p-8 sm:p-12 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center space-y-2.5">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center mx-auto">
+                    <UserCheck className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยังไม่ได้เลือกลูกค้า</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    กรุณาเลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อเรียกดูสรุปยอดและประวัติข้อมูลลูกค้าทั้งหมด
+                  </p>
+                </div>
+              ) : (
               <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden">
                 {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0">
@@ -866,6 +893,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+              )
             )}
 
             {/* TAB 2: ประวัติการเช่า */}
@@ -909,9 +937,12 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Table Area: Fills 100% of remaining vertical height */}
-                <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col">
-                  <div className="flex-1 min-h-0 overflow-auto">
-                    <table className="min-w-[700px] w-full text-left border-collapse text-[10px] leading-tight">
+                <div
+                  ref={rentalAutoFit.containerRef}
+                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col"
+                >
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
                       <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider shadow-xs">
                         <tr>
                           <th className="w-[145px] min-w-[145px] max-w-[145px] px-2 py-2.5 whitespace-nowrap">เลขที่บิล</th>
@@ -926,14 +957,16 @@ export default function CustomersPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {customerBills.length === 0 ? (
-                          <tr>
+                        {paginatedCustomerBills.length === 0 ? (
+                          <tr data-empty-row="true">
                             <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic">
-                              ไม่พบประวัติการเช่าสำหรับลูกค้ารายนี้
+                              {!selectedCustomer
+                                ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูประวัติการเช่า'
+                                : 'ไม่พบประวัติการเช่าสำหรับลูกค้ารายนี้'}
                             </td>
                           </tr>
                         ) : (
-                          customerBills.map((b) => {
+                          paginatedCustomerBills.map((b) => {
                             let rentalBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             let rentalBadgeText = 'ฉบับร่าง'
                             if (b.rentalStatus === 'RENTING') {
@@ -1024,15 +1057,51 @@ export default function CustomersPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination footer */}
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div>
+                      {customerBills.length > 0 ? (
+                        <span>
+                          แสดง {rentalAutoFit.startIndex + 1} - {rentalAutoFit.endIndex} จาก {customerBills.length} รายการ
+                        </span>
+                      ) : (
+                        <span>0 รายการ</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={rentalAutoFit.currentPage <= 1}
+                        onClick={() => rentalAutoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>ก่อนหน้า</span>
+                      </button>
+                      <span className="px-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {rentalAutoFit.currentPage} / {rentalAutoFit.totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={rentalAutoFit.currentPage >= rentalAutoFit.totalPages}
+                        onClick={() => rentalAutoFit.setCurrentPage((p) => Math.min(rentalAutoFit.totalPages, p + 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <span>ถัดไป</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* TAB 3: ประวัติการชำระเงิน */}
             {active360Tab === 'PAYMENT_HISTORY' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+              <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs shrink-0">
                   <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
                     <span className="text-emerald-700 dark:text-emerald-300 block text-[11px] font-bold">ยอดรับชำระเงินสะสมรวม</span>
                     <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -1047,7 +1116,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 shrink-0">
                   <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                     ประวัติการชำระเงินจากฐานข้อมูลจริง ({customerPayments.length} รายการ)
                   </h4>
@@ -1058,9 +1127,12 @@ export default function CustomersPage() {
                   )}
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                  <div className="min-w-0 overflow-x-auto">
-                    <table className="min-w-[700px] w-full text-left border-collapse text-[10px] leading-tight">
+                <div
+                  ref={paymentAutoFit.containerRef}
+                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"
+                >
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700 uppercase tracking-wider">
                           <th className="px-2 py-2.5 whitespace-nowrap">วันที่ชำระ</th>
@@ -1073,16 +1145,16 @@ export default function CustomersPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {customerPayments.length === 0 ? (
-                          <tr>
+                        {paginatedCustomerPayments.length === 0 ? (
+                          <tr data-empty-row="true">
                             <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic">
                               <Receipt className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
-                              <p>ยังไม่มีประวัติการชำระเงินสำหรับลูกค้ารายนี้</p>
+                              <p>{!selectedCustomer ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูประวัติการชำระเงิน' : 'ยังไม่มีประวัติการชำระเงินสำหรับลูกค้ารายนี้'}</p>
                               <span className="text-[10px] text-slate-400">เมื่อมีการรับชำระเงินหรือตัดยอดค้าง ข้อมูลจะแสดงที่นี่อัตโนมัติ</span>
                             </td>
                           </tr>
                         ) : (
-                          customerPayments.map((p) => {
+                          paginatedCustomerPayments.map((p) => {
                             let methodLabel = p.paymentMethod
                             if (p.paymentMethod === 'CASH') methodLabel = '💵 เงินสด'
                             else if (p.paymentMethod === 'TRANSFER') methodLabel = '🏦 โอนเงินธนาคาร'
@@ -1125,15 +1197,51 @@ export default function CustomersPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination footer */}
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div>
+                      {customerPayments.length > 0 ? (
+                        <span>
+                          แสดง {paymentAutoFit.startIndex + 1} - {paymentAutoFit.endIndex} จาก {customerPayments.length} รายการ
+                        </span>
+                      ) : (
+                        <span>0 รายการ</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={paymentAutoFit.currentPage <= 1}
+                        onClick={() => paymentAutoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>ก่อนหน้า</span>
+                      </button>
+                      <span className="px-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {paymentAutoFit.currentPage} / {paymentAutoFit.totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={paymentAutoFit.currentPage >= paymentAutoFit.totalPages}
+                        onClick={() => paymentAutoFit.setCurrentPage((p) => Math.min(paymentAutoFit.totalPages, p + 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <span>ถัดไป</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* TAB 4: สินค้าค้างคืน */}
             {active360Tab === 'OUTSTANDING_ITEMS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+              <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
                 {/* 3 Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs shrink-0">
                   <div className="bg-amber-50/60 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800">
                     <span className="text-amber-800 dark:text-amber-300 block text-[11px] font-bold">จำนวนสินค้าค้างคืนรวม</span>
                     <span className="text-base font-extrabold text-amber-600 dark:text-amber-400">
@@ -1154,7 +1262,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 shrink-0">
                   <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                     รายการสินค้าที่ถืออยู่นอกคลัง (คัดกรองจากบิลที่ยังมียอดคงค้าง)
                   </h4>
@@ -1165,9 +1273,12 @@ export default function CustomersPage() {
                   )}
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                  <div className="min-w-0 overflow-x-auto">
-                    <table className="min-w-[760px] w-full text-left border-collapse text-[10px] leading-tight">
+                <div
+                  ref={outstandingAutoFit.containerRef}
+                  className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"
+                >
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <table className="w-full text-left border-collapse text-[10px] leading-tight table-fixed">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700 uppercase tracking-wider">
                           <th className="px-2 py-2.5 whitespace-nowrap">สินค้า</th>
@@ -1182,16 +1293,16 @@ export default function CustomersPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {customerOutstandingItems.length === 0 ? (
-                          <tr>
+                        {paginatedCustomerOutstandingItems.length === 0 ? (
+                          <tr data-empty-row="true">
                             <td colSpan={9} className="px-4 py-8 text-center text-slate-400 italic">
                               <Package className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
-                              <p className="font-bold text-xs text-slate-600 dark:text-slate-400">ไม่มีสินค้าค้างคืน</p>
+                              <p className="font-bold text-xs text-slate-600 dark:text-slate-400">{!selectedCustomer ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูสินค้าค้างคืน' : 'ไม่มีสินค้าค้างคืน'}</p>
                               <span className="text-[10px] text-slate-400">ลูกค้ารายนี้ไม่มีอุปกรณ์ค้างคืนในระบบ</span>
                             </td>
                           </tr>
                         ) : (
-                          customerOutstandingItems.map((item) => (
+                          paginatedCustomerOutstandingItems.map((item) => (
                             <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
                               <td className="px-2 py-2.5 whitespace-nowrap">
                                 <span className="font-bold text-slate-900 dark:text-slate-100 block">{item.productName}</span>
@@ -1228,12 +1339,54 @@ export default function CustomersPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination footer */}
+                  <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div>
+                      {customerOutstandingItems.length > 0 ? (
+                        <span>
+                          แสดง {outstandingAutoFit.startIndex + 1} - {outstandingAutoFit.endIndex} จาก {customerOutstandingItems.length} รายการ
+                        </span>
+                      ) : (
+                        <span>0 รายการ</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={outstandingAutoFit.currentPage <= 1}
+                        onClick={() => outstandingAutoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>ก่อนหน้า</span>
+                      </button>
+                      <span className="px-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {outstandingAutoFit.currentPage} / {outstandingAutoFit.totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={outstandingAutoFit.currentPage >= outstandingAutoFit.totalPages}
+                        onClick={() => outstandingAutoFit.setCurrentPage((p) => Math.min(outstandingAutoFit.totalPages, p + 1))}
+                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <span>ถัดไป</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}
             {active360Tab === 'DOCUMENTS' && (
+              !selectedCustomer ? (
+                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-2">
+                  <FileText className="w-8 h-8 opacity-40 mx-auto" />
+                  <p className="text-xs">กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูเอกสารส่วนตัว</p>
+                </div>
+              ) : (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
@@ -1353,6 +1506,7 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+              )
             )}
 
             {/* TAB 6: สถิติการใช้งาน */}
@@ -1413,36 +1567,43 @@ export default function CustomersPage() {
 
             {/* TAB 7: หมายเหตุ */}
             {active360Tab === 'NOTES_TAGS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
-                    <p className="text-[10px] text-slate-500">บันทึกข้อความประสานงาน ข้อมูลติดต่อพิเศษ หรือข้อควรระวัง (บันทึกลงฐานข้อมูล)</p>
+              !selectedCustomer ? (
+                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-2">
+                  <Tag className="w-8 h-8 opacity-40 mx-auto" />
+                  <p className="text-xs">กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูและแก้ไขหมายเหตุ</p>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
+                      <p className="text-[10px] text-slate-500">บันทึกข้อความประสานงาน ข้อมูลติดต่อพิเศษ หรือข้อควรระวัง (บันทึกลงฐานข้อมูล)</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isSavingNote}
+                      onClick={handleSaveNote}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{isSavingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    disabled={isSavingNote}
-                    onClick={handleSaveNote}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>{isSavingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}</span>
-                  </button>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    ข้อความหมายเหตุ (Note):
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={customerNoteInput}
-                    onChange={(e) => setCustomerNoteInput(e.target.value)}
-                    placeholder="ระบุหมายเหตุ หรือบันทึกข้อความภายในเกี่ยวกับลูกค้ารายนี้..."
-                    className="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed font-sans"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      ข้อความหมายเหตุ (Note):
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={customerNoteInput}
+                      onChange={(e) => setCustomerNoteInput(e.target.value)}
+                      placeholder="ระบุหมายเหตุ หรือบันทึกข้อความภายในเกี่ยวกับลูกค้ารายนี้..."
+                      className="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed font-sans"
+                    />
+                  </div>
                 </div>
-              </div>
+              )
             )}
 
           </div>

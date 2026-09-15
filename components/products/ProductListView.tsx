@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Search,
   RotateCcw,
@@ -10,10 +10,11 @@ import {
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { Product } from '@/lib/types/rental-pos'
+import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
 interface ProductListViewProps {
   products: Product[]
-  paginatedProducts: Product[]
+  paginatedProducts?: Product[]
   isLoading: boolean
   searchTerm: string
   setSearchTerm: (term: string) => void
@@ -25,11 +26,11 @@ interface ProductListViewProps {
   setActiveViewTab: (tab: 'ALL' | 'DAMAGED') => void
   categories: { id: string; label: string }[]
   damagedProductsCount: number
-  currentPage: number
-  totalPages: number
-  totalProducts: number
-  productsPerPage: number
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>
+  currentPage?: number
+  totalPages?: number
+  totalProducts?: number
+  productsPerPage?: number
+  setCurrentPage?: React.Dispatch<React.SetStateAction<number>>
   defaultMinStock?: number
   onRestoreDamaged: (product: Product) => void
   onTransformDamaged: (product: Product) => void
@@ -39,7 +40,6 @@ interface ProductListViewProps {
 
 export function ProductListView({
   products,
-  paginatedProducts,
   isLoading,
   searchTerm,
   setSearchTerm,
@@ -51,17 +51,25 @@ export function ProductListView({
   setActiveViewTab,
   categories,
   damagedProductsCount,
-  currentPage,
-  totalPages,
-  totalProducts,
-  productsPerPage,
-  setCurrentPage,
   defaultMinStock = 2,
   onRestoreDamaged,
   onTransformDamaged,
   onOpenHistory,
   onDeleteProduct,
 }: ProductListViewProps) {
+  const autoFit = useAutoFitPageSize({
+    totalItems: products.length,
+    activeKey: activeViewTab,
+    defaultRowHeight: 38,
+    defaultHeaderHeight: 36,
+  })
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    autoFit.setCurrentPage(1)
+  }, [searchTerm, categoryFilter, statusFilter, activeViewTab])
+
+  const effectivePaginatedProducts = products.slice(autoFit.startIndex, autoFit.endIndex)
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-2.5 sm:gap-3 overflow-hidden">
       {/* Filter / Search & Action Bar */}
@@ -144,8 +152,11 @@ export function ProductListView({
       </div>
 
       {/* Products Table Area */}
-      <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden">
-        <div className="flex-1 min-h-0 w-full overflow-y-auto">
+      <div
+        ref={autoFit.containerRef}
+        className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between overflow-hidden"
+      >
+        <div className="flex-1 min-h-0 w-full overflow-hidden">
           <table className="w-full text-xs text-left border-collapse table-fixed">
             {activeViewTab === 'DAMAGED' ? (
               <>
@@ -160,7 +171,7 @@ export function ProductListView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {paginatedProducts.map((p) => (
+                  {effectivePaginatedProducts.map((p) => (
                     <tr key={p.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors">
                       <td className="py-1.5 px-2.5 min-w-0">
                         <div className="font-extrabold text-slate-900 dark:text-slate-100 truncate" title={p.name}>
@@ -208,7 +219,7 @@ export function ProductListView({
                     </tr>
                   ))}
                   {isLoading ? (
-                    <tr>
+                    <tr data-empty-row="true">
                       <td colSpan={6} className="text-center py-12 text-slate-400 text-xs">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
@@ -216,8 +227,8 @@ export function ProductListView({
                         </div>
                       </td>
                     </tr>
-                  ) : paginatedProducts.length === 0 ? (
-                    <tr>
+                  ) : effectivePaginatedProducts.length === 0 ? (
+                    <tr data-empty-row="true">
                       <td colSpan={6} className="text-center py-10 text-slate-400 text-xs italic">
                         ไม่พบรายการสินค้าชำรุดในระบบ
                       </td>
@@ -241,7 +252,7 @@ export function ProductListView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {paginatedProducts.map((p) => {
+                  {effectivePaginatedProducts.map((p) => {
                     const isLow = defaultMinStock > 0 && p.availableQuantity <= defaultMinStock
                     return (
                       <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -315,7 +326,7 @@ export function ProductListView({
                     )
                   })}
                   {isLoading ? (
-                    <tr>
+                    <tr data-empty-row="true">
                       <td colSpan={9} className="text-center py-12 text-slate-400 text-xs">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -323,8 +334,8 @@ export function ProductListView({
                         </div>
                       </td>
                     </tr>
-                  ) : paginatedProducts.length === 0 ? (
-                    <tr>
+                  ) : effectivePaginatedProducts.length === 0 ? (
+                    <tr data-empty-row="true">
                       <td colSpan={9} className="text-center py-10 text-slate-400 text-xs italic">
                         ไม่พบรายการสินค้าที่ตรงกับเงื่อนไขการค้นหา
                       </td>
@@ -339,25 +350,30 @@ export function ProductListView({
         {/* Pagination Bar */}
         <div className="shrink-0 p-2 sm:p-2.5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
           <span className="truncate">
-            แสดง {paginatedProducts.length > 0 ? (currentPage - 1) * productsPerPage + 1 : 0} ถึง{' '}
-            {Math.min(currentPage * productsPerPage, totalProducts)} จากทั้งหมด {totalProducts} รายการ
+            {products.length > 0 ? (
+              <span>
+                แสดง {autoFit.startIndex + 1} ถึง {autoFit.endIndex} จากทั้งหมด {products.length} รายการ
+              </span>
+            ) : (
+              <span>0 รายการ</span>
+            )}
           </span>
           <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              onClick={() => autoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={autoFit.currentPage <= 1}
               className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 disabled:opacity-40 font-bold transition-colors cursor-pointer"
             >
               ก่อนหน้า
             </button>
             <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
-              {currentPage} / {totalPages}
+              {autoFit.currentPage} / {autoFit.totalPages}
             </span>
             <button
               type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => autoFit.setCurrentPage((p) => Math.min(autoFit.totalPages, p + 1))}
+              disabled={autoFit.currentPage >= autoFit.totalPages}
               className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 disabled:opacity-40 font-bold transition-colors cursor-pointer"
             >
               ถัดไป

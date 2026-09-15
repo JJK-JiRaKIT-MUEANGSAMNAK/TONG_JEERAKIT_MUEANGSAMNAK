@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Printer,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { CustomSelect } from '@/components/common/CustomSelect'
@@ -26,6 +28,7 @@ import {
   cancelQuotationWorkflow,
 } from '@/lib/quotation-storage'
 import { checkAndExpireReservations } from '@/lib/bill-workflow-service'
+import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
 interface ReservationFulfillmentResult {
   hasShortage: boolean
@@ -132,6 +135,21 @@ export default function QuotationsPage() {
     const matchesStatus = statusFilter === 'ALL' || q.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const quotationAutoFit = useAutoFitPageSize({
+    totalItems: filteredQuotations.length,
+    defaultRowHeight: 40,
+    defaultHeaderHeight: 38,
+  })
+
+  useEffect(() => {
+    quotationAutoFit.setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
+  const paginatedQuotations = filteredQuotations.slice(
+    quotationAutoFit.startIndex,
+    quotationAutoFit.endIndex
+  )
 
   const closeActionModal = () => {
     setSelectedQuotationForConversion(null)
@@ -259,112 +277,141 @@ export default function QuotationsPage() {
         </div>
       )}
 
-      {!isLoading && filteredQuotations.length === 0 && (
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center py-16 text-slate-400">
-          <FileText className="w-10 h-10 mb-3 opacity-40" />
-          <span className="text-sm font-semibold">ไม่พบรายการใบเสนอราคา</span>
-          <span className="text-xs mt-1 text-slate-500">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</span>
-        </div>
-      )}
-
-      {!isLoading && filteredQuotations.length > 0 && (
+      {!isLoading && (
         <>
           {/* 1. Mobile Card View (< md screens) */}
           <div className="md:hidden flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1">
-            {filteredQuotations.map((q) => {
-              const isConverted = q.status === 'CONVERTED'
-              const buttonLabel = isConverted ? 'เปิดบิลแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล POS' : 'ตอบรับ / จองสินค้า'
-              return (
-                <div
-                  key={q.id}
-                  className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm space-y-2"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 block">
-                        {q.quotationNo}
-                      </span>
-                      <span className="text-[11px] text-slate-400 block">วันที่: {q.quotationDate}</span>
-                    </div>
-                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                      q.status === 'ACCEPTED'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                        : q.status === 'CONVERTED'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                    }`}>
-                      {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-slate-100 dark:border-slate-700/80">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">ลูกค้า:</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
-                        {q.customerName}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">ช่วงเช่า:</span>
-                      <span className="font-mono text-slate-600 dark:text-slate-400 block text-[11px]">
-                        {q.rentalStartDate} - {q.rentalEndDate}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-1">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">ยอดสุทธิ:</span>
-                      <span className="font-black text-sm text-slate-900 dark:text-slate-100">
-                        ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            {paginatedQuotations.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 italic">ไม่พบรายการใบเสนอราคา</div>
+            ) : (
+              paginatedQuotations.map((q) => {
+                const isConverted = q.status === 'CONVERTED'
+                const buttonLabel = isConverted ? 'เปิดบิลแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล POS' : 'ตอบรับ / จองสินค้า'
+                return (
+                  <div
+                    key={q.id}
+                    className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 block">
+                          {q.quotationNo}
+                        </span>
+                        <span className="text-[11px] text-slate-400 block">วันที่: {q.quotationDate}</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                        q.status === 'ACCEPTED'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : q.status === 'CONVERTED'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                      }`}>
+                        {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handlePrintQuotation(q)}
-                        className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 active:scale-95 cursor-pointer min-h-[36px]"
-                        title="พิมพ์ใบเสนอราคา"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>พิมพ์</span>
-                      </button>
+                    <div className="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-slate-100 dark:border-slate-700/80">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">ลูกค้า:</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                          {q.customerName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">ช่วงเช่า:</span>
+                        <span className="font-mono text-slate-600 dark:text-slate-400 block text-[11px]">
+                          {q.rentalStartDate} - {q.rentalEndDate}
+                        </span>
+                      </div>
+                    </div>
 
-                      {q.status === 'ACCEPTED' && (
+                    <div className="flex justify-between items-center pt-1">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">ยอดสุทธิ:</span>
+                        <span className="font-black text-sm text-slate-900 dark:text-slate-100">
+                          ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleOpenReleaseModal(q)}
-                          className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs inline-flex items-center gap-1 shadow-xs cursor-pointer min-h-[36px]"
-                          title="ปล่อยการจองสินค้า"
+                          onClick={() => handlePrintQuotation(q)}
+                          className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 active:scale-95 cursor-pointer min-h-[36px]"
+                          title="พิมพ์ใบเสนอราคา"
                         >
-                          <span>ปล่อยจอง</span>
+                          <Printer className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          <span>พิมพ์</span>
                         </button>
-                      )}
 
-                      <button
-                        disabled={isConverted}
-                        onClick={() => !isConverted && handleOpenConversionVerification(q)}
-                        className={`px-3 py-1.5 rounded-xl text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all min-h-[36px] ${
-                          isConverted
-                            ? 'bg-slate-400 cursor-not-allowed'
-                            : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'
-                        }`}
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>{buttonLabel}</span>
-                        {!isConverted && <ArrowRight className="w-3.5 h-3.5" />}
-                      </button>
+                        {q.status === 'ACCEPTED' && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReleaseModal(q)}
+                            className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs inline-flex items-center gap-1 shadow-xs cursor-pointer min-h-[36px]"
+                            title="ปล่อยการจองสินค้า"
+                          >
+                            <span>ปล่อยจอง</span>
+                          </button>
+                        )}
+
+                        <button
+                          disabled={isConverted}
+                          onClick={() => !isConverted && handleOpenConversionVerification(q)}
+                          className={`px-3 py-1.5 rounded-xl text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all min-h-[36px] ${
+                            isConverted
+                              ? 'bg-slate-400 cursor-not-allowed'
+                              : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'
+                          }`}
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>{buttonLabel}</span>
+                          {!isConverted && <ArrowRight className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
+          </div>
+
+          {/* Mobile pagination bar */}
+          <div className="md:hidden shrink-0 flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+            <span>
+              {filteredQuotations.length > 0
+                ? `${quotationAutoFit.startIndex + 1}-${quotationAutoFit.endIndex} จาก ${filteredQuotations.length}`
+                : '0 รายการ'}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={quotationAutoFit.currentPage <= 1}
+                onClick={() => quotationAutoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 disabled:opacity-40 cursor-pointer"
+              >
+                ก่อนหน้า
+              </button>
+              <span className="font-bold text-slate-700 dark:text-slate-200 px-1">
+                {quotationAutoFit.currentPage}/{quotationAutoFit.totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={quotationAutoFit.currentPage >= quotationAutoFit.totalPages}
+                onClick={() => quotationAutoFit.setCurrentPage((p) => Math.min(quotationAutoFit.totalPages, p + 1))}
+                className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 disabled:opacity-40 cursor-pointer"
+              >
+                ถัดไป
+              </button>
+            </div>
           </div>
 
           {/* 2. Desktop/Tablet Table View (>= md screens) */}
-          <div className="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex-1 min-h-0 flex-col">
-            <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-auto">
+          <div
+            ref={quotationAutoFit.containerRef}
+            className="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex-1 min-h-0 flex-col"
+          >
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
               <table className="w-full table-fixed text-left text-[11px] leading-tight border-collapse">
                 <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-sm">
                   <tr className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-sans font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
@@ -378,70 +425,116 @@ export default function QuotationsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {filteredQuotations.map((q) => {
-                    const isConverted = q.status === 'CONVERTED'
-                    const buttonLabel = isConverted ? 'เปิดแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล' : 'ตอบรับ/จอง'
-                    return (
-                      <tr key={q.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
-                        <td className="px-2 py-2.5 font-bold text-blue-600 dark:text-blue-400 font-mono whitespace-nowrap truncate">{q.quotationNo}</td>
-                        <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.quotationDate}</td>
-                        <td className="px-2 py-2.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap truncate">{q.customerName}</td>
-                        <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.rentalStartDate} ถึง {q.rentalEndDate}</td>
-                        <td className="px-2 py-2.5 text-right font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
-                          ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-2 py-2.5 text-center whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                            q.status === 'ACCEPTED'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : q.status === 'CONVERTED'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          }`}>
-                            {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2.5 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handlePrintQuotation(q)}
-                              className="shrink-0 px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 hover:scale-[1.02] cursor-pointer"
-                              title="พิมพ์ใบเสนอราคา"
-                            >
-                              <Printer className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                              <span>พิมพ์</span>
-                            </button>
-
-                            {q.status === 'ACCEPTED' && (
+                  {paginatedQuotations.length === 0 ? (
+                    <tr data-empty-row="true">
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-400 italic">
+                        <FileText className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
+                        <p className="font-bold text-xs text-slate-600 dark:text-slate-400">ไม่พบรายการใบเสนอราคา</p>
+                        <span className="text-[10px] text-slate-400">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</span>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedQuotations.map((q) => {
+                      const isConverted = q.status === 'CONVERTED'
+                      const buttonLabel = isConverted ? 'เปิดแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล' : 'ตอบรับ/จอง'
+                      return (
+                        <tr key={q.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                          <td className="px-2 py-2.5 font-bold text-blue-600 dark:text-blue-400 font-mono whitespace-nowrap truncate">{q.quotationNo}</td>
+                          <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.quotationDate}</td>
+                          <td className="px-2 py-2.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap truncate">{q.customerName}</td>
+                          <td className="px-2 py-2.5 text-slate-500 font-mono whitespace-nowrap truncate">{q.rentalStartDate} ถึง {q.rentalEndDate}</td>
+                          <td className="px-2 py-2.5 text-right font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
+                            ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              q.status === 'ACCEPTED'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                : q.status === 'CONVERTED'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            }`}>
+                              {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => handleOpenReleaseModal(q)}
-                                className="shrink-0 px-2 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:scale-[1.02] cursor-pointer"
-                                title="ปล่อย / ยกเลิกการจองสินค้า"
+                                onClick={() => handlePrintQuotation(q)}
+                                className="shrink-0 px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:bg-slate-50 hover:scale-[1.02] cursor-pointer"
+                                title="พิมพ์ใบเสนอราคา"
                               >
-                                <span>ปล่อยจอง</span>
+                                <Printer className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                <span>พิมพ์</span>
                               </button>
-                            )}
 
-                            <button
-                              disabled={isConverted}
-                              onClick={() => !isConverted && handleOpenConversionVerification(q)}
-                              className={`shrink-0 px-2 py-1 rounded-lg text-white font-extrabold text-[10px] inline-flex items-center gap-1 shadow-md transition-all ${
-                                isConverted ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] cursor-pointer'
-                              }`}
-                            >
-                              <ShoppingBag className="w-3 h-3" />
-                              <span>{buttonLabel}</span>
-                              {!isConverted && <ArrowRight className="w-3 h-3" />}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                              {q.status === 'ACCEPTED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenReleaseModal(q)}
+                                  className="shrink-0 px-2 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[10px] inline-flex items-center gap-1 shadow-xs hover:scale-[1.02] cursor-pointer"
+                                  title="ปล่อย / ยกเลิกการจองสินค้า"
+                                >
+                                  <span>ปล่อยจอง</span>
+                                </button>
+                              )}
+
+                              <button
+                                disabled={isConverted}
+                                onClick={() => !isConverted && handleOpenConversionVerification(q)}
+                                className={`shrink-0 px-2 py-1 rounded-lg text-white font-extrabold text-[10px] inline-flex items-center gap-1 shadow-md transition-all ${
+                                  isConverted ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] cursor-pointer'
+                                }`}
+                              >
+                                <ShoppingBag className="w-3 h-3" />
+                                <span>{buttonLabel}</span>
+                                {!isConverted && <ArrowRight className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Pagination footer */}
+            <div className="px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500 shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
+              <div>
+                {filteredQuotations.length > 0 ? (
+                  <span>
+                    แสดง {quotationAutoFit.startIndex + 1} - {quotationAutoFit.endIndex} จาก {filteredQuotations.length} รายการ
+                  </span>
+                ) : (
+                  <span>0 รายการ</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={quotationAutoFit.currentPage <= 1}
+                  onClick={() => quotationAutoFit.setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>ก่อนหน้า</span>
+                </button>
+                <span className="px-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {quotationAutoFit.currentPage} / {quotationAutoFit.totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={quotationAutoFit.currentPage >= quotationAutoFit.totalPages}
+                  onClick={() => quotationAutoFit.setCurrentPage((p) => Math.min(quotationAutoFit.totalPages, p + 1))}
+                  className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span>ถัดไป</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </>

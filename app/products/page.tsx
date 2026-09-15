@@ -394,21 +394,6 @@ export default function ProductsPage() {
     return matchesSearch && matchesCat && matchesStatus
   })
 
-  // Pagination for Products Table (10 items per page)
-  const [currentPage, setCurrentPage] = useState<number>(1)
-  const productsPerPage = 10
-  const totalProducts = filteredProducts.length
-  const totalPages = Math.ceil(totalProducts / productsPerPage) || 1
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * productsPerPage,
-    currentPage * productsPerPage
-  )
-
-  // Reset pagination when filter changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm, categoryFilter, statusFilter, activeViewTab])
-
   // Stock Summary Metrics
   const totalItems = products.reduce((acc, p) => acc + p.totalQuantity, 0)
   const totalAvailable = products.reduce((acc, p) => acc + p.availableQuantity, 0)
@@ -636,8 +621,7 @@ export default function ProductsPage() {
       {/* Main Tab Workspace View */}
       {activeMainTab === 'LIST' && (
         <ProductListView
-          products={products}
-          paginatedProducts={paginatedProducts}
+          products={filteredProducts}
           isLoading={isLoading}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -649,11 +633,6 @@ export default function ProductsPage() {
           setActiveViewTab={setActiveViewTab}
           categories={categories}
           damagedProductsCount={damagedProductsCount}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalProducts={totalProducts}
-          productsPerPage={productsPerPage}
-          setCurrentPage={setCurrentPage}
           defaultMinStock={defaultMinStock}
           onRestoreDamaged={(p) => setRestoreTargetProduct(p)}
           onTransformDamaged={(p) => setTransformTargetProduct(p)}
