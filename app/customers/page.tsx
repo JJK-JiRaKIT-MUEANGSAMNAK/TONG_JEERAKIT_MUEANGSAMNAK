@@ -435,14 +435,7 @@ export default function CustomersPage() {
           <span className="text-sm font-semibold">กำลังโหลดข้อมูลลูกค้า...</span>
         </div>
       )}
-      {!isLoading && customers.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <Users className="w-10 h-10 mb-3 opacity-40" />
-          <span className="text-sm font-semibold">ไม่พบข้อมูลลูกค้า</span>
-          <span className="text-xs mt-1 text-slate-500">เพิ่มลูกค้าใหม่ผ่านปุ่มเพิ่มลูกค้า</span>
-        </div>
-      )}
-      {!isLoading && customers.length > 0 && (
+      {!isLoading && (
         /* แสดงโครงสร้าง 360 และแท็บย่อยเสมอ */
         <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
 
@@ -544,26 +537,15 @@ export default function CustomersPage() {
 
             {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร (Flat Information Layout) */}
             {active360Tab === 'GENERAL' && (
-              !selectedCustomer ? (
-                <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 p-8 sm:p-12 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center space-y-2.5">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center mx-auto">
-                    <UserCheck className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยังไม่ได้เลือกลูกค้า</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    กรุณาเลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อเรียกดูสรุปยอดและประวัติข้อมูลลูกค้าทั้งหมด
-                  </p>
-                </div>
-              ) : (
               <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden">
                 {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-emerald-600 shrink-0" />
                     <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      ข้อมูลลูกค้า ({selectedCustomer.customerCode})
+                      ข้อมูลลูกค้า {selectedCustomer?.customerCode ? `(${selectedCustomer.customerCode})` : '(-)'}
                     </h4>
-                    {selectedCustomer.isSuspended && (
+                    {selectedCustomer?.isSuspended && (
                       <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full ml-1">
                         🔒 ถูกระงับสิทธิ์
                       </span>
@@ -573,8 +555,14 @@ export default function CustomersPage() {
                   {/* Action buttons */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
-                      onClick={() => handleOpenEdit(selectedCustomer)}
-                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 shadow-sm transition-all cursor-pointer"
+                      type="button"
+                      disabled={!selectedCustomer}
+                      onClick={() => selectedCustomer && handleOpenEdit(selectedCustomer)}
+                      className={`px-2.5 py-1.5 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 shadow-sm transition-all ${
+                        !selectedCustomer
+                          ? 'opacity-40 cursor-not-allowed bg-slate-800 text-white'
+                          : 'bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white cursor-pointer'
+                      }`}
                     >
                       <Edit className="w-3.5 h-3.5 text-blue-400" />
                       <span>แก้ไขข้อมูล</span>
@@ -582,32 +570,38 @@ export default function CustomersPage() {
 
                     <button
                       type="button"
-                      disabled={suspendingCustomerId === selectedCustomer.id}
-                      onClick={() => handleToggleSuspend(selectedCustomer)}
+                      disabled={!selectedCustomer || suspendingCustomerId === selectedCustomer?.id}
+                      onClick={() => selectedCustomer && handleToggleSuspend(selectedCustomer)}
                       className={`px-2.5 py-1.5 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-sm ${
-                        suspendingCustomerId === selectedCustomer.id
-                          ? 'opacity-60 cursor-not-allowed bg-slate-400 text-white'
+                        !selectedCustomer || suspendingCustomerId === selectedCustomer?.id
+                          ? 'opacity-40 cursor-not-allowed bg-slate-400 text-white'
                           : selectedCustomer.isSuspended
                           ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
                           : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
                       }`}
                     >
-                      {suspendingCustomerId === selectedCustomer.id ? (
+                      {selectedCustomer && suspendingCustomerId === selectedCustomer.id ? (
                         <>
                           <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           <span>กำลังบันทึก...</span>
                         </>
                       ) : (
                         <>
-                          {selectedCustomer.isSuspended ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
-                          <span>{selectedCustomer.isSuspended ? 'ปลดระงับสิทธิ์' : 'ระงับสิทธิ์'}</span>
+                          {selectedCustomer?.isSuspended ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
+                          <span>{selectedCustomer?.isSuspended ? 'ปลดระงับสิทธิ์' : 'ระงับสิทธิ์'}</span>
                         </>
                       )}
                     </button>
 
                     <button
-                      onClick={() => setCustomerToDelete(selectedCustomer)}
-                      className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm shadow-red-500/20 transition-all cursor-pointer"
+                      type="button"
+                      disabled={!selectedCustomer}
+                      onClick={() => selectedCustomer && setCustomerToDelete(selectedCustomer)}
+                      className={`px-2.5 py-1.5 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all ${
+                        !selectedCustomer
+                          ? 'opacity-40 cursor-not-allowed bg-red-600/60 text-white'
+                          : 'bg-red-600 hover:bg-red-700 text-white shadow-red-500/20 cursor-pointer'
+                      }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>ลบลูกค้า</span>
@@ -630,7 +624,7 @@ export default function CustomersPage() {
                         ชื่อลูกค้า / ชื่อบริษัท
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
-                        {selectedCustomer.customerName || '-'}
+                        {selectedCustomer?.customerName || '-'}
                       </div>
                     </div>
                     <div>
@@ -638,7 +632,7 @@ export default function CustomersPage() {
                         รหัสลูกค้า
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 font-mono font-bold text-slate-600 dark:text-slate-300 text-xs truncate">
-                        {selectedCustomer.customerCode || '-'}
+                        {selectedCustomer?.customerCode || '-'}
                       </div>
                     </div>
                     <div>
@@ -646,7 +640,7 @@ export default function CustomersPage() {
                         เลขประจำตัวผู้เสียภาษี
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-mono font-bold text-slate-800 dark:text-slate-200 text-xs truncate">
-                        {selectedCustomer.taxId || '-'}
+                        {selectedCustomer?.taxId || '-'}
                       </div>
                     </div>
                   </div>
@@ -658,7 +652,7 @@ export default function CustomersPage() {
                         เบอร์โทรศัพท์หลัก
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-mono font-bold text-blue-600 dark:text-blue-400 text-xs truncate">
-                        {selectedCustomer.phone || '-'}
+                        {selectedCustomer?.phone || '-'}
                       </div>
                     </div>
                     <div>
@@ -666,7 +660,7 @@ export default function CustomersPage() {
                         เบอร์โทรศัพท์ 2
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-mono text-slate-700 dark:text-slate-300 text-xs truncate">
-                        {selectedCustomer.phone2 || '-'}
+                        {selectedCustomer?.phone2 || '-'}
                       </div>
                     </div>
                     <div>
@@ -674,7 +668,7 @@ export default function CustomersPage() {
                         อีเมล (Email)
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-xs truncate">
-                        {selectedCustomer.email || '-'}
+                        {selectedCustomer?.email || '-'}
                       </div>
                     </div>
                     <div>
@@ -682,7 +676,7 @@ export default function CustomersPage() {
                         LINE ID
                       </label>
                       <div className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-xs truncate">
-                        {selectedCustomer.lineId || '-'}
+                        {selectedCustomer?.lineId || '-'}
                       </div>
                     </div>
                   </div>
@@ -703,7 +697,7 @@ export default function CustomersPage() {
                         บ้านเลขที่
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
-                        {selectedCustomer.houseNo || '-'}
+                        {selectedCustomer?.houseNo || '-'}
                       </div>
                     </div>
                     <div>
@@ -711,7 +705,7 @@ export default function CustomersPage() {
                         หมู่
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-800 dark:text-slate-200 truncate">
-                        {selectedCustomer.moo || '-'}
+                        {selectedCustomer?.moo || '-'}
                       </div>
                     </div>
                     <div>
@@ -719,7 +713,7 @@ export default function CustomersPage() {
                         ซอย
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-800 dark:text-slate-200 truncate">
-                        {selectedCustomer.soi || '-'}
+                        {selectedCustomer?.soi || '-'}
                       </div>
                     </div>
                     <div>
@@ -727,7 +721,7 @@ export default function CustomersPage() {
                         ถนน
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-800 dark:text-slate-200 truncate">
-                        {selectedCustomer.road || '-'}
+                        {selectedCustomer?.road || '-'}
                       </div>
                     </div>
                   </div>
@@ -739,7 +733,7 @@ export default function CustomersPage() {
                         จังหวัด
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-medium text-blue-600 dark:text-blue-400 text-xs truncate">
-                        {selectedCustomer.province || '-'}
+                        {selectedCustomer?.province || '-'}
                       </div>
                     </div>
                     <div>
@@ -747,7 +741,7 @@ export default function CustomersPage() {
                         อำเภอ / เขต
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-medium text-slate-800 dark:text-slate-200 text-xs truncate">
-                        {selectedCustomer.district || '-'}
+                        {selectedCustomer?.district || '-'}
                       </div>
                     </div>
                     <div>
@@ -755,7 +749,7 @@ export default function CustomersPage() {
                         ตำบล / แขวง
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-medium text-slate-800 dark:text-slate-200 text-xs truncate">
-                        {selectedCustomer.subDistrict || '-'}
+                        {selectedCustomer?.subDistrict || '-'}
                       </div>
                     </div>
                     <div>
@@ -763,7 +757,7 @@ export default function CustomersPage() {
                         รหัสไปรษณีย์
                       </label>
                       <div className="w-full px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 font-mono font-bold text-center text-blue-600 dark:text-blue-400 text-xs truncate">
-                        {selectedCustomer.postalCode || '-'}
+                        {selectedCustomer?.postalCode || '-'}
                       </div>
                     </div>
                   </div>
@@ -776,17 +770,23 @@ export default function CustomersPage() {
                       <CreditCard className="w-3.5 h-3.5 text-sky-600" />
                       <span>สำเนาบัตรประชาชน</span>
                     </span>
-                    <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full font-bold text-[10px] flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      <span>ยืนยันตัวตนแล้ว</span>
-                    </span>
+                    {selectedCustomer ? (
+                      <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full font-bold text-[10px] flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>ยืนยันตัวตนแล้ว</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-[10px] flex items-center gap-1">
+                        <span>รอเลือกลูกค้า</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Layout แบ่ง 2 ฝั่ง ซ้าย: รูปบัตรขยายเต็มพื้นที่ | ขวา: ข้อมูลเลขบัตร + ปุ่มจัดการ */}
                   <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-stretch pt-2">
                     {/* ฝั่งซ้าย: กล่องรูปบัตร ยืดเต็มพื้นที่และจัดรูปอยู่กึ่งกลางสมบูรณ์ทั้งแนวตั้งและแนวนอน */}
                     <div className="flex-1 min-h-0 flex items-center justify-center p-2 rounded-2xl bg-slate-900/5 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 overflow-hidden">
-                      {selectedCustomer.idCardImageUrl ? (
+                      {selectedCustomer?.idCardImageUrl ? (
                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
@@ -798,7 +798,7 @@ export default function CustomersPage() {
                             ✓ สำเนาบัตร
                           </div>
                         </div>
-                      ) : (
+                      ) : selectedCustomer ? (
                         <div className="aspect-[85.6/54] w-full max-w-[280px] sm:max-w-[320px] max-h-full p-3 bg-gradient-to-br from-sky-600 via-blue-700 to-indigo-800 text-white flex flex-col justify-between rounded-xl shadow-lg border border-blue-400/30">
                           <div className="flex justify-between items-start">
                             <div className="space-y-0.5">
@@ -826,6 +826,12 @@ export default function CustomersPage() {
                             <span className="font-bold text-emerald-300">✓ VERIFIED</span>
                           </div>
                         </div>
+                      ) : (
+                        <div className="aspect-[85.6/54] w-full max-w-[280px] sm:max-w-[320px] max-h-full p-3 bg-slate-50 dark:bg-slate-900/60 text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-1">
+                          <CreditCard className="w-8 h-8 opacity-40 text-slate-400" />
+                          <p className="text-xs font-bold text-slate-600 dark:text-slate-400">กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล</p>
+                          <span className="text-[10px] text-slate-400">เลือกรายชื่อลูกค้าจากเมนูด้านบน</span>
+                        </div>
                       )}
                     </div>
 
@@ -838,7 +844,7 @@ export default function CustomersPage() {
                             เลขบัตรประจำตัวประชาชน (13 หลัก)
                           </label>
                           <div className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-bold text-xs text-slate-900 dark:text-slate-100 truncate shadow-2xs">
-                            {selectedCustomer.idCardNumber || '-'}
+                            {selectedCustomer?.idCardNumber || '-'}
                           </div>
                         </div>
 
@@ -847,7 +853,7 @@ export default function CustomersPage() {
                             วันหมดอายุบัตรประชาชน
                           </label>
                           <div className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-bold text-xs text-slate-700 dark:text-slate-300 truncate shadow-2xs">
-                            {selectedCustomer.idCardExpiry || '-'}
+                            {selectedCustomer?.idCardExpiry || '-'}
                           </div>
                         </div>
                       </div>
@@ -866,14 +872,14 @@ export default function CustomersPage() {
                         <div className="flex flex-col sm:flex-row gap-2">
                           <button
                             type="button"
-                            disabled={!selectedCustomer.idCardImageUrl}
+                            disabled={!selectedCustomer?.idCardImageUrl}
                             onClick={() => {
-                              if (selectedCustomer.idCardImageUrl) {
+                              if (selectedCustomer?.idCardImageUrl) {
                                 setZoomIDCardUrl(selectedCustomer.idCardImageUrl)
                               }
                             }}
                             className={`flex-1 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl border border-slate-300 dark:border-slate-700 flex items-center justify-center gap-1.5 text-xs shadow-xs transition-all ${
-                              !selectedCustomer.idCardImageUrl ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                              !selectedCustomer?.idCardImageUrl ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                             }`}
                           >
                             <Eye className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -881,8 +887,13 @@ export default function CustomersPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleOpenEdit(selectedCustomer)}
-                            className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition-all cursor-pointer"
+                            disabled={!selectedCustomer}
+                            onClick={() => selectedCustomer && handleOpenEdit(selectedCustomer)}
+                            className={`flex-1 px-3 py-2 font-bold rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition-all ${
+                              !selectedCustomer
+                                ? 'opacity-40 cursor-not-allowed bg-indigo-600/60 text-white'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
+                            }`}
                           >
                             <Upload className="w-3.5 h-3.5 shrink-0" />
                             <span>อัปโหลด / สแกนเปลี่ยนรูป</span>
@@ -893,7 +904,6 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
-              )
             )}
 
             {/* TAB 2: ประวัติการเช่า */}
@@ -961,7 +971,7 @@ export default function CustomersPage() {
                           <tr data-empty-row="true">
                             <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic">
                               {!selectedCustomer
-                                ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูประวัติการเช่า'
+                                ? 'กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล'
                                 : 'ไม่พบประวัติการเช่าสำหรับลูกค้ารายนี้'}
                             </td>
                           </tr>
@@ -1149,8 +1159,12 @@ export default function CustomersPage() {
                           <tr data-empty-row="true">
                             <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic">
                               <Receipt className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
-                              <p>{!selectedCustomer ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูประวัติการชำระเงิน' : 'ยังไม่มีประวัติการชำระเงินสำหรับลูกค้ารายนี้'}</p>
-                              <span className="text-[10px] text-slate-400">เมื่อมีการรับชำระเงินหรือตัดยอดค้าง ข้อมูลจะแสดงที่นี่อัตโนมัติ</span>
+                              <p>{!selectedCustomer ? 'กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล' : 'ยังไม่มีประวัติการชำระเงินสำหรับลูกค้ารายนี้'}</p>
+                              <span className="text-[10px] text-slate-400">
+                                {!selectedCustomer
+                                  ? 'เลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อดูข้อมูลการชำระเงิน'
+                                  : 'เมื่อมีการรับชำระเงินหรือตัดยอดค้าง ข้อมูลจะแสดงที่นี่อัตโนมัติ'}
+                              </span>
                             </td>
                           </tr>
                         ) : (
@@ -1297,8 +1311,14 @@ export default function CustomersPage() {
                           <tr data-empty-row="true">
                             <td colSpan={9} className="px-4 py-8 text-center text-slate-400 italic">
                               <Package className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
-                              <p className="font-bold text-xs text-slate-600 dark:text-slate-400">{!selectedCustomer ? 'กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูสินค้าค้างคืน' : 'ไม่มีสินค้าค้างคืน'}</p>
-                              <span className="text-[10px] text-slate-400">ลูกค้ารายนี้ไม่มีอุปกรณ์ค้างคืนในระบบ</span>
+                              <p className="font-bold text-xs text-slate-600 dark:text-slate-400">
+                                {!selectedCustomer ? 'กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล' : 'ไม่มีสินค้าค้างคืน'}
+                              </p>
+                              <span className="text-[10px] text-slate-400">
+                                {!selectedCustomer
+                                  ? 'เลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อดูรายการสินค้าค้างคืน'
+                                  : 'ลูกค้ารายนี้ไม่มีอุปกรณ์ค้างคืนในระบบ'}
+                              </span>
                             </td>
                           </tr>
                         ) : (
@@ -1381,12 +1401,6 @@ export default function CustomersPage() {
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}
             {active360Tab === 'DOCUMENTS' && (
-              !selectedCustomer ? (
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-2">
-                  <FileText className="w-8 h-8 opacity-40 mx-auto" />
-                  <p className="text-xs">กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูเอกสารส่วนตัว</p>
-                </div>
-              ) : (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
@@ -1394,6 +1408,14 @@ export default function CustomersPage() {
                     <p className="text-[10px] text-slate-500">แสดงเฉพาะไฟล์เอกสารที่บันทึกไว้จริงในระบบ และข้อมูลประกอบของลูกค้า</p>
                   </div>
                 </div>
+
+                {!selectedCustomer ? (
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center space-y-2">
+                    <FileText className="w-8 h-8 opacity-40 mx-auto" />
+                    <p className="font-bold text-xs text-slate-600 dark:text-slate-400">กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล</p>
+                    <span className="text-[10px] text-slate-400">เลือกรายชื่อลูกค้าจากเมนูด้านบน เพื่อดูเอกสารส่วนตัว</span>
+                  </div>
+                ) : (
 
                 <div className="space-y-3">
                   {/* 1. ส่วนไฟล์เอกสารประจำตัว (แสดงเมื่อมีไฟล์จริง) */}
@@ -1505,8 +1527,8 @@ export default function CustomersPage() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
-              )
             )}
 
             {/* TAB 6: สถิติการใช้งาน */}
@@ -1567,43 +1589,37 @@ export default function CustomersPage() {
 
             {/* TAB 7: หมายเหตุ */}
             {active360Tab === 'NOTES_TAGS' && (
-              !selectedCustomer ? (
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-2">
-                  <Tag className="w-8 h-8 opacity-40 mx-auto" />
-                  <p className="text-xs">กรุณาเลือกลูกค้าจากเมนูด้านบน เพื่อดูและแก้ไขหมายเหตุ</p>
-                </div>
-              ) : (
-                <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
-                      <p className="text-[10px] text-slate-500">บันทึกข้อความประสานงาน ข้อมูลติดต่อพิเศษ หรือข้อควรระวัง (บันทึกลงฐานข้อมูล)</p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={isSavingNote}
-                      onClick={handleSaveNote}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Save className="w-3.5 h-3.5" />
-                      <span>{isSavingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}</span>
-                    </button>
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
+                    <p className="text-[10px] text-slate-500">บันทึกข้อความประสานงาน ข้อมูลติดต่อพิเศษ หรือข้อควรระวัง (บันทึกลงฐานข้อมูล)</p>
                   </div>
+                  <button
+                    type="button"
+                    disabled={!selectedCustomer || isSavingNote}
+                    onClick={handleSaveNote}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSavingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}</span>
+                  </button>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      ข้อความหมายเหตุ (Note):
-                    </label>
-                    <textarea
-                      rows={6}
-                      value={customerNoteInput}
-                      onChange={(e) => setCustomerNoteInput(e.target.value)}
-                      placeholder="ระบุหมายเหตุ หรือบันทึกข้อความภายในเกี่ยวกับลูกค้ารายนี้..."
-                      className="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed font-sans"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    ข้อความหมายเหตุ (Note):
+                  </label>
+                  <textarea
+                    rows={6}
+                    disabled={!selectedCustomer}
+                    value={customerNoteInput}
+                    onChange={(e) => setCustomerNoteInput(e.target.value)}
+                    placeholder={!selectedCustomer ? "กรุณาเลือกลูกค้าเพื่อแสดงข้อมูล..." : "ระบุหมายเหตุ หรือบันทึกข้อความภายในเกี่ยวกับลูกค้ารายนี้..."}
+                    className="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed font-sans disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
                 </div>
-              )
+              </div>
             )}
 
           </div>
