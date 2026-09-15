@@ -401,37 +401,37 @@ export default function CustomersPage() {
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2 sm:gap-2.5">
 
-      {/* Customer Selector & 7 Sub-tabs Workspace */}
-      <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col ${active360Tab === 'GENERAL' ? 'flex-1 min-h-0' : 'shrink-0'}`}>
-        {/* Customer Selector & Add Action Toolbar */}
-        <div className="p-2.5 sm:p-3 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-          <div className="flex-1 min-w-0">
-            <CustomSelect
-              value={selectedCustomerId}
-              onChange={(val) => setSelectedCustomerId(String(val))}
-              placeholder="กรุณาเลือกลูกค้าเพื่อแสดงข้อมูลลูกค้า (พิมพ์ชื่อ รหัส หรือเบอร์โทร)..."
-              searchable={true}
-              options={customers.map((c) => ({
-                value: c.id,
-                label: c.customerName || '',
-                sublabel: `${c.customerCode || ''} | ${c.phone || ''}`,
-              }))}
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              onClick={handleOpenAdd}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ เพิ่มลูกค้าใหม่</span>
-            </button>
-          </div>
+      {/* Customer Selector & Add Action Toolbar (การ์ดค้นหาลูกค้า แยกอิสระ) */}
+      <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+        <div className="flex-1 min-w-0">
+          <CustomSelect
+            value={selectedCustomerId}
+            onChange={(val) => setSelectedCustomerId(String(val))}
+            placeholder="กรุณาเลือกลูกค้าเพื่อแสดงข้อมูลลูกค้า (พิมพ์ชื่อ รหัส หรือเบอร์โทร)..."
+            searchable={true}
+            options={customers.map((c) => ({
+              value: c.id,
+              label: c.customerName || '',
+              sublabel: `${c.customerCode || ''} | ${c.phone || ''}`,
+            }))}
+          />
         </div>
 
-        {/* Sub-tabs Navigation Bar */}
-        <div className={`p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30 shrink-0 ${active360Tab === 'GENERAL' ? 'border-b border-slate-200 dark:border-slate-700' : ''}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            onClick={handleOpenAdd}
+            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ เพิ่มลูกค้าใหม่</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Workspace Card (การ์ดเนื้อหา โดยมีปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
+      <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+        {/* Sub-tabs Navigation Bar (ปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
+        <div className="p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <div className="bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
             <button
               onClick={() => setActive360Tab('GENERAL')}
@@ -519,9 +519,17 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร (อยู่ในกรอบเดียวกับแถบแท็บ ไม่ลอยแยก) */}
-        {active360Tab === 'GENERAL' && (
-          <div className="flex-1 min-h-0 text-xs p-3 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
+        {/* Tab Content Workspace Area */}
+        {isLoading ? (
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center py-16 text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin mb-3" />
+            <span className="text-sm font-semibold">กำลังโหลดข้อมูลลูกค้า...</span>
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร */}
+            {active360Tab === 'GENERAL' && (
+              <div className="flex-1 min-h-0 text-xs p-3 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
             {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2">
@@ -889,32 +897,10 @@ export default function CustomersPage() {
                 </div>
               </div>
             )}
-      </div>
 
-      {/* Main Content Area for Other Tabs */}
-      {active360Tab !== 'GENERAL' && (
-        <>
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-              <RefreshCw className="w-8 h-8 animate-spin mb-3" />
-              <span className="text-sm font-semibold">กำลังโหลดข้อมูลลูกค้า...</span>
-            </div>
-          )}
-          {!isLoading && (
-            <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
-              {/* Customer Tab Content Body */}
-              <div
-                className={`flex-1 min-h-0 text-xs flex flex-col overflow-hidden ${
-                  active360Tab === 'RENTAL_HISTORY' ||
-                  active360Tab === 'PAYMENT_HISTORY' ||
-                  active360Tab === 'OUTSTANDING_ITEMS'
-                    ? 'p-0 bg-transparent border-0 shadow-none'
-                    : 'bg-white dark:bg-slate-800 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm'
-                }`}
-              >
-                {/* TAB 2: ประวัติการเช่า */}
+            {/* TAB 2: ประวัติการเช่า */}
             {active360Tab === 'RENTAL_HISTORY' && (
-              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 {/* 4 Stat Cards */}
                 <div className="px-3 pt-2.5 pb-1.5 shrink-0">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-xs">
@@ -1117,7 +1103,7 @@ export default function CustomersPage() {
 
             {/* TAB 3: ประวัติการชำระเงิน */}
             {active360Tab === 'PAYMENT_HISTORY' && (
-              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 {/* Stat Cards */}
                 <div className="px-3 pt-2.5 pb-1.5 shrink-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs">
@@ -1265,7 +1251,7 @@ export default function CustomersPage() {
 
             {/* TAB 4: สินค้าค้างคืน */}
             {active360Tab === 'OUTSTANDING_ITEMS' && (
-              <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 {/* 3 Stat Cards */}
                 <div className="px-3 pt-2.5 pb-1.5 shrink-0">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 text-xs">
@@ -1417,7 +1403,7 @@ export default function CustomersPage() {
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}
             {active360Tab === 'DOCUMENTS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">เอกสารส่วนตัวลูกค้า</h4>
@@ -1549,7 +1535,7 @@ export default function CustomersPage() {
 
             {/* TAB 6: สถิติการใช้งาน */}
             {active360Tab === 'ANALYTICS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
                 <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">สถิติและพฤติกรรมการเช่าจริง</h4>
                 
                 {/* 3 Main Stat Cards */}
@@ -1605,7 +1591,7 @@ export default function CustomersPage() {
 
             {/* TAB 7: หมายเหตุ */}
             {active360Tab === 'NOTES_TAGS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
@@ -1637,12 +1623,9 @@ export default function CustomersPage() {
                 </div>
               </div>
             )}
-
           </div>
-        </div>
-      )}
-        </>
-      )}
+        )}
+      </div>
 
       {/* Add / Edit Customer Modal */}
       <NewCustomerModal
