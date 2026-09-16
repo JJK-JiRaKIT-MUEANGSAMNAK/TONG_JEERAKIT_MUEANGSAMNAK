@@ -185,15 +185,29 @@ export function computeFinancialSummary(options: {
     .map(([date, v]) => ({ date, income: v.income, expense: v.expense, net: v.income - v.expense }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
+  // depositHeld represents total deposit held by store currently across all transactions
+  let allTimeDepositReceived = 0
+  let allTimeDepositRefunded = 0
+  for (const t of allTxs) {
+    if (isDepositTx(t)) {
+      if (t.type === 'INCOME') {
+        allTimeDepositReceived += t.incomeAmount || 0
+      } else if (t.type === 'EXPENSE') {
+        allTimeDepositRefunded += t.expenseAmount || 0
+      }
+    }
+  }
+  const depositHeld = allTimeDepositReceived - allTimeDepositRefunded
+
   return {
     grossReceived,
     refundTotal,
-    netReceived: Math.max(0, grossReceived - refundTotal),
+    netReceived: grossReceived - refundTotal,
     rentalRevenue,
     saleRevenue,
     depositReceived,
     depositRefunded,
-    depositHeld: Math.max(0, depositReceived - depositRefunded),
+    depositHeld,
     outstanding,
     txCount: txs.length,
     billCount: billIds.size,
@@ -325,9 +339,12 @@ export function computeRentalOperationalSummary(): RentalOperationalSummary {
 export interface QuotationSummary {
   draft: number
   sent: number
+  waiting: number
   accepted: number
   converted: number
   cancelled: number
+  rejected: number
+  expired: number
   total: number
 }
 
@@ -335,10 +352,23 @@ export function computeQuotationSummary(): QuotationSummary {
   const qs = loadQuotations()
   const draft = qs.filter((q) => q.status === 'DRAFT').length
   const sent = qs.filter((q) => q.status === 'SENT').length
-  const accepted = qs.filter((q) => q.status === 'ACCEPTED' || q.status === 'WAITING').length
+  const waiting = qs.filter((q) => q.status === 'WAITING').length
+  const accepted = qs.filter((q) => q.status === 'ACCEPTED').length
   const converted = qs.filter((q) => q.status === 'CONVERTED').length
-  const cancelled = qs.filter((q) => q.status === 'CANCELLED' || q.status === 'REJECTED' || q.status === 'EXPIRED').length
-  return { draft, sent, accepted, converted, cancelled, total: qs.length }
+  const cancelled = qs.filter((q) => q.status === 'CANCELLED').length
+  const rejected = qs.filter((q) => q.status === 'REJECTED').length
+  const expired = qs.filter((q) => q.status === 'EXPIRED').length
+  return {
+    draft,
+    sent,
+    waiting,
+    accepted,
+    converted,
+    cancelled,
+    rejected,
+    expired,
+    total: qs.length,
+  }
 }
 
 // ─── Top Products (by billed revenue in date range) ──────────────────────────

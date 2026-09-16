@@ -177,6 +177,32 @@ describe('computeFinancialSummary', () => {
     const jan1 = r.daily.find((d) => d.date === '2026-01-01')
     expect(jan1?.income).toBe(300)
   })
+
+  it('8b. netReceived allows negative value when refund exceeds gross revenue', () => {
+    setFinance([
+      makeTx({ incomeAmount: 300, type: 'INCOME', isDeposit: false }),
+      makeTx({ expenseAmount: 800, type: 'EXPENSE', isDeposit: false }),
+    ])
+    setBills([])
+    const r = computeFinancialSummary()
+    expect(r.grossReceived).toBe(300)
+    expect(r.refundTotal).toBe(800)
+    expect(r.netReceived).toBe(-500)
+  })
+
+  it('8c. depositHeld calculates all-time held deposits regardless of date range filter', () => {
+    setFinance([
+      // Past deposit outside date filter
+      makeTx({ dateTime: '2026-01-01T10:00:00.000Z', incomeAmount: 1000, type: 'INCOME', isDeposit: true }),
+      // In-range transaction
+      makeTx({ dateTime: '2026-01-15T10:00:00.000Z', incomeAmount: 200, type: 'INCOME', isDeposit: false }),
+    ])
+    setBills([])
+    const r = computeFinancialSummary({ startDate: '2026-01-14', endDate: '2026-01-16' })
+    expect(r.grossReceived).toBe(200)
+    expect(r.depositReceived).toBe(0)
+    expect(r.depositHeld).toBe(1000)
+  })
 })
 
 describe('computeStockSummary', () => {
@@ -261,16 +287,19 @@ describe('computeQuotationSummary', () => {
       { id: 'q3', status: 'ACCEPTED' },
       { id: 'q4', status: 'CONVERTED' },
       { id: 'q5', status: 'CANCELLED' },
-      { id: 'q6', status: 'WAITING' },    // counted as accepted
-      { id: 'q7', status: 'REJECTED' },   // counted as cancelled
-      { id: 'q8', status: 'EXPIRED' },    // counted as cancelled
+      { id: 'q6', status: 'WAITING' },
+      { id: 'q7', status: 'REJECTED' },
+      { id: 'q8', status: 'EXPIRED' },
     ])
     const q = computeQuotationSummary()
     expect(q.draft).toBe(1)
     expect(q.sent).toBe(1)
-    expect(q.accepted).toBe(2) // ACCEPTED + WAITING
+    expect(q.waiting).toBe(1)
+    expect(q.accepted).toBe(1)
     expect(q.converted).toBe(1)
-    expect(q.cancelled).toBe(3) // CANCELLED + REJECTED + EXPIRED
+    expect(q.cancelled).toBe(1)
+    expect(q.rejected).toBe(1)
+    expect(q.expired).toBe(1)
     expect(q.total).toBe(8)
   })
 })
