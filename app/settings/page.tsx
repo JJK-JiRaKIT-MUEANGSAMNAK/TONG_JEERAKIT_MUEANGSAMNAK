@@ -219,17 +219,19 @@ export interface SystemConfig {
 
 import { ManualBackupCard } from '@/components/settings/ManualBackupCard'
 
-// 9 Main Categories
+// 7 Main Categories
 export type SettingsTab =
   | 'BUSINESS'
   | 'PRODUCTS_STOCK'
   | 'RENTAL_BILLS'
-  | 'DOC_NUMBERS'
-  | 'DOCS_PRINT'
-  | 'FINANCE_PAYMENT'
-  | 'APPOINTMENTS_NOTIFICATIONS'
-  | 'ACCOUNT_SECURITY'
-  | 'PROFILE_BRANDING'
+  | 'DOCUMENTS'
+  | 'FINANCE'
+  | 'NOTIFICATIONS'
+  | 'SYSTEM_ACCOUNT'
+
+export type BusinessSubTab = 'INFO' | 'BRANDING'
+export type DocumentsSubTab = 'NUMBERS' | 'PRINTING'
+export type SystemAccountSubTab = 'SECURITY' | 'BACKUP'
 
 import {
   loadSystemSettings,
@@ -317,6 +319,9 @@ export default function SettingsPage() {
     setUser((prev) => ({ ...prev, avatarUrl: url }))
   }
   const [activeTab, setActiveTab] = useState<SettingsTab>('BUSINESS')
+  const [businessSubTab, setBusinessSubTab] = useState<BusinessSubTab>('INFO')
+  const [documentsSubTab, setDocumentsSubTab] = useState<DocumentsSubTab>('NUMBERS')
+  const [systemAccountSubTab, setSystemAccountSubTab] = useState<SystemAccountSubTab>('SECURITY')
   const [isSaved, setIsSaved] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
@@ -1027,13 +1032,38 @@ export default function SettingsPage() {
 
   const handleResetDefaults = () => {
     if (activeTab === 'BUSINESS') {
-      if (confirm('คุณต้องการคืนค่าข้อมูลกิจการทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
-        resetBusinessSettings()
+      if (businessSubTab === 'INFO') {
+        if (confirm('คุณต้องการคืนค่าข้อมูลกิจการกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+          resetBusinessSettings()
+          setConfig((prev) => ({
+            ...prev,
+            business: DEFAULT_BUSINESS_SETTINGS,
+          }))
+          showToast('คืนค่าสำเร็จ', 'คืนค่าข้อมูลกิจการเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+        }
+        return
+      }
+      if (businessSubTab === 'BRANDING') {
+        if (confirm('คุณต้องการคืนค่าการตั้งค่าแบรนด์และหน้าตาระบบกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+          resetBrandingSettings()
+          updateUserAvatar(null)
+          setConfig((prev) => ({
+            ...prev,
+            branding: DEFAULT_BRANDING_SETTINGS,
+          }))
+          showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าแบรนด์และหน้าตาระบบเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+        }
+        return
+      }
+    }
+
+    if (activeTab === 'PRODUCTS_STOCK') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าสินค้าและสต็อกกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
         setConfig((prev) => ({
           ...prev,
-          business: DEFAULT_BUSINESS_SETTINGS,
+          productStock: DEFAULT_PRODUCT_STOCK_SETTINGS,
         }))
-        showToast('คืนค่าสำเร็จ', 'คืนค่าข้อมูลกิจการเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าสินค้าและสต็อกเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
       }
       return
     }
@@ -1050,31 +1080,32 @@ export default function SettingsPage() {
       return
     }
 
-    if (activeTab === 'DOC_NUMBERS') {
-      if (confirm('คุณต้องการคืนค่าการตั้งค่าเลขที่เอกสารกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
-        resetDocumentNumberingSettings()
-        setConfig((prev) => ({
-          ...prev,
-          documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
-        }))
-        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเลขที่เอกสารเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+    if (activeTab === 'DOCUMENTS') {
+      if (documentsSubTab === 'NUMBERS') {
+        if (confirm('คุณต้องการคืนค่าการตั้งค่าเลขที่เอกสารกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+          resetDocumentNumberingSettings()
+          setConfig((prev) => ({
+            ...prev,
+            documentNumbering: DEFAULT_DOCUMENT_NUMBERING_SETTINGS,
+          }))
+          showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเลขที่เอกสารเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+        }
+        return
       }
-      return
+      if (documentsSubTab === 'PRINTING') {
+        if (confirm('คุณต้องการคืนค่าการตั้งค่าเอกสารและการพิมพ์กลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+          resetDocumentPrintingSettings()
+          setConfig((prev) => ({
+            ...prev,
+            documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS,
+          }))
+          showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเอกสารและการพิมพ์เป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+        }
+        return
+      }
     }
 
-    if (activeTab === 'DOCS_PRINT') {
-      if (confirm('คุณต้องการคืนค่าการตั้งค่าเอกสารและการพิมพ์กลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
-        resetDocumentPrintingSettings()
-        setConfig((prev) => ({
-          ...prev,
-          documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS,
-        }))
-        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าเอกสารและการพิมพ์เป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
-      }
-      return
-    }
-
-    if (activeTab === 'FINANCE_PAYMENT') {
+    if (activeTab === 'FINANCE') {
       if (confirm('คุณต้องการคืนค่าการตั้งค่าการเงินและการชำระเงินกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
         resetFinancePaymentSettings()
         setConfig((prev) => ({
@@ -1086,7 +1117,7 @@ export default function SettingsPage() {
       return
     }
 
-    if (activeTab === 'APPOINTMENTS_NOTIFICATIONS') {
+    if (activeTab === 'NOTIFICATIONS') {
       if (confirm('คุณต้องการคืนค่าการตั้งค่าการแจ้งเตือนกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
         resetNotificationSettings()
         setConfig((prev) => ({
@@ -1102,19 +1133,10 @@ export default function SettingsPage() {
       return
     }
 
-    if (activeTab === 'PROFILE_BRANDING') {
-      if (confirm('คุณต้องการคืนค่าการตั้งค่าโปรไฟล์และแบรนด์ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
-        resetBrandingSettings()
-        updateUserAvatar(null)
-        setConfig((prev) => ({
-          ...prev,
-          branding: DEFAULT_BRANDING_SETTINGS,
-          business: {
-            ...prev.business,
-            logoDataUrl: '',
-          },
-        }))
-        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าโปรไฟล์และแบรนด์เป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
+    if (activeTab === 'SYSTEM_ACCOUNT') {
+      if (confirm('คุณต้องการคืนค่าการตั้งค่าบัญชีและความปลอดภัยกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+        setAutoLockDuration('5')
+        showToast('คืนค่าสำเร็จ', 'คืนค่าการตั้งค่าความปลอดภัยเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'INFO')
       }
       return
     }
@@ -1126,453 +1148,630 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
-        {/* Left Navigation: 9 Main Categories */}
-        <div className="w-full md:w-56 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex flex-row overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col gap-1 text-xs no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab('BUSINESS')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'BUSINESS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <Building className="w-4 h-4 shrink-0 text-blue-500" />
-            <span className="truncate">ข้อมูลกิจการ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('PRODUCTS_STOCK')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'PRODUCTS_STOCK'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <Package className="w-4 h-4 shrink-0 text-amber-500" />
-            <span className="truncate">สินค้าและสต็อก</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('RENTAL_BILLS')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'RENTAL_BILLS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <CalendarDays className="w-4 h-4 shrink-0 text-emerald-500" />
-            <span className="truncate">การเช่าและบิล</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('DOC_NUMBERS')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'DOC_NUMBERS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <Hash className="w-4 h-4 shrink-0 text-indigo-500" />
-            <span className="truncate">เลขที่เอกสาร</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('DOCS_PRINT')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'DOCS_PRINT'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <FileText className="w-4 h-4 shrink-0 text-rose-500" />
-            <span className="truncate">เอกสารและการพิมพ์</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('FINANCE_PAYMENT')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'FINANCE_PAYMENT'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <CreditCard className="w-4 h-4 shrink-0 text-violet-500" />
-            <span className="truncate">การเงินและการชำระเงิน</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('APPOINTMENTS_NOTIFICATIONS')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'APPOINTMENTS_NOTIFICATIONS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <BellRing className="w-4 h-4 shrink-0 text-teal-500" />
-            <span className="truncate">นัดหมายและการแจ้งเตือน</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('ACCOUNT_SECURITY')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'ACCOUNT_SECURITY'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <Shield className="w-4 h-4 shrink-0 text-indigo-500" />
-            <span className="truncate">บัญชีและความปลอดภัย</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('PROFILE_BRANDING')}
-            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
-              activeTab === 'PROFILE_BRANDING'
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
-                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
-            }`}
-          >
-            <ImageIcon className="w-4 h-4 shrink-0 text-pink-500" />
-            <span className="truncate">โปรไฟล์และแบรนด์</span>
-          </button>
+    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-900 text-xs">
+      {/* 1. Main Horizontal Tabs Bar */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 h-14 shrink-0 flex items-center overflow-x-auto no-scrollbar">
+        <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+          {[
+            { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
+            { id: 'PRODUCTS_STOCK' as const, label: 'สินค้า / สต็อก', icon: Package },
+            { id: 'RENTAL_BILLS' as const, label: 'เช่า / บิล', icon: CalendarDays },
+            { id: 'DOCUMENTS' as const, label: 'เอกสาร', icon: FileText },
+            { id: 'FINANCE' as const, label: 'การเงิน', icon: CreditCard },
+            { id: 'NOTIFICATIONS' as const, label: 'นัดหมาย / แจ้งเตือน', icon: BellRing },
+            { id: 'SYSTEM_ACCOUNT' as const, label: 'บัญชี / ระบบ', icon: Shield },
+          ].map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`h-7 px-3.5 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
         </div>
+      </div>
 
-        {/* Right Settings Workspace */}
+      {/* 2. Subtabs Bar (shown if active tab has subtabs) */}
+      {activeTab === 'BUSINESS' && (
+        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
+          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setBusinessSubTab('INFO')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                businessSubTab === 'INFO'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Building className="w-3.5 h-3.5 shrink-0" />
+              <span>ข้อมูลกิจการ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setBusinessSubTab('BRANDING')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                businessSubTab === 'BRANDING'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>แบรนด์และหน้าตาระบบ</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'DOCUMENTS' && (
+        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
+          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setDocumentsSubTab('NUMBERS')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                documentsSubTab === 'NUMBERS'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Hash className="w-3.5 h-3.5 shrink-0" />
+              <span>เลขที่เอกสาร</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDocumentsSubTab('PRINTING')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                documentsSubTab === 'PRINTING'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span>รูปแบบและการพิมพ์</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'SYSTEM_ACCOUNT' && (
+        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
+          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setSystemAccountSubTab('SECURITY')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                systemAccountSubTab === 'SECURITY'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 shrink-0" />
+              <span>บัญชีและความปลอดภัย</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSystemAccountSubTab('BACKUP')}
+              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                systemAccountSubTab === 'BACKUP'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Save className="w-3.5 h-3.5 shrink-0" />
+              <span>สำรองข้อมูล</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Full-Width Settings Workspace */}
+      <div className="flex-1 min-h-0 min-w-0 p-2 overflow-hidden flex flex-col">
         <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
           <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
             {/* Scrollable Container (internal scroll only, no page-level scroll) */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-3 text-xs">
               
-              {/* ================= TAB 1: ข้อมูลกิจการ ================= */}
+              {/* ================= TAB 1: กิจการ ================= */}
               {activeTab === 'BUSINESS' && (
                 <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Building className="w-4 h-4 text-blue-600" />
-                      <span>ข้อมูลสถานประกอบการ / ร้านค้า</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      ข้อมูลกลางของกิจการสำหรับแสดงบนหัวเอกสาร บิลเช่า ใบเสนอราคา ใบเสร็จรับเงิน และข้อมูลติดต่อสำหรับลูกค้า
-                    </p>
-                  </div>
-
-                  {/* Logo Section */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-blue-500" />
-                      <span>โลโก้กิจการ</span>
-                    </h4>
-
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                      {/* Logo Preview Frame */}
-                      <div className="w-32 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative">
-                        {config.business.logoDataUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={config.business.logoDataUrl}
-                            alt="Business Logo Preview"
-                            className="w-full h-full object-contain p-1"
-                          />
-                        ) : (
-                          <div className="text-center p-2 text-slate-400">
-                            <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-40" />
-                            <span className="text-[10px] block">ยังไม่มีโลโก้</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Logo Actions & Guidelines */}
-                      <div className="space-y-2 flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <input
-                            type="file"
-                            ref={logoInputRef}
-                            onChange={handleLogoUpload}
-                            accept="image/png, image/jpeg, image/webp"
-                            className="hidden"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => logoInputRef.current?.click()}
-                            className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                          >
-                            <Upload className="w-4 h-4" />
-                            <span>{config.business.logoDataUrl ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้'}</span>
-                          </button>
-
-                          {config.business.logoDataUrl && (
-                            <button
-                              type="button"
-                              onClick={handleRemoveLogo}
-                              className="h-9 px-3.5 py-0 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>ลบโลโก้</span>
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-400">
-                          รองรับไฟล์รูปภาพ PNG, JPG, WebP (ขนาดไฟล์ไม่เกิน 500 KB)
+                  {/* Subtab 1: ข้อมูลกิจการ (INFO) */}
+                  {businessSubTab === 'INFO' && (
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Building className="w-4 h-4 text-blue-600" />
+                          <span>ข้อมูลสถานประกอบการ / ร้านค้า</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          ข้อมูลกลางของกิจการสำหรับแสดงบนหัวเอกสาร บิลเช่า ใบเสนอราคา ใบเสร็จรับเงิน และข้อมูลติดต่อสำหรับลูกค้า
                         </p>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* General Business Info */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        ชื่อร้าน / บริษัท (ตามทะเบียนพาณิชย์/ภ.พ.20)
-                      </label>
-                      <input
-                        type="text"
-                        value={config.business.businessName}
-                        onChange={(e) => setConfig({ ...config, business: { ...config.business, businessName: e.target.value } })}
-                        placeholder="ระบุชื่อร้าน หรือ ชื่อบริษัท..."
-                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
+                      {/* Logo Section */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4 text-blue-500" />
+                          <span>โลโก้กิจการ</span>
+                        </h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          เลขประจำตัวผู้เสียภาษี (13 หลัก)
-                        </label>
-                        <input
-                          type="text"
-                          value={config.business.taxId}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 13)
-                            setConfig({ ...config, business: { ...config.business, taxId: val } })
-                          }}
-                          placeholder="เช่น 0105565012345 (ตัวเลข 13 หลัก)"
-                          maxLength={13}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          เบอร์โทรศัพท์ติดต่อ
-                        </label>
-                        <input
-                          type="text"
-                          value={config.business.phone}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, phone: e.target.value } })}
-                          placeholder="เช่น 02-999-8888, 081-234-5678"
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          อีเมล
-                        </label>
-                        <input
-                          type="email"
-                          value={config.business.email}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, email: e.target.value } })}
-                          placeholder="เช่น contact@example.com"
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          LINE ID / LINE Official Account
-                        </label>
-                        <input
-                          type="text"
-                          value={config.business.lineId}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, lineId: e.target.value } })}
-                          placeholder="เช่น @myrentalshop"
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        ที่อยู่สถานประกอบการ (ตาม ภ.พ.20)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={config.business.address}
-                        onChange={(e) => setConfig({ ...config, business: { ...config.business, address: e.target.value } })}
-                        placeholder="ระบุที่อยู่สถานประกอบการสำหรับแสดงบนหัวเอกสาร..."
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        ชื่อผู้มีอำนาจลงนาม / ผู้จัดการ
-                      </label>
-                      <input
-                        type="text"
-                        value={config.business.authorizedPerson}
-                        onChange={(e) => setConfig({ ...config, business: { ...config.business, authorizedPerson: e.target.value } })}
-                        placeholder="เช่น นายสมชาย ใจดี (ผู้จัดการ)"
-                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bank Account & PromptPay Card */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-emerald-600" />
-                      <span>บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ธนาคาร</label>
-                        <input
-                          type="text"
-                          value={config.business.bankName}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankName: e.target.value } })}
-                          placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">เลขที่บัญชี</label>
-                        <input
-                          type="text"
-                          value={config.business.bankAccountNumber}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountNumber: e.target.value } })}
-                          placeholder="เช่น 045-2-12345-6"
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-blue-600"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ชื่อบัญชี</label>
-                        <input
-                          type="text"
-                          value={config.business.bankAccountName}
-                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountName: e.target.value } })}
-                          placeholder="เช่น ร้าน หรือ บจก..."
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
-                      <div>
-                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ประเภท PromptPay</label>
-                        <CustomSelect
-                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
-                          value={config.business.promptPayType || ''}
-                          onChange={(val) => setConfig({ ...config, business: { ...config.business, promptPayType: val as any } })}
-                          options={[
-                            { value: '', label: '-- ไม่ระบุประเภท --' },
-                            { value: 'PHONE', label: 'เบอร์โทรศัพท์ (Phone Number)' },
-                            { value: 'TAX_ID', label: 'เลขประจำตัวผู้เสียภาษี (Tax ID / ID Card)' },
-                          ]}
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">หมายเลข PromptPay</label>
-                        <input
-                          type="text"
-                          value={config.business.promptPayValue}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '')
-                            const maxLen = config.business.promptPayType === 'TAX_ID' ? 13 : 10
-                            setConfig({ ...config, business: { ...config.business, promptPayValue: val.slice(0, maxLen) } })
-                          }}
-                          placeholder={
-                            config.business.promptPayType === 'TAX_ID'
-                              ? 'เช่น 0105565012345 (13 หลัก)'
-                              : config.business.promptPayType === 'PHONE'
-                              ? 'เช่น 0812345678 (10 หลัก)'
-                              : 'ระบุหมายเลข PromptPay'
-                          }
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-emerald-600"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bank QR Code Upload */}
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block">
-                            QR Code รับเงินของธนาคาร (Bank QR Code)
-                          </span>
-                          <span className="text-[11px] text-slate-500 block">
-                            รูปภาพ QR Code รับเงินที่ร้านได้รับจากธนาคาร/แอปธนาคาร (รองรับ PNG, JPG, WEBP ขนาดไม่เกิน 500 KB)
-                          </span>
-                        </div>
-                      </div>
-
-                      <input
-                        ref={bankQrInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={handleBankQrUpload}
-                        className="hidden"
-                      />
-
-                      {config.business.bankQrDataUrl ? (
-                        <div className="flex items-center gap-3 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-white flex items-center justify-center p-1">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={config.business.bankQrDataUrl}
-                              alt="Bank QR Code"
-                              className="w-full h-full object-contain"
-                            />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                          {/* Logo Preview Frame */}
+                          <div className="w-32 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative">
+                            {config.business.logoDataUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={config.business.logoDataUrl}
+                                alt="Business Logo Preview"
+                                className="w-full h-full object-contain p-1"
+                              />
+                            ) : (
+                              <div className="text-center p-2 text-slate-400">
+                                <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-40" />
+                                <span className="text-[10px] block">ยังไม่มีโลโก้</span>
+                              </div>
+                            )}
                           </div>
-                          <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>มีรูปภาพ QR Code รับเงินแล้ว</span>
-                            </div>
-                            <div className="flex items-center gap-2">
+
+                          {/* Logo Actions & Guidelines */}
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                type="file"
+                                ref={logoInputRef}
+                                onChange={handleLogoUpload}
+                                accept="image/png, image/jpeg, image/webp"
+                                className="hidden"
+                              />
                               <button
                                 type="button"
-                                onClick={() => bankQrInputRef.current?.click()}
-                                className="h-9 px-3.5 py-0 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                                onClick={() => logoInputRef.current?.click()}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                               >
                                 <Upload className="w-4 h-4" />
-                                <span>เปลี่ยน QR</span>
+                                <span>{config.business.logoDataUrl ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้'}</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={handleRemoveBankQr}
-                                className="h-9 px-3.5 py-0 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-semibold flex items-center gap-1.5 border border-red-200 dark:border-red-800 cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>ลบ QR</span>
-                              </button>
+
+                              {config.business.logoDataUrl && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveLogo}
+                                  className="h-9 px-3.5 py-0 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>ลบโลโก้</span>
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400">
+                              รองรับไฟล์รูปภาพ PNG, JPG, WebP (ขนาดไฟล์ไม่เกิน 500 KB)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* General Business Information */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            ชื่อสถานประกอบการ / ร้านค้า <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={config.business.businessName}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, businessName: e.target.value } })}
+                            placeholder="เช่น เจริญการช่าง สาขาใหญ่"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            เบอร์โทรศัพท์ติดต่อ
+                          </label>
+                          <input
+                            type="tel"
+                            value={config.business.phone}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, phone: e.target.value } })}
+                            placeholder="เช่น 02-123-4567 หรือ 081-234-5678"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            อีเมลติดต่อ
+                          </label>
+                          <input
+                            type="email"
+                            value={config.business.email}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, email: e.target.value } })}
+                            placeholder="เช่น contact@business.com"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            เลขประจำตัวผู้เสียภาษีอากร (Tax ID)
+                          </label>
+                          <input
+                            type="text"
+                            value={config.business.taxId}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, taxId: e.target.value } })}
+                            placeholder="เช่น 0105551234567"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            ที่อยู่สถานประกอบการ
+                          </label>
+                          <textarea
+                            value={config.business.address}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, address: e.target.value } })}
+                            placeholder="เช่น 123/45 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110"
+                            rows={2}
+                            className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            ชื่อผู้มีอำนาจลงนาม / ผู้จัดการ
+                          </label>
+                          <input
+                            type="text"
+                            value={config.business.authorizedPerson}
+                            onChange={(e) => setConfig({ ...config, business: { ...config.business, authorizedPerson: e.target.value } })}
+                            placeholder="เช่น นายสมชาย ใจดี (ผู้จัดการ)"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subtab 2: แบรนด์และหน้าตาระบบ (BRANDING) */}
+                  {businessSubTab === 'BRANDING' && (
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-pink-500" />
+                          <span>แบรนด์และหน้าตาระบบ</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          จัดการชื่อระบบ รูปภาพพื้นหลังเข้าสู่ระบบ รูปโปรไฟล์ประจำตัวผู้ใช้ และโลโก้ระบบ
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* CARD 0: ชื่อระบบ (System Name) */}
+                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                          <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                            <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
+                              <Store className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                ชื่อระบบ
+                              </h4>
+                              <p className="text-[11px] text-slate-500">
+                                กำหนดชื่อระบบหลักสำหรับแสดงผลบนแถบเมนู ส่วนหัว และหน้าจอทั้งหมด
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                ชื่อระบบ
+                              </label>
+                              <input
+                                type="text"
+                                value={config.branding?.systemName || ''}
+                                onChange={(e) =>
+                                  setConfig({
+                                    ...config,
+                                    branding: {
+                                      ...config.branding,
+                                      systemName: e.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder="JJK_JeeRaKiT"
+                                className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs"
+                              />
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <div
-                          onClick={() => bankQrInputRef.current?.click()}
-                          className="p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl flex items-center justify-center gap-2 cursor-pointer bg-white dark:bg-slate-800 transition-colors"
-                        >
-                          <QrCode className="w-4 h-4 text-slate-400" />
-                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            เลือกรูปภาพ QR Code รับเงิน
-                          </span>
+
+                        {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
+                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
+                                <Sparkles className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  พื้นหลังเข้าสู่ระบบและปลดล็อก PIN
+                                </h4>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <input
+                                ref={authBgInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/jpg"
+                                className="hidden"
+                                onChange={handleAuthBgUpload}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => authBgInputRef.current?.click()}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>{config.branding?.authBackgroundImageUrl ? 'เปลี่ยนรูปพื้นหลัง' : 'อัปโหลดรูปพื้นหลัง'}</span>
+                              </button>
+                              {config.branding?.authBackgroundImageUrl && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveAuthBg}
+                                  className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>ลบรูป</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Background Preview Frame */}
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                                ตัวอย่างการแสดงผลบนหน้า Login และ App Lock (Live Preview)
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {config.branding?.authBackgroundImageUrl ? '🟢 กำหนดรูปภาพแล้ว' : '⚪ ค่าเริ่มต้น (Gradient Glow)'}
+                              </span>
+                            </div>
+
+                            <div className="relative aspect-video sm:aspect-[21/9] w-full rounded-2xl overflow-hidden border-2 border-slate-300 dark:border-slate-700 shadow-md bg-slate-950 flex items-center justify-center">
+                              {config.branding?.authBackgroundImageUrl ? (
+                                <div
+                                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                  style={{ backgroundImage: `url(${config.branding.authBackgroundImageUrl})` }}
+                                >
+                                  <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs" />
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 bg-slate-950 flex items-center justify-center overflow-hidden">
+                                  <div className="absolute top-1/4 -left-10 w-48 h-48 bg-blue-600/30 rounded-full blur-2xl" />
+                                  <div className="absolute bottom-1/4 -right-10 w-48 h-48 bg-indigo-600/30 rounded-full blur-2xl" />
+                                </div>
+                              )}
+
+                              {/* Mini Lock Mockup Box */}
+                              <div className="relative z-10 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 sm:p-4 text-center max-w-xs w-full mx-4 shadow-xl backdrop-blur-md">
+                                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white mx-auto mb-1.5 shadow-sm">
+                                  <Lock className="w-4 h-4" />
+                                </div>
+                                <p className="text-xs font-black text-white">{config.business.businessName || 'Rental POS'}</p>
+                                <p className="text-[10px] text-slate-400 mb-2">หน้าจอล็อก & เข้าสู่ระบบ</p>
+                                <div className="flex justify-center gap-1.5">
+                                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                                    <div key={i} className={`w-2 h-2 rounded-full ${i < 3 ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-1.5">
+                              * รองรับไฟล์ .jpg, .jpeg, .png, .webp ขนาดไม่เกิน 3 MB ระบบจะครอบและปรับสัดส่วนอัตโนมัติ (Cover & Center)
+                            </p>
+                          </div>
                         </div>
-                      )}
+
+                        {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
+                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                                <User className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  รูปโปรไฟล์ผู้ใช้งาน
+                                </h4>
+                                <p className="text-[11px] text-slate-500">
+                                  รูป Avatar ประจำตัวสำหรับบัญชีปัจจุบัน (@{user?.username || 'user'}) แสดงบนหน้าจอ PIN Lock และส่วนหัวผู้ใช้
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <input
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/jpg"
+                                className="hidden"
+                                onChange={handleAvatarUpload}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => avatarInputRef.current?.click()}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>{user?.avatarUrl ? 'เปลี่ยนรูปโปรไฟล์' : 'อัปโหลดรูปโปรไฟล์'}</span>
+                              </button>
+                              {user?.avatarUrl && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveAvatar}
+                                  className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>ลบรูป</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Avatar Preview Area */}
+                          <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20 shrink-0 overflow-hidden">
+                              {user?.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={user.avatarUrl} alt={user.fullName || 'User Avatar'} className="w-full h-full object-cover" />
+                              ) : (
+                                user?.firstName?.[0] || 'ผ'
+                              )}
+                            </div>
+
+                            <div className="space-y-1 text-center sm:text-left">
+                              <div className="flex items-center justify-center sm:justify-start gap-2">
+                                <span className="font-black text-sm text-slate-900 dark:text-slate-100">{user?.fullName || 'ผู้ใช้งานระบบ'}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px]">
+                                  @{user?.username || 'user'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                สิทธิ์การใช้งาน: {user?.role === 'OWNER' ? '👑 เจ้าของร้าน (Owner)' : '💻 พนักงาน (User)'}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {user?.avatarUrl ? '✓ ใช้รูปโปรไฟล์แบบรูปภาพส่วนตัว (แยกอิสระตามแต่ละ User)' : '✓ ใช้ตัวอักษรย่อเป็นตัวแทนรูปโปรไฟล์ (Initial Avatar)'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
+                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
+                                <Building className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  โลโก้แอปและไอคอนระบบ
+                                </h4>
+                                <p className="text-[11px] text-slate-500">
+                                  โลโก้หลักของระบบ ใช้เป็น Favicon บนบราวเซอร์, หัวเมนู Sidebar, และไอคอนสำหรับ Home Screen
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <input
+                                ref={appLogoInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/jpg"
+                                className="hidden"
+                                onChange={handleAppLogoUpload}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => appLogoInputRef.current?.click()}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>{config.branding?.appLogoUrl || config.business?.logoDataUrl ? 'เปลี่ยนโลโก้แอป' : 'อัปโหลดโลโก้แอป'}</span>
+                              </button>
+                              {(config.branding?.appLogoUrl || config.business?.logoDataUrl) && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveAppLogo}
+                                  className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                  <span>คืนค่าเริ่มต้น</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Dual Mockup: PC Browser Tab & Mobile App Icon */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Mockup 1: PC Browser Tab */}
+                            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
+                                🖥️ ตัวอย่างการแสดงผลบน PC (Browser Tab & Favicon)
+                              </span>
+                              <div className="bg-slate-900 rounded-xl p-2.5 border border-slate-700/80 shadow-inner">
+                                {/* Browser Tab Bar Mockup */}
+                                <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-slate-800">
+                                  <div className="flex gap-1">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                                  </div>
+                                  <div className="flex-1 bg-slate-800/80 rounded-lg px-2.5 py-1 flex items-center gap-2 max-w-[220px]">
+                                    <div className="w-4 h-4 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-slate-700">
+                                      {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="Favicon" className="w-full h-full object-contain" />
+                                      ) : (
+                                        <Store className="w-3 h-3 text-emerald-400" />
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-slate-200 truncate font-semibold">
+                                      {config.branding?.systemName || config.business.businessName || 'JJK_JeeRaKiT'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-[10px] text-slate-400">Favicon บน Browser จะอัปเดตแบบ Dynamic อัตโนมัติตามโลโก้นี้</p>
+                              </div>
+                            </div>
+
+                            {/* Mockup 2: Mobile App Icon */}
+                            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
+                                📱 ตัวอย่างการแสดงผลบน Smartphone (Home Screen Icon)
+                              </span>
+                              <div className="bg-slate-900 rounded-xl p-3 border border-slate-700/80 flex items-center gap-4 shadow-inner">
+                                {/* App Icon Squircle */}
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-2 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white shrink-0 overflow-hidden">
+                                  {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="App Icon" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <Store className="w-7 h-7" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-xs text-white">{config.business.businessName || 'Rental POS'}</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">
+                                    ไอคอนสำหรับบันทึกไว้ที่หน้าจอโฮม (PWA / Web App Shortcut)
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-slate-400">
+                            * แนะนำใช้รูปสัดส่วนสี่เหลี่ยมจัตุรัส (Square 512×512 ขึ้นไป) ไฟล์ .png หรือ .webp เพื่อความคมชัดสูงสุด
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1582,10 +1781,10 @@ export default function SettingsPage() {
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-600" />
-                      <span>2. สินค้าและสต็อก (Master Data & Inventory Config)</span>
+                      <span>สินค้า / สต็อก (Products & Stock Configuration)</span>
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      จัดการหมวดหมู่สินค้า รูปแบบการเช่า และหน่วยนับ และกำหนดพฤติกรรมสต็อก
+                      จัดการหมวดหมู่สินค้า รูปแบบการเช่า และหน่วยนับ พร้อมทั้งกำหนดพฤติกรรมการควบคุมสต็อก
                     </p>
                   </div>
 
@@ -1595,7 +1794,7 @@ export default function SettingsPage() {
                       <div>
                         <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-500" />
-                          <span>ตั้งค่าเสริมสินค้า (ชุดกฎสินค้า: 1 แถว = หมวดหมู่ + การคำนวณ + หน่วยนับ)</span>
+                          <span>ส่วนที่ 1: หมวดหมู่และกฎสินค้า (หมวดหมู่ + รูปแบบคิดเงิน + หน่วยนับ)</span>
                         </h4>
                         <p className="text-[11px] text-slate-500 mt-0.5">
                           เมื่อเลือกหมวดหมู่ตอนเพิ่มสินค้า ระบบจะดึงรูปแบบการคำนวณและหน่วยนับของชุดกฎนี้ไปใช้ทันที
@@ -1820,7 +2019,7 @@ export default function SettingsPage() {
 
                   {/* Section B: Inventory Configurations */}
                   <div className="space-y-2.5 pt-2">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100">การควบคุมสต็อกและการเตือน</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100">ส่วนที่ 2: การควบคุมสต็อกและการเตือน (Stock Behavior & Control)</h4>
                     
                     <div>
                       <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1888,133 +2087,175 @@ export default function SettingsPage() {
 
               {/* ================= TAB 3: การเช่าและบิล ================= */}
               {activeTab === 'RENTAL_BILLS' && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-emerald-600" />
-                      <span>3. การเช่าและบิล (Rental & Billing Configuration)</span>
+                      <span>เช่า / บิล (Rental & Billing Configuration)</span>
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      กำหนดรูปแบบการเช่าเริ่มต้น วิธีนับวันเช่า เงื่อนไขค่าปรับ และนโยบายการรับคืน/รับชำระ
+                      กำหนดค่าเริ่มต้นการเช่า รูปแบบการนับวันและเวลาตัดรอบ นโยบายค่าปรับคืนล่าช้า และนโยบายการจอง
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        รูปแบบการเช่าเริ่มต้น (Default Rental Type)
-                      </label>
-                      <CustomSelect
-                        buttonClassName="h-9 px-2.5 py-0 rounded-xl"
-                        value={config.rentalBilling.defaultRentalType}
-                        onChange={(val) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: { ...config.rentalBilling, defaultRentalType: String(val) },
-                          })
-                        }
-                        options={
-                          categoryRules.length > 0
-                            ? categoryRules.map((cr) => ({
-                                value: cr.name,
-                                label: cr.name,
-                                sublabel: cr.calculationLabel,
-                              }))
-                            : [
-                                { value: 'NORMAL', label: 'เช่าปกติ (ตามรอบสินค้า)' },
-                                { value: 'DAILY', label: 'เช่ารายวัน (Daily Rental)' },
-                              ]
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        จำนวนวันเช่าเริ่มต้น (Default Rental Days)
-                      </label>
-                      <NumericInput
-                        value={config.rentalBilling.defaultRentalDays}
-                        onChange={(val) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              defaultRentalDays: val === '' ? 1 : Math.max(1, val),
-                            },
-                          })
-                        }
-                        defaultValueOnBlur={1}
-                        min={1}
-                        allowDecimals={false}
-                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Day Counting Method */}
-                  <div>
-                    <label className="block font-bold text-slate-900 dark:text-slate-100 mb-2">
-                      วิธีนับวันเช่าของระบบ (Day Counting Method)
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {[
-                        {
-                          id: 'START_DATE_IS_DAY_ONE',
-                          title: 'นับวันเริ่มต้นเป็นวันที่ 1',
-                          desc: 'สูตร: วันสิ้นสุด - วันเริ่ม + 1 (เช่น 1 ส.ค. ถึง 1 ส.ค. = 1 วัน)',
-                        },
-                        {
-                          id: 'NIGHTS',
-                          title: 'นับตามจำนวนคืน (Nights)',
-                          desc: 'สูตร: ผลต่างของวัน/คืน (เช่น 1 ส.ค. ถึง 5 ส.ค. = 4 คืน)',
-                        },
-                        {
-                          id: 'CUSTOM',
-                          title: 'กำหนดเองตามสัญญา (Custom)',
-                          desc: 'เปิดให้ปรับแต่งจำนวนวันตามข้อตกลง (เก็บค่าการตั้งค่า)',
-                        },
-                      ].map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() =>
+                  {/* กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-emerald-500" />
+                      <span>กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults)</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          รูปแบบการเช่าเริ่มต้น (Default Rental Type)
+                        </label>
+                        <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
+                          value={config.rentalBilling.defaultRentalType}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: { ...config.rentalBilling, defaultRentalType: String(val) },
+                            })
+                          }
+                          options={
+                            categoryRules.length > 0
+                              ? categoryRules.map((cr) => ({
+                                  value: cr.name,
+                                  label: cr.name,
+                                  sublabel: cr.calculationLabel,
+                                }))
+                              : [
+                                  { value: 'NORMAL', label: 'เช่าปกติ (ตามรอบสินค้า)' },
+                                  { value: 'DAILY', label: 'เช่ารายวัน (Daily Rental)' },
+                                ]
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          จำนวนวันเช่าเริ่มต้น (Default Rental Days)
+                        </label>
+                        <NumericInput
+                          value={config.rentalBilling.defaultRentalDays}
+                          onChange={(val) =>
                             setConfig({
                               ...config,
                               rentalBilling: {
                                 ...config.rentalBilling,
-                                rentalDayCalculation: item.id as any,
+                                defaultRentalDays: val === '' ? 1 : Math.max(1, val),
                               },
                             })
                           }
-                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                            config.rentalBilling.rentalDayCalculation === item.id
-                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 shadow-xs'
-                              : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-                            <span
-                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                                config.rentalBilling.rentalDayCalculation === item.id
-                                  ? 'border-emerald-600 bg-emerald-600 text-white'
-                                  : 'border-slate-400'
-                              }`}
-                            >
-                              {config.rentalBilling.rentalDayCalculation === item.id && (
-                                <Check className="w-2.5 h-2.5 stroke-[3]" />
-                              )}
-                            </span>
-                            <span>{item.title}</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-1 pl-5.5">{item.desc}</p>
-                        </div>
-                      ))}
+                          defaultValueOnBlur={1}
+                          min={1}
+                          allowDecimals={false}
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Grace Period and Late Fee */}
+                  {/* กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span>กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff)</span>
+                    </h4>
+
+                    {/* Day Counting Method */}
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        รูปแบบการนับวันเช่า (Day Counting Method)
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {[
+                          {
+                            id: 'START_DATE_IS_DAY_ONE',
+                            title: 'นับวันเริ่มต้นเป็นวันที่ 1',
+                            desc: 'สูตร: วันสิ้นสุด - วันเริ่ม + 1 (เช่น 1 ส.ค. ถึง 1 ส.ค. = 1 วัน)',
+                          },
+                          {
+                            id: 'NIGHTS',
+                            title: 'นับตามจำนวนคืน (Nights)',
+                            desc: 'สูตร: ผลต่างของวัน/คืน (เช่น 1 ส.ค. ถึง 5 ส.ค. = 4 คืน)',
+                          },
+                          {
+                            id: 'CUSTOM',
+                            title: 'กำหนดเองตามสัญญา (Custom)',
+                            desc: 'เปิดให้ปรับแต่งจำนวนวันตามข้อตกลง (เก็บค่าการตั้งค่า)',
+                          },
+                        ].map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() =>
+                              setConfig({
+                                ...config,
+                                rentalBilling: {
+                                  ...config.rentalBilling,
+                                  rentalDayCalculation: item.id as any,
+                                },
+                              })
+                            }
+                            className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                              config.rentalBilling.rentalDayCalculation === item.id
+                                ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-500 shadow-xs'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                              <span
+                                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                  config.rentalBilling.rentalDayCalculation === item.id
+                                    ? 'border-emerald-600 bg-emerald-600 text-white'
+                                    : 'border-slate-400'
+                                }`}
+                              >
+                                {config.rentalBilling.rentalDayCalculation === item.id && (
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                )}
+                              </span>
+                              <span>{item.title}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 pl-5.5">{item.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Return Cutoff Time (ย้ายมากลุ่ม B) */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        เวลาตัดรอบคืนของประจำวัน (Daily Return Cutoff Time)
+                      </label>
+                      <div className="max-w-xs">
+                        <input
+                          type="time"
+                          step={60}
+                          value={config.rentalBilling.returnCutoffTime}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                returnCutoffTime: e.target.value || '12:00',
+                              },
+                            })
+                          }
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold"
+                        />
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        ค่าเริ่มต้น 12:00 — หากคืนสินค้าในเช้าวันถัดไปก่อนเวลาตัดรอบนี้ ระบบจะไม่คิดเพิ่มวันเช่า (DAILY)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy) */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
-                      <span>Grace Period & การคำนวณค่าปรับคืนล่าช้า (Late Fee)</span>
+                      <span>กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy)</span>
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -2089,200 +2330,191 @@ export default function SettingsPage() {
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* DAILY overdue charge / return cutoff */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <label className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.rentalBilling.dailyOverdueChargeEnabled}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              dailyOverdueChargeEnabled: e.target.checked,
-                            },
-                          })
-                        }
-                        className="w-4 h-4 mt-0.5 text-emerald-600 rounded"
-                      />
-                      <span>
-                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">คิดค่าเช่า DAILY เพิ่มเมื่อคืนเกินกำหนด</span>
-                        <span className="block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">ปิด = แจ้งเตือนเกินกำหนดอย่างเดียว ไม่คิดค่าเช่าเพิ่ม</span>
-                      </span>
-                    </label>
-
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">เวลาตัดรอบคืนวันถัดไป</label>
-                      <input
-                        type="time"
-                        step={60}
-                        value={config.rentalBilling.returnCutoffTime}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              returnCutoffTime: e.target.value || '12:00',
-                            },
-                          })
-                        }
-                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
-                      />
-                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">ค่าเริ่มต้น 12:00 — คืนเช้าวันถัดไปก่อนเวลานี้ไม่เพิ่มวัน DAILY</p>
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <label className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.rentalBilling.dailyOverdueChargeEnabled}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                dailyOverdueChargeEnabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 mt-0.5 text-emerald-600 rounded"
+                        />
+                        <span>
+                          <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">คิดค่าเช่ารายวัน (DAILY) เพิ่มเมื่อส่งคืนเกินกำหนด</span>
+                          <span className="block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                            เปิด = คำนวณคิดค่าเช่าเพิ่มตามจำนวนวันที่เกินกำหนดส่งคืนจริง (ปิด = ระบบแจ้งเตือนเกินกำหนดเท่านั้น โดยไม่เพิ่มวันคิดเงิน)
+                          </span>
+                        </span>
+                      </label>
                     </div>
                   </div>
 
-                  {/* Rental Policy Toggles */}
-                  <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.rentalBilling.allowPartialReturn}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              allowPartialReturn: e.target.checked,
-                            },
-                          })
-                        }
-                        className="w-4 h-4 text-emerald-600 rounded"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                          อนุญาตให้ทยอยคืนสินค้าบางส่วน (Partial Return)
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          เมื่อปิดใช้งาน ระบบจะไม่อนุญาตให้ยืนยันการคืนหากคืนสินค้าไม่ครบตามจำนวนคงค้าง
-                        </span>
-                      </div>
-                    </label>
+                  {/* กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-500" />
+                      <span>กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies)</span>
+                    </h4>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.rentalBilling.allowPartialPayment}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              allowPartialPayment: e.target.checked,
-                            },
-                          })
-                        }
-                        className="w-4 h-4 text-emerald-600 rounded"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                          อนุญาตให้ชำระเงินบางส่วน (Partial Payment)
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          เมื่อปิดใช้งาน จำนวนรับชำระจะต้องเท่ากับยอดคงค้างที่ต้องชำระเท่านั้น
-                        </span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.rentalBilling.allowContinueAfterPaid}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            rentalBilling: {
-                              ...config.rentalBilling,
-                              allowContinueAfterPaid: e.target.checked,
-                            },
-                          })
-                        }
-                        className="w-4 h-4 text-emerald-600 rounded"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                          อนุญาตให้ทำรายการต่อหลังชำระเงินครบแล้ว
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          เมื่อเปิดใช้งาน ระบบจะอนุญาตให้ส่งคืนสินค้าหรือแก้ไขรายการแม้ว่าบิลจะชำระครบแล้ว
-                        </span>
-                      </div>
-                    </label>
-
-                    {/* Reservation Expiry Policy */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 pt-2">
-                      <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-emerald-500" />
-                        <span>นโยบายการหมดอายุการจองสต็อก (Reservation Expiry Policy)</span>
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.rentalBilling.allowPartialReturn}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                allowPartialReturn: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-emerald-600 rounded"
+                        />
                         <div>
-                          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            กฎการหมดอายุการจอง
-                          </label>
-                          <CustomSelect
-                            buttonClassName="h-9 px-2.5 py-0 rounded-xl"
-                            value={config.rentalBilling.reservationExpiryPolicy || 'UNTIL_START_DATE'}
-                            onChange={(val) =>
-                              setConfig({
-                                ...config,
-                                rentalBilling: {
-                                  ...config.rentalBilling,
-                                  reservationExpiryPolicy: val as any,
-                                },
-                              })
-                            }
-                            options={[
-                              { value: 'UNTIL_START_DATE', label: 'คงไว้จนถึงวันเริ่มเช่า / วันรับสินค้า' },
-                              { value: 'MANUAL', label: 'คงไว้จนกว่าผู้ใช้จะยกเลิกเอง' },
-                              { value: 'DAYS_LIMIT', label: 'หมดอายุหลังจำนวนวันที่กำหนด' },
-                            ]}
-                          />
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                            อนุญาตให้ทยอยคืนสินค้าบางส่วน (Partial Return)
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            เมื่อปิดใช้งาน ระบบจะไม่อนุญาตให้ยืนยันการคืนหากคืนสินค้าไม่ครบตามจำนวนคงค้าง
+                          </span>
                         </div>
-                        {config.rentalBilling.reservationExpiryPolicy === 'DAYS_LIMIT' && (
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.rentalBilling.allowPartialPayment}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                allowPartialPayment: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-emerald-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                            อนุญาตให้ชำระเงินบางส่วน (Partial Payment)
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            เมื่อปิดใช้งาน จำนวนรับชำระจะต้องเท่ากับยอดคงค้างที่ต้องชำระเท่านั้น
+                          </span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.rentalBilling.allowContinueAfterPaid}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              rentalBilling: {
+                                ...config.rentalBilling,
+                                allowContinueAfterPaid: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 text-emerald-600 rounded"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                            อนุญาตให้ทำรายการต่อหลังชำระเงินครบแล้ว
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            เมื่อเปิดใช้งาน ระบบจะอนุญาตให้ส่งคืนสินค้าหรือแก้ไขรายการแม้ว่าบิลจะชำระครบแล้ว
+                          </span>
+                        </div>
+                      </label>
+
+                      {/* Reservation Expiry Policy */}
+                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 pt-2">
+                        <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-emerald-500" />
+                          <span>นโยบายการหมดอายุการจองสต็อก (Reservation Expiry Policy)</span>
+                        </h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                              จำนวนวันที่ให้จองสินค้าได้ (วัน)
+                              กฎการหมดอายุการจอง
                             </label>
-                            <NumericInput
-                              value={config.rentalBilling.reservationExpiryDays ?? 7}
+                            <CustomSelect
+                              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
+                              value={config.rentalBilling.reservationExpiryPolicy || 'UNTIL_START_DATE'}
                               onChange={(val) =>
                                 setConfig({
                                   ...config,
                                   rentalBilling: {
                                     ...config.rentalBilling,
-                                    reservationExpiryDays: val === '' ? 1 : Math.max(1, Number(val)),
+                                    reservationExpiryPolicy: val as any,
                                   },
                                 })
                               }
-                              defaultValueOnBlur={7}
-                              min={1}
-                              allowDecimals={false}
-                              className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-xs"
+                              options={[
+                                { value: 'UNTIL_START_DATE', label: 'คงไว้จนถึงวันเริ่มเช่า / วันรับสินค้า' },
+                                { value: 'MANUAL', label: 'คงไว้จนกว่าผู้ใช้จะยกเลิกเอง' },
+                                { value: 'DAYS_LIMIT', label: 'หมดอายุหลังจำนวนวันที่กำหนด' },
+                              ]}
                             />
                           </div>
-                        )}
+                          {config.rentalBilling.reservationExpiryPolicy === 'DAYS_LIMIT' && (
+                            <div>
+                              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                จำนวนวันที่ให้จองสินค้าได้ (วัน)
+                              </label>
+                              <NumericInput
+                                value={config.rentalBilling.reservationExpiryDays ?? 7}
+                                onChange={(val) =>
+                                  setConfig({
+                                    ...config,
+                                    rentalBilling: {
+                                      ...config.rentalBilling,
+                                      reservationExpiryDays: val === '' ? 1 : Math.max(1, Number(val)),
+                                    },
+                                  })
+                                }
+                                defaultValueOnBlur={7}
+                                min={1}
+                                allowDecimals={false}
+                                className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-xs"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ================= TAB 4: เลขที่เอกสาร ================= */}
-              {activeTab === 'DOC_NUMBERS' && (
+              {/* ================= TAB 4: เอกสาร ================= */}
+              {activeTab === 'DOCUMENTS' && (
                 <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-indigo-600" />
-                      <span>รูปแบบเลขที่เอกสาร</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      กำหนดรูปแบบ Prefix, จำนวนหลักลำดับ, การรีเซ็ตรอบลำดับ (รายวัน/เดือน/ปี) และรูปแบบวันที่
-                    </p>
-                  </div>
+                  {/* Subtab 1: รูปแบบเลขที่เอกสาร (NUMBERS) */}
+                  {documentsSubTab === 'NUMBERS' && (
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Hash className="w-4 h-4 text-indigo-600" />
+                          <span>รูปแบบเลขที่เอกสาร</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          กำหนดรูปแบบ Prefix, จำนวนหลักลำดับ, การรีเซ็ตรอบลำดับ (รายวัน/เดือน/ปี) และรูปแบบวันที่
+                        </p>
+                      </div>
 
                   {(
                     [
@@ -2437,21 +2669,21 @@ export default function SettingsPage() {
                       </div>
                     )
                   })}
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* ================= TAB 5: เอกสารและการพิมพ์ ================= */}
-              {activeTab === 'DOCS_PRINT' && (
-                <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-rose-600" />
-                      <span>เอกสารและการพิมพ์</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      เลือกแบบฟอร์มเอกสารเริ่มต้น ขนาดกระดาษ ระยะขอบ และองค์ประกอบบนใบพิมพ์ A4
-                    </p>
-                  </div>
+                  {/* Subtab 2: รูปแบบและการพิมพ์ (PRINTING) */}
+                  {documentsSubTab === 'PRINTING' && (
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-rose-600" />
+                          <span>รูปแบบและการพิมพ์</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          เลือกแบบฟอร์มเอกสารเริ่มต้น ขนาดกระดาษ ระยะขอบ และองค์ประกอบบนใบพิมพ์ A4
+                        </p>
+                      </div>
 
                   {/* Section 1: แบบฟอร์มเริ่มต้น */}
                   <div className="space-y-2">
@@ -2828,26 +3060,176 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
 
-              {/* ================= TAB 6: การเงินและการชำระเงิน ================= */}
-              {activeTab === 'FINANCE_PAYMENT' && (
-                <div className="space-y-3">
+              {/* ================= TAB 5: การเงิน ================= */}
+              {activeTab === 'FINANCE' && (
+                <div className="space-y-4">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-violet-600" />
-                      <span>6. การเงินและการชำระเงิน (Finance, Payment & Taxes)</span>
+                      <span>การเงินและการชำระเงิน (Finance & Payment)</span>
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      เปิด/ปิดช่องทางรับชำระเงิน กำหนดค่าเริ่มต้นภาษี ส่วนลด เงินมัดจำ และการบันทึกบัญชี
+                      บัญชีรับเงิน ช่องทางชำระเงิน ค่าเริ่มต้นภาษี ส่วนลด เงินมัดจำ และการปัดเศษทศนิยม
                     </p>
                   </div>
 
-                  {/* Payment Methods Toggles */}
-                  <div className="space-y-2">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block">ช่องทางการชำระเงินที่เปิดใช้งาน</span>
+                  {/* Section A: บัญชีรับเงินของร้าน & PromptPay (ยกมาจากหมวดกิจการเดิม) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-emerald-600" />
+                      <span>ส่วนที่ 1: บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ธนาคาร</label>
+                        <input
+                          type="text"
+                          value={config.business.bankName}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankName: e.target.value } })}
+                          placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">เลขที่บัญชี</label>
+                        <input
+                          type="text"
+                          value={config.business.bankAccountNumber}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountNumber: e.target.value } })}
+                          placeholder="เช่น 045-2-12345-6"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-blue-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ชื่อบัญชี</label>
+                        <input
+                          type="text"
+                          value={config.business.bankAccountName}
+                          onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountName: e.target.value } })}
+                          placeholder="เช่น ร้าน หรือ บจก..."
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ประเภท PromptPay</label>
+                        <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
+                          value={config.business.promptPayType || ''}
+                          onChange={(val) => setConfig({ ...config, business: { ...config.business, promptPayType: val as any } })}
+                          options={[
+                            { value: '', label: '-- ไม่ระบุประเภท --' },
+                            { value: 'PHONE', label: 'เบอร์โทรศัพท์ (Phone Number)' },
+                            { value: 'TAX_ID', label: 'เลขประจำตัวผู้เสียภาษี (Tax ID / ID Card)' },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">หมายเลข PromptPay</label>
+                        <input
+                          type="text"
+                          value={config.business.promptPayValue}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '')
+                            const maxLen = config.business.promptPayType === 'TAX_ID' ? 13 : 10
+                            setConfig({ ...config, business: { ...config.business, promptPayValue: val.slice(0, maxLen) } })
+                          }}
+                          placeholder={
+                            config.business.promptPayType === 'TAX_ID'
+                              ? 'เช่น 0105565012345 (13 หลัก)'
+                              : config.business.promptPayType === 'PHONE'
+                              ? 'เช่น 0812345678 (10 หลัก)'
+                              : 'ระบุหมายเลข PromptPay'
+                          }
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-emerald-600"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bank QR Code Upload */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block">
+                            QR Code รับเงินของธนาคาร (Bank QR Code)
+                          </span>
+                          <span className="text-[11px] text-slate-500 block">
+                            รูปภาพ QR Code รับเงินที่ร้านได้รับจากธนาคาร/แอปธนาคาร (รองรับ PNG, JPG, WEBP ขนาดไม่เกิน 500 KB)
+                          </span>
+                        </div>
+                      </div>
+
+                      <input
+                        ref={bankQrInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleBankQrUpload}
+                        className="hidden"
+                      />
+
+                      {config.business.bankQrDataUrl ? (
+                        <div className="flex items-center gap-3 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-white flex items-center justify-center p-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={config.business.bankQrDataUrl}
+                              alt="Bank QR Code"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>มีรูปภาพ QR Code รับเงินแล้ว</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => bankQrInputRef.current?.click()}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>เปลี่ยน QR</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleRemoveBankQr}
+                                className="h-9 px-3.5 py-0 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-semibold flex items-center gap-1.5 border border-red-200 dark:border-red-800 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span>ลบ QR</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => bankQrInputRef.current?.click()}
+                          className="p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl flex items-center justify-center gap-2 cursor-pointer bg-white dark:bg-slate-800 transition-colors"
+                        >
+                          <QrCode className="w-4 h-4 text-slate-400" />
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                            เลือกรูปภาพ QR Code รับเงิน
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Section B: ช่องทางรับชำระเงิน (Payment Methods) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-blue-500" />
+                      <span>ส่วนที่ 2: ช่องทางการชำระเงินที่เปิดใช้งาน</span>
+                    </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-2.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.financePayment.paymentMethods.cash}
@@ -2868,7 +3250,7 @@ export default function SettingsPage() {
                         <span className="font-bold text-slate-800 dark:text-slate-200">เงินสด</span>
                       </label>
 
-                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-2.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.financePayment.paymentMethods.bankTransfer}
@@ -2889,7 +3271,7 @@ export default function SettingsPage() {
                         <span className="font-bold text-slate-800 dark:text-slate-200">โอนธนาคาร</span>
                       </label>
 
-                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-2.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.financePayment.paymentMethods.promptPay}
@@ -2910,7 +3292,7 @@ export default function SettingsPage() {
                         <span className="font-bold text-slate-800 dark:text-slate-200">PromptPay QR</span>
                       </label>
 
-                      <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-2.5 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.financePayment.paymentMethods.credit}
@@ -2933,59 +3315,12 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Bank & PromptPay Info Read-only from Business Settings */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                        ข้อมูลบัญชีธนาคาร & PromptPay (ดึงจากข้อมูลกิจการ)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('BUSINESS')}
-                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold cursor-pointer underline"
-                      >
-                        แก้ไขในข้อมูลกิจการ
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <span className="text-slate-500 block text-[11px]">บัญชีธนาคาร:</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                          {config.business.bankName
-                            ? `${config.business.bankName} - ${config.business.bankAccountNumber || 'ไม่ระบุเลขที่บัญชี'}`
-                            : 'ยังไม่ได้ตั้งค่าบัญชีธนาคาร'}
-                        </span>
-                        {config.business.bankAccountName && (
-                          <span className="text-[11px] text-slate-500">ชื่อบัญชี: {config.business.bankAccountName}</span>
-                        )}
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <span className="text-slate-500 block text-[11px]">PromptPay:</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                          {config.business.promptPayValue
-                            ? `${config.business.promptPayType === 'TAX_ID' ? 'เลขผู้เสียภาษี' : 'เบอร์โทร'} ${config.business.promptPayValue}`
-                            : 'ยังไม่ได้ตั้งค่า PromptPay'}
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <span className="text-slate-500 block text-[11px]">QR Code ธนาคาร:</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 block flex items-center gap-1">
-                          {config.business.bankQrDataUrl ? (
-                            <>
-                              <span className="text-emerald-600 dark:text-emerald-400">✓</span>
-                              <span>อัปโหลดรูป QR แล้ว</span>
-                            </>
-                          ) : (
-                            'ยังไม่ได้อัปโหลด QR Code'
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: ค่าเริ่มต้นภาษี ส่วนลด และเงินมัดจำ */}
-                  <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block">ค่าเริ่มต้นภาษี ส่วนลด และเงินมัดจำ</span>
+                  {/* Section C: ภาษีและส่วนลด (Tax & Discount Settings) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span>ส่วนที่ 3: ภาษีและส่วนลด (Tax & Discount Settings)</span>
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -3005,7 +3340,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           max={100}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3027,7 +3362,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           max={100}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3050,30 +3385,7 @@ export default function SettingsPage() {
                           min={0}
                           max={100}
                           allowDecimals={false}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          เงินมัดจำเริ่มต้น (Default Deposit %)
-                        </label>
-                        <NumericInput
-                          value={config.financePayment.defaultDepositPercent}
-                          onChange={(val) =>
-                            setConfig({
-                              ...config,
-                              financePayment: {
-                                ...config.financePayment,
-                                defaultDepositPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
-                              },
-                            })
-                          }
-                          defaultValueOnBlur={0}
-                          min={0}
-                          max={100}
-                          allowDecimals={false}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3099,7 +3411,72 @@ export default function SettingsPage() {
                           ]}
                         />
                       </div>
+                    </div>
+                  </div>
 
+                  {/* Section D: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Save className="w-4 h-4 text-emerald-500" />
+                      <span>ส่วนที่ 4: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation)</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          เงินมัดจำเริ่มต้น (Default Deposit %)
+                        </label>
+                        <NumericInput
+                          value={config.financePayment.defaultDepositPercent}
+                          onChange={(val) =>
+                            setConfig({
+                              ...config,
+                              financePayment: {
+                                ...config.financePayment,
+                                defaultDepositPercent: val === '' ? 0 : Math.max(0, Math.min(100, val)),
+                              },
+                            })
+                          }
+                          defaultValueOnBlur={0}
+                          min={0}
+                          max={100}
+                          allowDecimals={false}
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-end">
+                        <label className="flex items-center gap-3 p-2.5 w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer h-9">
+                          <input
+                            type="checkbox"
+                            checked={config.financePayment.autoCreateFinanceTransaction}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                financePayment: {
+                                  ...config.financePayment,
+                                  autoCreateFinanceTransaction: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-4 h-4 text-violet-600 rounded"
+                          />
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                            บันทึกรายการบัญชีการเงินอัตโนมัติเมื่อรับชำระ
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section E: การปัดเศษทศนิยม (Currency & Rounding) */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-indigo-500" />
+                      <span>ส่วนที่ 5: การปัดเศษทศนิยม (Currency & Rounding)</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           จำนวนทศนิยมยอดเงิน (Money Precision)
@@ -3119,7 +3496,7 @@ export default function SettingsPage() {
                           min={0}
                           max={4}
                           allowDecimals={false}
-                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3148,39 +3525,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Section 3: การบันทึกบัญชีอัตโนมัติ */}
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config.financePayment.autoCreateFinanceTransaction}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            financePayment: {
-                              ...config.financePayment,
-                              autoCreateFinanceTransaction: e.target.checked,
-                            },
-                          })
-                        }
-                        className="w-4 h-4 text-violet-600 rounded"
-                      />
-                      <div>
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                          บันทึกรายการบัญชีการเงินอัตโนมัติ (Auto Create Finance Transaction)
-                        </span>
-                        <span className="text-[11px] text-slate-500">
-                          สร้างบันทึกรายรับ-รายจ่ายในสมุดบัญชีการเงินอัตโนมัติเมื่อมีการรับชำระเงินจริง
-                        </span>
-                      </div>
-                    </label>
-                  </div>
                 </div>
               )}
 
-              {/* ================= TAB 7: นัดหมายและการแจ้งเตือน ================= */}
-              {activeTab === 'APPOINTMENTS_NOTIFICATIONS' && (
+              {/* ================= TAB 6: นัดหมายและการแจ้งเตือน ================= */}
+              {activeTab === 'NOTIFICATIONS' && (
                 <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -3192,12 +3541,12 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Section 1: ประเภทนัดหมาย */}
+                  {/* Group A: ประเภทการนัดหมาย (Appointment Types) */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5 text-teal-600" />
-                        <span>ประเภทนัดหมาย</span>
+                        <span>กลุ่ม A: ประเภทการนัดหมาย (Appointment Types)</span>
                       </h4>
                       <span className="text-[11px] text-slate-500">
                         ทั้งหมด {masterData.appointmentTypes.length} ประเภท (Master Data)
@@ -3322,11 +3671,11 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Section 2: การแจ้งเตือน */}
+                  {/* Group B: การแจ้งเตือนในระบบ (System Alerts) */}
                   <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-teal-600" />
-                      <span>การแจ้งเตือน</span>
+                      <span>กลุ่ม B: การแจ้งเตือนในระบบ (System Alerts)</span>
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -3574,12 +3923,12 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Section 3: LINE Notify / OA Configuration */}
+                  {/* Group C: LINE Notify / LINE Official Account */}
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-emerald-600" />
-                        <span>การเชื่อมต่อ LINE Notify / LINE Official Account</span>
+                        <span>กลุ่ม C: การเชื่อมต่อ LINE Notify / LINE Official Account</span>
                       </h4>
                       <span className="px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-extrabold text-[10px]">
                         พร้อมใช้งาน
@@ -3660,18 +4009,20 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* ================= TAB 8: บัญชีและความปลอดภัย ================= */}
-              {activeTab === 'ACCOUNT_SECURITY' && (
+              {/* ================= TAB 7: บัญชีและระบบ ================= */}
+              {activeTab === 'SYSTEM_ACCOUNT' && (
                 <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-indigo-600" />
-                      <span>บัญชีและความปลอดภัย</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      จัดการข้อมูลบัญชีผู้ใช้งาน ความปลอดภัย รหัสผ่าน รหัส PIN 6 หลัก และการล็อกหน้าจออัตโนมัติ
-                    </p>
-                  </div>
+                  {systemAccountSubTab === 'SECURITY' && (
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-indigo-600" />
+                          <span>บัญชีและความปลอดภัย</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          จัดการข้อมูลบัญชีผู้ใช้งาน ความปลอดภัย รหัสผ่าน รหัส PIN 6 หลัก และการล็อกหน้าจออัตโนมัติ
+                        </p>
+                      </div>
 
                   {/* 1. User Profile Information */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
@@ -4266,410 +4617,101 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                    {/* 5. Manual Local Offline Backup */}
-                    <ManualBackupCard />
+                    {/* 5. Session Management */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <LogOut className="w-4 h-4 text-rose-500" />
+                        <span>เซสชันการใช้งาน</span>
+                      </h4>
 
-                    {/* 6. Session Management */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <LogOut className="w-4 h-4 text-rose-500" />
-                      <span>เซสชันการใช้งาน</span>
-                    </h4>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => logout()}
+                          className="h-9 px-3.5 py-0 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>ออกจากระบบปัจจุบัน</span>
+                        </button>
 
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => logout()}
-                        className="h-9 px-3.5 py-0 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>ออกจากระบบปัจจุบัน</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await logout('global')
-                            showToast('ออกจากระบบสำเร็จ', 'ออกจากระบบทุกอุปกรณ์เรียบร้อยแล้ว', 'INFO')
-                          } catch {
-                            await logout()
-                          }
-                        }}
-                        className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Shield className="w-4 h-4 text-indigo-500" />
-                        <span>ออกจากระบบทุกอุปกรณ์ (Logout All Devices)</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ================= TAB 9: โปรไฟล์และแบรนด์ ================= */}
-              {activeTab === 'PROFILE_BRANDING' && (
-                <div className="space-y-3">
-                  {/* Section Header */}
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-pink-500" />
-                      <span>การปรับแต่งระบบ / โปรไฟล์และแบรนด์</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      จัดการชื่อระบบ รูปภาพพื้นหลังเข้าสู่ระบบ รูปโปรไฟล์ประจำตัวผู้ใช้ และโลโก้ระบบ
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                                        {/* CARD 0: ชื่อระบบ (System Name) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-                      <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
-                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
-                          <Store className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                            ชื่อระบบ
-                          </h4>
-                          <p className="text-[11px] text-slate-500">
-                            กำหนดชื่อระบบหลักสำหรับแสดงผลบนแถบเมนู ส่วนหัว และหน้าจอทั้งหมด
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            ชื่อระบบ
-                          </label>
-                          <input
-                            type="text"
-                            value={config.branding?.systemName || ''}
-                            onChange={(e) =>
-                              setConfig({
-                                ...config,
-                                branding: {
-                                  ...config.branding,
-                                  systemName: e.target.value,
-                                },
-                              })
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await logout('global')
+                              showToast('ออกจากระบบสำเร็จ', 'ออกจากระบบทุกอุปกรณ์เรียบร้อยแล้ว', 'INFO')
+                            } catch {
+                              await logout()
                             }
-                            placeholder="JJK_JeeRaKiT"
-                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs"
-                          />
-                        </div>
+                          }}
+                          className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Shield className="w-4 h-4 text-indigo-500" />
+                          <span>ออกจากระบบทุกอุปกรณ์ (Logout All Devices)</span>
+                        </button>
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
-                            <Sparkles className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                              พื้นหลังเข้าสู่ระบบและปลดล็อก PIN
-                            </h4>
-                            
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <input
-                            ref={authBgInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/jpg"
-                            className="hidden"
-                            onChange={handleAuthBgUpload}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => authBgInputRef.current?.click()}
-                            className="h-9 px-3.5 py-0 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                          >
-                            <Upload className="w-4 h-4" />
-                            <span>{config.branding?.authBackgroundImageUrl ? 'เปลี่ยนรูปพื้นหลัง' : 'อัปโหลดรูปพื้นหลัง'}</span>
-                          </button>
-                          {config.branding?.authBackgroundImageUrl && (
-                            <button
-                              type="button"
-                              onClick={handleRemoveAuthBg}
-                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>ลบรูป</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Background Preview Frame */}
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                            ตัวอย่างการแสดงผลบนหน้า Login และ App Lock (Live Preview)
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {config.branding?.authBackgroundImageUrl ? '🟢 กำหนดรูปภาพแล้ว' : '⚪ ค่าเริ่มต้น (Gradient Glow)'}
-                          </span>
-                        </div>
-
-                        <div className="relative aspect-video sm:aspect-[21/9] w-full rounded-2xl overflow-hidden border-2 border-slate-300 dark:border-slate-700 shadow-md bg-slate-950 flex items-center justify-center">
-                          {config.branding?.authBackgroundImageUrl ? (
-                            <div
-                              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                              style={{ backgroundImage: `url(${config.branding.authBackgroundImageUrl})` }}
-                            >
-                              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs" />
-                            </div>
-                          ) : (
-                            <div className="absolute inset-0 bg-slate-950 flex items-center justify-center overflow-hidden">
-                              <div className="absolute top-1/4 -left-10 w-48 h-48 bg-blue-600/30 rounded-full blur-2xl" />
-                              <div className="absolute bottom-1/4 -right-10 w-48 h-48 bg-indigo-600/30 rounded-full blur-2xl" />
-                            </div>
-                          )}
-
-                          {/* Mini Lock Mockup Box */}
-                          <div className="relative z-10 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 sm:p-4 text-center max-w-xs w-full mx-4 shadow-xl backdrop-blur-md">
-                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white mx-auto mb-1.5 shadow-sm">
-                              <Lock className="w-4 h-4" />
-                            </div>
-                            <p className="text-xs font-black text-white">{config.business.businessName || 'Rental POS'}</p>
-                            <p className="text-[10px] text-slate-400 mb-2">หน้าจอล็อก & เข้าสู่ระบบ</p>
-                            <div className="flex justify-center gap-1.5">
-                              {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className={`w-2 h-2 rounded-full ${i < 3 ? 'bg-blue-500' : 'bg-slate-700'}`} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-1.5">
-                          * รองรับไฟล์ .jpg, .jpeg, .png, .webp ขนาดไม่เกิน 3 MB ระบบจะครอบและปรับสัดส่วนอัตโนมัติ (Cover & Center)
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                              รูปโปรไฟล์ผู้ใช้งาน
-                            </h4>
-                            <p className="text-[11px] text-slate-500">
-                              รูป Avatar ประจำตัวสำหรับบัญชีปัจจุบัน (@{user?.username || 'user'}) แสดงบนหน้าจอ PIN Lock และส่วนหัวผู้ใช้
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <input
-                            ref={avatarInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/jpg"
-                            className="hidden"
-                            onChange={handleAvatarUpload}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => avatarInputRef.current?.click()}
-                            className="h-9 px-3.5 py-0 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                          >
-                            <Upload className="w-4 h-4" />
-                            <span>{user?.avatarUrl ? 'เปลี่ยนรูปโปรไฟล์' : 'อัปโหลดรูปโปรไฟล์'}</span>
-                          </button>
-                          {user?.avatarUrl && (
-                            <button
-                              type="button"
-                              onClick={handleRemoveAvatar}
-                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>ลบรูป</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Avatar Preview Area */}
-                      <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20 shrink-0 overflow-hidden">
-                          {user?.avatarUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={user.avatarUrl} alt={user.fullName || 'User Avatar'} className="w-full h-full object-cover" />
-                          ) : (
-                            user?.firstName?.[0] || 'ผ'
-                          )}
-                        </div>
-
-                        <div className="space-y-1 text-center sm:text-left">
-                          <div className="flex items-center justify-center sm:justify-start gap-2">
-                            <span className="font-black text-sm text-slate-900 dark:text-slate-100">{user?.fullName || 'ผู้ใช้งานระบบ'}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px]">
-                              @{user?.username || 'user'}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500">
-                            สิทธิ์การใช้งาน: {user?.role === 'OWNER' ? '👑 เจ้าของร้าน (Owner)' : '💻 พนักงาน (User)'}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {user?.avatarUrl ? '✓ ใช้รูปโปรไฟล์แบบรูปภาพส่วนตัว (แยกอิสระตามแต่ละ User)' : '✓ ใช้ตัวอักษรย่อเป็นตัวแทนรูปโปรไฟล์ (Initial Avatar)'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
-                            <Building className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                              โลโก้แอปและไอคอนระบบ
-                            </h4>
-                            <p className="text-[11px] text-slate-500">
-                              โลโก้หลักของระบบ ใช้เป็น Favicon บนบราวเซอร์, หัวเมนู Sidebar, และไอคอนสำหรับ Home Screen
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <input
-                            ref={appLogoInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/jpg"
-                            className="hidden"
-                            onChange={handleAppLogoUpload}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => appLogoInputRef.current?.click()}
-                            className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                          >
-                            <Upload className="w-4 h-4" />
-                            <span>{config.branding?.appLogoUrl || config.business?.logoDataUrl ? 'เปลี่ยนโลโก้แอป' : 'อัปโหลดโลโก้แอป'}</span>
-                          </button>
-                          {(config.branding?.appLogoUrl || config.business?.logoDataUrl) && (
-                            <button
-                              type="button"
-                              onClick={handleRemoveAppLogo}
-                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                              <span>คืนค่าเริ่มต้น</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Dual Mockup: PC Browser Tab & Mobile App Icon */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Mockup 1: PC Browser Tab */}
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
-                            🖥️ ตัวอย่างการแสดงผลบน PC (Browser Tab & Favicon)
-                          </span>
-                          <div className="bg-slate-900 rounded-xl p-2.5 border border-slate-700/80 shadow-inner">
-                            {/* Browser Tab Bar Mockup */}
-                            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-slate-800">
-                              <div className="flex gap-1">
-                                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                              </div>
-                              <div className="flex-1 bg-slate-800/80 rounded-lg px-2.5 py-1 flex items-center gap-2 max-w-[220px]">
-                                <div className="w-4 h-4 rounded-md overflow-hidden shrink-0 flex items-center justify-center bg-slate-700">
-                                  {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
-                                    /* eslint-disable-next-line @next/next/no-img-element */
-                                    <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="Favicon" className="w-full h-full object-contain" />
-                                  ) : (
-                                    <Store className="w-3 h-3 text-emerald-400" />
-                                  )}
-                                </div>
-                                <span className="text-[10px] text-slate-200 truncate font-semibold">
-                                  {config.branding?.systemName || config.business.businessName || 'JJK_JeeRaKiT'}
-                                </span>
-                              </div>
-                            </div>
-                            <p className="text-[10px] text-slate-400">Favicon บน Browser จะอัปเดตแบบ Dynamic อัตโนมัติตามโลโก้นี้</p>
-                          </div>
-                        </div>
-
-                        {/* Mockup 2: Mobile App Icon */}
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
-                            📱 ตัวอย่างการแสดงผลบน Smartphone (Home Screen Icon)
-                          </span>
-                          <div className="bg-slate-900 rounded-xl p-3 border border-slate-700/80 flex items-center gap-4 shadow-inner">
-                            {/* App Icon Squircle */}
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-2 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white shrink-0 overflow-hidden">
-                              {config.branding?.appLogoUrl || config.business?.logoDataUrl ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img src={config.branding?.appLogoUrl || config.business?.logoDataUrl} alt="App Icon" className="w-full h-full object-contain" />
-                              ) : (
-                                <Store className="w-7 h-7" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-xs text-white">{config.business.businessName || 'Rental POS'}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
-                                ไอคอนสำหรับบันทึกไว้ที่หน้าจอโฮม (PWA / Web App Shortcut)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-slate-400">
-                        * แนะนำใช้รูปสัดส่วนสี่เหลี่ยมจัตุรัส (Square 512×512 ขึ้นไป) ไฟล์ .png หรือ .webp เพื่อความคมชัดสูงสุด
+                {/* Subtab 2: สำรองและกู้คืนข้อมูล (BACKUP) */}
+                {systemAccountSubTab === 'BACKUP' && (
+                  <div className="space-y-3">
+                    <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <Save className="w-4 h-4 text-amber-500" />
+                        <span>สำรองและกู้คืนข้อมูล (Backup & Restore)</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        จัดการสำรองข้อมูลทั้งหมดของระบบลงในเครื่องแบบออฟไลน์ หรือนำเข้าไฟล์สำรองเพื่อกู้คืนข้อมูล
                       </p>
                     </div>
+
+                    {/* Manual Local Offline Backup */}
+                    <ManualBackupCard />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            )}
+
+
 
             </div>
 
             {/* Footer Action Area */}
-            <div className="pt-3 mt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
-              <button
-                type="button"
-                onClick={handleResetDefaults}
-                className="h-9 px-3.5 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4 text-slate-400" />
-                <span>คืนค่าเดิม</span>
-              </button>
+            {!(activeTab === 'SYSTEM_ACCOUNT' && systemAccountSubTab === 'BACKUP') && (
+              <div className="pt-3 mt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetDefaults}
+                  className="h-9 px-3.5 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 text-slate-400" />
+                  <span>คืนค่าเดิม</span>
+                </button>
 
-              <button
-                type="submit"
-                className={`h-9 px-3.5 py-0 rounded-xl text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isSaved
-                    ? 'bg-emerald-700 shadow-emerald-700/30'
-                    : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
-                }`}
-              >
-                {isSaved ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>บันทึกแล้ว!</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>บันทึกการตั้งค่า</span>
-                  </>
-                )}
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  className={`h-9 px-3.5 py-0 rounded-xl text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isSaved
+                      ? 'bg-emerald-700 shadow-emerald-700/30'
+                      : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
+                  }`}
+                >
+                  {isSaved ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>บันทึกแล้ว!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>บันทึกการตั้งค่า</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
