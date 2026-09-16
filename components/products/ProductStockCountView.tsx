@@ -223,6 +223,7 @@ export function ProductStockCountView({
               value={selectedCategory}
               onChange={(val) => setSelectedCategory(val)}
               options={categoryOptions}
+              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
             />
           </div>
         </div>
@@ -236,6 +237,7 @@ export function ProductStockCountView({
               disabled={isSubmitting}
               variant="outline"
               icon={<RotateCcw />}
+              className="h-9 !py-0 px-3.5 text-xs rounded-xl"
             >
               ล้างค่า
             </ActionButton>
@@ -247,6 +249,7 @@ export function ProductStockCountView({
             disabled={isSubmitting}
             variant="outline"
             icon={<Printer />}
+            className="h-9 !py-0 px-3.5 text-xs rounded-xl"
           >
             พิมพ์ตารางตรวจนับ
           </ActionButton>
@@ -257,6 +260,7 @@ export function ProductStockCountView({
             disabled={isSubmitting || modifiedItems.length === 0}
             variant="primary"
             icon={isSubmitting ? undefined : <CheckCircle2 />}
+            className="h-9 !py-0 px-3.5 text-xs rounded-xl"
             badge={
               !isSubmitting && modifiedItems.length > 0 ? (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono font-black">
