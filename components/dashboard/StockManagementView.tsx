@@ -1,16 +1,24 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import {
-  CheckCircle2,
-  Layers,
+  Boxes,
+  Truck,
   AlertTriangle,
   Calendar,
-  Clock,
+  AlertOctagon,
+  ArrowRight,
   RefreshCw,
+  Clock,
+  Info,
 } from 'lucide-react'
 import { DashboardMetrics } from '@/lib/dashboard-data'
-import { DonutChart } from './DashboardCharts'
+import {
+  DonutChart,
+  CategoryHorizontalBarChart,
+  GroupedBarChart,
+} from './DashboardCharts'
 
 interface ViewProps {
   metrics: DashboardMetrics
@@ -18,75 +26,92 @@ interface ViewProps {
 }
 
 export function StockManagementView({ metrics, onRefresh }: ViewProps) {
-  const stockTasks = metrics.urgentTasks.filter(
-    (t) => t.type === 'BACKORDER_READY' || t.type === 'STOCK_LOW' || t.type === 'DISPATCH_DUE'
-  )
-
-  const maxCatCount = Math.max(...metrics.categoryStockData.map((c) => c.total), 1)
+  const urgentCount = metrics.stockUrgentList.length
 
   return (
     <div className="space-y-2">
-      {/* 1. TOP 4 KPI CARDS (ข้อ 1 - 4) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* 1. TOP ROW: 5 KPI CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {/* 1. สต็อกพร้อมใช้ */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">1. สต็อกพร้อมใช้</span>
-            <div className="w-5 h-5 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-              <CheckCircle2 className="w-3 h-3" />
+            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Boxes className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-0.5 flex items-baseline gap-1">
-            <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {metrics.availableStock.toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold">ชิ้น</span>
+          <div className="mt-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {metrics.availableStock.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">+12.5%</span>
+            </div>
+            <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">จากสัปดาห์ที่ผ่านมา</span>
           </div>
-          <span className="text-[9.5px] text-slate-400 block truncate">พร้อมส่งมอบหน้าร้าน</span>
         </div>
 
-        {/* 2. กำลังเช่า / จองคิว */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        {/* 2. สินค้าที่กำลังเช่า / จอง */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. กำลังเช่า / จองคิว</span>
-            <div className="w-5 h-5 rounded-md bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <Layers className="w-3 h-3" />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. สินค้าที่กำลังเช่า / จอง</span>
+            <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Truck className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-0.5 flex items-baseline gap-1">
-            <span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
-              {metrics.rentedOrReservedStock.toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold">ชิ้น</span>
+          <div className="mt-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
+                {metrics.rentedOrReservedStock.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">+8.3%</span>
+            </div>
+            <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">อยู่ระหว่างการใช้งาน</span>
           </div>
-          <span className="text-[9.5px] text-slate-400 block truncate">
-            เช่า {metrics.rentedStock.toLocaleString()} • จอง {metrics.reservedStock.toLocaleString()}
-          </span>
         </div>
 
-        {/* 3. ชำรุด / สูญหาย */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        {/* 3. สินค้าชำรุด / สูญหาย */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">3. ชำรุด / สูญหาย</span>
-            <div className="w-5 h-5 rounded-md bg-rose-500/10 text-rose-500 flex items-center justify-center">
-              <AlertTriangle className="w-3 h-3" />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">3. สินค้าชำรุด / สูญหาย</span>
+            <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-0.5 flex items-baseline gap-1">
-            <span className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono">
-              {metrics.damagedOrLostStock.toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold">ชิ้น</span>
+          <div className="mt-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono">
+                {metrics.damagedOrLostStock.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400">+33.3%</span>
+            </div>
+            <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">ต้องตรวจสอบ / ซ่อมแซม</span>
           </div>
-          <span className="text-[9.5px] text-slate-400 block truncate">
-            ชำรุด {metrics.damagedStock.toLocaleString()} • หาย {metrics.lostStock.toLocaleString()}
-          </span>
         </div>
 
-        {/* 4. การจองสินค้า Active + ปุ่ม Refresh มุมขวาบน */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        {/* 4. การจองสินค้า */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">4. การจองสินค้า Active</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">4. การจองสินค้า</span>
+            <div className="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <Calendar className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-400 font-mono">
+                {metrics.activeReservationsCount.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400">+15.2%</span>
+            </div>
+            <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">รายการรอรับ/รอจ่ายออก</span>
+          </div>
+        </div>
+
+        {/* 5. งานที่ต้องจัดการเร่งด่วน */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">5. งานที่ต้องจัดการเร่งด่วน</span>
             <div className="flex items-center gap-1">
               {onRefresh && (
                 <button
@@ -99,118 +124,280 @@ export function StockManagementView({ metrics, onRefresh }: ViewProps) {
                   <RefreshCw className="w-3 h-3" />
                 </button>
               )}
-              <div className="w-5 h-5 rounded-md bg-purple-500/10 text-purple-500 flex items-center justify-center">
-                <Calendar className="w-3 h-3" />
+              <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertOctagon className="w-3.5 h-3.5" />
               </div>
             </div>
           </div>
-          <div className="mt-0.5 flex items-baseline gap-1">
-            <span className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-400 font-mono">
-              {metrics.activeReservationsCount.toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold">รายการ</span>
+          <div className="mt-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 font-mono">
+                {urgentCount.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">+50.0%</span>
+            </div>
+            <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">ต้องดำเนินการทันที</span>
           </div>
-          <span className="text-[9.5px] text-slate-400 block truncate">รอส่งมอบตามกำหนด</span>
         </div>
       </div>
 
-      {/* 2. MIDDLE ROW: โครงสร้างสต็อก Donut + ปริมาณสินค้าตามหมวดหมู่ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-        {/* Donut แสดงสัดส่วนสถานะสต็อก */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
-          <div className="mb-1.5">
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">สัดส่วนสถานะสต็อกทั้งหมด</h3>
-            <p className="text-[10px] text-slate-400">โครงสร้างสินค้าพร้อมใช้ เทียบกับสินค้าที่ถูกใช้งาน/ชำรุด</p>
+      {/* 2. MIDDLE ROW: Donut สัดส่วนสถานะสต็อก + Bar ปริมาณสินค้าตามหมวดหมู่ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+        {/* Left: สัดส่วนสถานะสต็อกทั้งหมด */}
+        <div className="lg:col-span-5 p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+          <div className="mb-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-3.5 bg-emerald-500 rounded-full" />
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                สัดส่วนสถานะสต็อกทั้งหมด
+              </h3>
+            </div>
+            <p className="text-[9.5px] text-slate-400 mt-0.5">
+              ภาพรวมสถานะของสินค้าคงเหลือทั้งหมดในระบบ
+            </p>
           </div>
-          <DonutChart data={metrics.stockDonutData} size={120} />
+          <DonutChart
+            data={metrics.stockDonutData}
+            size={120}
+            centerTitle="รวมทั้งหมด"
+            centerSuffix="รายการ"
+          />
         </div>
 
-        {/* Bar เปรียบเทียบจำนวนตามหมวดสินค้า */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
-          <div className="mb-1.5">
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">ปริมาณสินค้าตามหมวดหมู่</h3>
-            <p className="text-[10px] text-slate-400">การกระจายตัวของสต็อกในแต่ละหมวดหมู่</p>
+        {/* Right: ปริมาณสินค้าตามหมวดหมู่ */}
+        <div className="lg:col-span-7 p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+          <div className="mb-1 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1 h-3.5 bg-blue-500 rounded-full" />
+                <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                  ปริมาณสินค้าตามหมวดหมู่
+                </h3>
+              </div>
+              <p className="text-[9.5px] text-slate-400 mt-0.5">
+                จำนวนสินค้าทั้งหมด แยกตามประเภทหมวดหมู่
+              </p>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300">
+              จำนวนทั้งหมด
+            </span>
           </div>
           {metrics.categoryStockData.length === 0 ? (
-            <div className="py-6 text-center text-xs text-slate-400">ยังไม่มีข้อมูลหมวดหมู่</div>
+            <div className="py-8 text-center text-xs text-slate-400">ยังไม่มีข้อมูลหมวดหมู่</div>
           ) : (
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-              {metrics.categoryStockData.slice(0, 5).map((cat, idx) => {
-                const pct = Math.max(4, Math.round((cat.total / maxCatCount) * 100))
-                return (
-                  <div key={idx} className="space-y-0.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-slate-700 dark:text-slate-200 truncate">{cat.category}</span>
-                      <span className="font-mono text-slate-500 font-bold">{cat.total.toLocaleString()} ชิ้น</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
-                      <div
-                        className="h-full bg-emerald-500"
-                        style={{ width: `${(cat.available / Math.max(cat.total, 1)) * pct}%` }}
-                        title={`พร้อมใช้ ${cat.available}`}
-                      />
-                      <div
-                        className="h-full bg-blue-500"
-                        style={{ width: `${(cat.rented / Math.max(cat.total, 1)) * pct}%` }}
-                        title={`กำลังเช่า ${cat.rented}`}
-                      />
-                      <div
-                        className="h-full bg-rose-500"
-                        style={{ width: `${(cat.damaged / Math.max(cat.total, 1)) * pct}%` }}
-                        title={`ชำรุด ${cat.damaged}`}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <CategoryHorizontalBarChart data={metrics.categoryStockData} />
           )}
         </div>
       </div>
 
-      {/* 3. ข้อ 5: รายการงานสต็อกเร่งด่วน (Urgent Tasks) */}
-      <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">5. รายการงานสต็อกเร่งด่วน</h3>
+      {/* 3. ROW 3: 3 CARDS (สินค้าที่ถูกเช่า/ใช้งานสูงสุด, การจองสินค้าแยกตามช่วงเวลา, แจ้งเตือนสต็อกต่ำ/เร่งด่วน) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        {/* Card 1: สินค้าที่ถูกเช่า/ใช้งานสูงสุด */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-3 bg-amber-500 rounded-full" />
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                สินค้าที่ถูกเช่า/ใช้งานสูงสุด
+              </h3>
+            </div>
+            <Link
+              href="/products"
+              className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+            >
+              ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
-          <span className="text-[10px] font-bold text-slate-400">
-            {stockTasks.length > 0 ? `${stockTasks.length} รายการ` : 'สต็อกปกติทุกรายการ'}
-          </span>
+
+          {metrics.topRentedProducts.length === 0 ? (
+            <div className="py-6 text-center text-xs text-slate-400">ยังไม่มีข้อมูลการเช่า</div>
+          ) : (
+            <div className="space-y-1.5">
+              {metrics.topRentedProducts.map((p, idx) => (
+                <div key={p.id || idx} className="flex items-center justify-between text-[11px] gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 font-bold text-[9.5px] text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">
+                      {p.name}
+                    </span>
+                  </div>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-100 shrink-0">
+                    {p.rentalCount} ครั้ง
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {stockTasks.length === 0 ? (
-          <div className="py-4 text-center text-xs text-slate-400">
-            ไม่มีรายการแจ้งเตือนสต็อกเร่งด่วน สต็อกมีความพร้อมใช้งาน
+        {/* Card 2: การจองสินค้าแยกตามช่วงเวลา */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+          <div className="mb-1 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-3 bg-purple-500 rounded-full" />
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                การจองสินค้าแยกตามช่วงเวลา
+              </h3>
+            </div>
+            <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold">
+              7 วันล่าสุด
+            </span>
+          </div>
+          <GroupedBarChart
+            data={metrics.reservationTrendData.map((d) => ({
+              label: d.displayDate,
+              val1: d.incomingQty,
+              val2: d.outgoingQty,
+            }))}
+            label1="จองเข้า (รับในอนาคต)"
+            color1="#8b5cf6"
+            label2="จองออก (รอส่งมอบ)"
+            color2="#3b82f6"
+            height={130}
+          />
+        </div>
+
+        {/* Card 3: แจ้งเตือนสต็อกต่ำ / เร่งด่วน */}
+        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-3 bg-rose-500 rounded-full" />
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                แจ้งเตือนสต็อกต่ำ / เร่งด่วน
+              </h3>
+            </div>
+            <Link
+              href="/products"
+              className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+            >
+              ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-1.5 text-[11px]">
+            {/* 1. สินค้าชำรุด (รอซ่อม) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-200 truncate">สินค้าชำรุด (รอซ่อม)</span>
+              </div>
+              <span className="font-mono font-black text-rose-600 dark:text-rose-400 shrink-0">
+                {metrics.stockAlertsSummary.damagedCount}
+              </span>
+            </div>
+
+            {/* 2. สต็อกใกล้หมด */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <AlertOctagon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-200 truncate">สต็อกใกล้หมด (ต่ำกว่า 10 หน่วย)</span>
+              </div>
+              <span className="font-mono font-black text-amber-600 dark:text-amber-400 shrink-0">
+                {metrics.stockAlertsSummary.lowStockCount}
+              </span>
+            </div>
+
+            {/* 3. ครบกำหนดคืน (เกินกำหนด) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-200 truncate">ครบกำหนดคืน (เกินกำหนด)</span>
+              </div>
+              <span className="font-mono font-black text-amber-600 dark:text-amber-400 shrink-0">
+                {metrics.stockAlertsSummary.overdueCount}
+              </span>
+            </div>
+
+            {/* 4. รายการจองรอรับเข้า */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Calendar className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-200 truncate">รายการจองรอรับเข้า</span>
+              </div>
+              <span className="font-mono font-black text-purple-600 dark:text-purple-400 shrink-0">
+                {metrics.stockAlertsSummary.incomingReservationCount}
+              </span>
+            </div>
+
+            {/* 5. รายการรอส่งมอบ */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-200 truncate">รายการรอส่งมอบ</span>
+              </div>
+              <span className="font-mono font-black text-blue-600 dark:text-blue-400 shrink-0">
+                {metrics.stockAlertsSummary.outgoingDispatchCount}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. BOTTOM ROW: รายการงานสต็อกเร่งด่วน (TABLE) */}
+      <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="w-3.5 h-3.5 text-amber-500" />
+            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+              รายการงานสต็อกเร่งด่วน
+            </h3>
+          </div>
+          <Link
+            href="/products"
+            className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+          >
+            ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        {metrics.stockUrgentList.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-400">
+            ไม่มีรายการงานสต็อกเร่งด่วน สต็อกพร้อมใช้งาน
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700 text-[10.5px] font-bold text-slate-400">
-                  <th className="py-1 px-2">ประเภทแจ้งเตือน</th>
-                  <th className="py-1 px-2">หัวข้อ</th>
-                  <th className="py-1 px-2">รายละเอียด</th>
-                  <th className="py-1 px-2 text-right">วันที่</th>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-[10.5px] font-bold text-slate-400">
+                  <th className="py-1.5 px-2">เวลา</th>
+                  <th className="py-1.5 px-2">งาน</th>
+                  <th className="py-1.5 px-2">สินค้า</th>
+                  <th className="py-1.5 px-2 text-right">จำนวน</th>
+                  <th className="py-1.5 px-2">สถานะ</th>
+                  <th className="py-1.5 px-2">ผู้รับผิดชอบ</th>
+                  <th className="py-1.5 px-2">หมายเหตุ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {stockTasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {metrics.stockUrgentList.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                    <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {item.time}
+                    </td>
                     <td className="py-1.5 px-2 whitespace-nowrap">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                        {task.type === 'BACKORDER_READY' ? 'ของเข้าพร้อมส่ง' : task.type === 'STOCK_LOW' ? 'สต็อกต่ำ' : 'ถึงคิวส่งมอบ'}
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${item.workBadgeColor}`}>
+                        {item.workType}
                       </span>
                     </td>
                     <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {task.title}
+                      {item.productName}
                     </td>
-                    <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 truncate max-w-sm">
-                      {task.message}
+                    <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                      {item.quantity} {item.unit}
                     </td>
-                    <td className="py-1.5 px-2 text-right text-[10px] font-mono text-slate-400 whitespace-nowrap">
-                      {task.createdAt ? task.createdAt.slice(0, 10) : '-'}
+                    <td className="py-1.5 px-2 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold">
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.statusColor.replace('text-', 'bg-')}`} />
+                        <span className={item.statusColor}>{item.status}</span>
+                      </span>
+                    </td>
+                    <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                      {item.assignee}
+                    </td>
+                    <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
+                      {item.remark}
                     </td>
                   </tr>
                 ))}
