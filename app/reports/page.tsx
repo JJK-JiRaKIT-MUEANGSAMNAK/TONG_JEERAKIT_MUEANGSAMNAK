@@ -2,14 +2,6 @@
 
 import React, { useState, useMemo, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import {
-  Wallet,
-  ShoppingBag,
-  Clock,
-  Truck,
-  Package,
-  LineChart,
-} from 'lucide-react'
 import { ReportFilter } from '@/components/reports/ReportFilter'
 import { FinanceReportView } from '@/components/reports/FinanceReportView'
 import { SalesRentalReportView } from '@/components/reports/SalesRentalReportView'
@@ -30,34 +22,6 @@ function getInitialDates(): { start: Date; end: Date } {
   const start = new Date(now.getFullYear(), now.getMonth(), 1)
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
   return { start, end }
-}
-
-const VIEW_TITLES: Record<string, { title: string; subtitle: string; icon: React.ComponentType<{ className?: string }> }> = {
-  finance: {
-    title: 'รายงานการเงิน',
-    subtitle: 'สรุปรายรับ รายจ่าย สุทธิ ลูกหนี้ค้าง เงินมัดจำ และช่องทางรับเงิน',
-    icon: Wallet,
-  },
-  'sales-rental': {
-    title: 'รายงานขาย เช่า และเอกสาร',
-    subtitle: 'ยอดขายสินค้า รายได้การเช่า บิล ใบเสนอราคา และงานเช่าปัจจุบัน',
-    icon: ShoppingBag,
-  },
-  operations: {
-    title: 'รายงานงานปฏิบัติการ',
-    subtitle: 'งานส่งมอบ งานรับคืน การจองสินค้า และภารกิจที่ต้องจัดการ',
-    icon: Truck,
-  },
-  stock: {
-    title: 'รายงานสต็อกและสินค้า',
-    subtitle: 'สต็อกพร้อมใช้ สัดส่วนสถานะ ชำรุด/สูญหาย และสินค้าทำเงินสูงสุด',
-    icon: Package,
-  },
-  business: {
-    title: 'รายงานวิเคราะห์ธุรกิจ',
-    subtitle: 'อัตราการเติบโต ลูกค้าหลัก แนวโน้มรายได้ และการจัดอันดับ',
-    icon: LineChart,
-  },
 }
 
 function ReportsWorkspace() {
@@ -178,29 +142,9 @@ function ReportsWorkspace() {
     return null
   }, [currentView, filter])
 
-  const viewConfig = VIEW_TITLES[currentView] || VIEW_TITLES.finance
-  const Icon = viewConfig.icon
-
   return (
     <div className="p-2 space-y-2 min-h-screen bg-slate-50/50 dark:bg-slate-950/40 text-slate-900 dark:text-slate-100 select-none">
-      {/* ─── Header: View Title & Subtitle (No Tabs) ───────────────────────── */}
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Icon className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate tracking-tight">
-              {viewConfig.title}
-            </h1>
-            <p className="text-[10px] text-slate-400 truncate">
-              {viewConfig.subtitle}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Global Compact Filter Bar (Topic 7 Filter) ────────────────────── */}
+      {/* ─── Global Compact Filter Bar ────────────────────────────────────────── */}
       <ReportFilter
         startDate={startDate}
         endDate={endDate}

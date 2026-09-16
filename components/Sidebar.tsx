@@ -187,7 +187,10 @@ function SidebarContent() {
         </div>
 
         {/* Navigation List */}
-        <nav className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5">
+        <nav
+          className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {MENU_ITEMS.map((item) => {
             if (item.href === '/dashboard') {
               const isDashboardActive = pathname === '/dashboard'
