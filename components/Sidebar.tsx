@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
 import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
@@ -71,14 +72,23 @@ function getPageName(pathname: string): string {
   return 'ระบบ'
 }
 
-export function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isDashboardExpanded, setIsDashboardExpanded] = useState(() => pathname === '/dashboard')
   const { user, signOut } = useAuth()
 
   const logoUrl = ''
   const systemDisplayName = 'JJK_JeeRaKiT'
   const pageName = getPageName(pathname || '')
+
+  // Keep dashboard expanded if user navigates to /dashboard
+  useEffect(() => {
+    if (pathname === '/dashboard') {
+      setIsDashboardExpanded(true)
+    }
+  }, [pathname])
 
   // Auto-collapse sidebar when route/pathname changes
   useEffect(() => {
@@ -169,6 +179,76 @@ export function Sidebar() {
         {/* Navigation List */}
         <nav className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5">
           {MENU_ITEMS.map((item) => {
+            if (item.href === '/dashboard') {
+              const isDashboardActive = pathname === '/dashboard'
+              const currentView = searchParams.get('view') || 'assets'
+
+              const subItems = [
+                { name: 'ธุรกรรมสินทรัพย์', view: 'assets', href: '/dashboard?view=assets' },
+                { name: 'บริหารงานสต็อก', view: 'stock', href: '/dashboard?view=stock' },
+                { name: 'วิเคราะห์ธุรกิจ', view: 'business', href: '/dashboard?view=business' },
+              ]
+
+              return (
+                <div key={item.href} className="space-y-1">
+                  <div
+                    onClick={() => {
+                      setIsDashboardExpanded((prev) => !prev)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setIsDashboardExpanded((prev) => !prev)
+                      }
+                    }}
+                    className={`flex min-h-10 items-center justify-between gap-2 px-3 py-2 rounded-lg font-bold text-[11px] leading-4 transition-all duration-150 cursor-pointer select-none ${
+                      isDashboardActive
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <LayoutDashboard className={`w-3.5 h-3.5 shrink-0 ${isDashboardActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span className="min-w-0 whitespace-nowrap">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isDashboardExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submenu: ธุรกรรมสินทรัพย์, บริหารงานสต็อก, วิเคราะห์ธุรกิจ */}
+                  {isDashboardExpanded && (
+                    <div className="pl-6 pr-1 py-1 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {subItems.map((sub) => {
+                        const isSubActive = isDashboardActive && currentView === sub.view
+
+                        return (
+                          <Link
+                            key={sub.view}
+                            href={sub.href}
+                            onClick={handleMenuClick}
+                            className={`flex min-h-8 items-center justify-between gap-2 px-3 py-1.5 rounded-md font-semibold text-[10.5px] leading-4 transition-all duration-150 ${
+                              isSubActive
+                                ? 'bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                            }`}
+                          >
+                            <span className="truncate">{sub.name}</span>
+                            {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             const isActive =
               pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
             const Icon = item.icon
@@ -233,5 +313,13 @@ export function Sidebar() {
         </div>
       </aside>
     </>
+  )
+}
+
+export function Sidebar() {
+  return (
+    <Suspense fallback={null}>
+      <SidebarContent />
+    </Suspense>
   )
 }
