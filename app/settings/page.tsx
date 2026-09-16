@@ -1149,132 +1149,135 @@ export default function SettingsPage() {
 
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-900 text-xs">
-      {/* 1. Main Horizontal Tabs Bar */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 h-14 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-        <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
-          {[
-            { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
-            { id: 'PRODUCTS_STOCK' as const, label: 'สินค้า / สต็อก', icon: Package },
-            { id: 'RENTAL_BILLS' as const, label: 'เช่า / บิล', icon: CalendarDays },
-            { id: 'DOCUMENTS' as const, label: 'เอกสาร', icon: FileText },
-            { id: 'FINANCE' as const, label: 'การเงิน', icon: CreditCard },
-            { id: 'NOTIFICATIONS' as const, label: 'นัดหมาย / แจ้งเตือน', icon: BellRing },
-            { id: 'SYSTEM_ACCOUNT' as const, label: 'บัญชี / ระบบ', icon: Shield },
-          ].map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
-            return (
+      {/* Settings Header Area (Main Tabs + Active Subtabs) */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 py-2 shrink-0 flex flex-col gap-2">
+        {/* Main Tabs */}
+        <div className="flex items-center overflow-x-auto no-scrollbar">
+          <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            {[
+              { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
+              { id: 'PRODUCTS_STOCK' as const, label: 'สินค้า / สต็อก', icon: Package },
+              { id: 'RENTAL_BILLS' as const, label: 'เช่า / บิล', icon: CalendarDays },
+              { id: 'DOCUMENTS' as const, label: 'เอกสาร', icon: FileText },
+              { id: 'FINANCE' as const, label: 'การเงิน', icon: CreditCard },
+              { id: 'NOTIFICATIONS' as const, label: 'นัดหมาย / แจ้งเตือน', icon: BellRing },
+              { id: 'SYSTEM_ACCOUNT' as const, label: 'บัญชี / ระบบ', icon: Shield },
+            ].map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`h-7 px-3.5 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm text-slate-900 dark:text-slate-100 font-bold'
+                      : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Subtabs (shown only if active tab has subtabs) */}
+        {activeTab === 'BUSINESS' && (
+          <div className="flex items-center overflow-x-auto no-scrollbar">
+            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
-                key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`h-7 px-3.5 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm text-slate-900 dark:text-slate-100 font-bold'
+                onClick={() => setBusinessSubTab('INFO')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  businessSubTab === 'INFO'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{tab.label}</span>
+                <Building className="w-3.5 h-3.5 shrink-0" />
+                <span>ข้อมูลกิจการ</span>
               </button>
-            )
-          })}
-        </div>
+              <button
+                type="button"
+                onClick={() => setBusinessSubTab('BRANDING')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  businessSubTab === 'BRANDING'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>แบรนด์และหน้าตาระบบ</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'DOCUMENTS' && (
+          <div className="flex items-center overflow-x-auto no-scrollbar">
+            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setDocumentsSubTab('NUMBERS')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  documentsSubTab === 'NUMBERS'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Hash className="w-3.5 h-3.5 shrink-0" />
+                <span>เลขที่เอกสาร</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDocumentsSubTab('PRINTING')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  documentsSubTab === 'PRINTING'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span>รูปแบบและการพิมพ์</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'SYSTEM_ACCOUNT' && (
+          <div className="flex items-center overflow-x-auto no-scrollbar">
+            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setSystemAccountSubTab('SECURITY')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  systemAccountSubTab === 'SECURITY'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 shrink-0" />
+                <span>บัญชีและความปลอดภัย</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSystemAccountSubTab('BACKUP')}
+                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  systemAccountSubTab === 'BACKUP'
+                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
+                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Save className="w-3.5 h-3.5 shrink-0" />
+                <span>สำรองข้อมูล</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* 2. Subtabs Bar (shown if active tab has subtabs) */}
-      {activeTab === 'BUSINESS' && (
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setBusinessSubTab('INFO')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                businessSubTab === 'INFO'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Building className="w-3.5 h-3.5 shrink-0" />
-              <span>ข้อมูลกิจการ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setBusinessSubTab('BRANDING')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                businessSubTab === 'BRANDING'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>แบรนด์และหน้าตาระบบ</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'DOCUMENTS' && (
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setDocumentsSubTab('NUMBERS')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                documentsSubTab === 'NUMBERS'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Hash className="w-3.5 h-3.5 shrink-0" />
-              <span>เลขที่เอกสาร</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDocumentsSubTab('PRINTING')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                documentsSubTab === 'PRINTING'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5 shrink-0" />
-              <span>รูปแบบและการพิมพ์</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'SYSTEM_ACCOUNT' && (
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-          <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setSystemAccountSubTab('SECURITY')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                systemAccountSubTab === 'SECURITY'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5 shrink-0" />
-              <span>บัญชีและความปลอดภัย</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSystemAccountSubTab('BACKUP')}
-              className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                systemAccountSubTab === 'BACKUP'
-                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                  : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Save className="w-3.5 h-3.5 shrink-0" />
-              <span>สำรองข้อมูล</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 3. Full-Width Settings Workspace */}
       <div className="flex-1 min-h-0 min-w-0 p-2 overflow-hidden flex flex-col">
@@ -1289,16 +1292,6 @@ export default function SettingsPage() {
                   {/* Subtab 1: ข้อมูลกิจการ (INFO) */}
                   {businessSubTab === 'INFO' && (
                     <div className="space-y-3">
-                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <Building className="w-4 h-4 text-blue-600" />
-                          <span>ข้อมูลสถานประกอบการ / ร้านค้า</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          ข้อมูลกลางของกิจการสำหรับแสดงบนหัวเอกสาร บิลเช่า ใบเสนอราคา ใบเสร็จรับเงิน และข้อมูลติดต่อสำหรับลูกค้า
-                        </p>
-                      </div>
-
                       {/* Logo Section */}
                       <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                         <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -1448,16 +1441,6 @@ export default function SettingsPage() {
                   {/* Subtab 2: แบรนด์และหน้าตาระบบ (BRANDING) */}
                   {businessSubTab === 'BRANDING' && (
                     <div className="space-y-3">
-                      <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-pink-500" />
-                          <span>แบรนด์และหน้าตาระบบ</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          จัดการชื่อระบบ รูปภาพพื้นหลังเข้าสู่ระบบ รูปโปรไฟล์ประจำตัวผู้ใช้ และโลโก้ระบบ
-                        </p>
-                      </div>
-
                       <div className="grid grid-cols-1 gap-3">
                         {/* CARD 0: ชื่อระบบ (System Name) */}
                         <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
@@ -1777,36 +1760,28 @@ export default function SettingsPage() {
 
               {/* ================= TAB 2: สินค้าและสต็อก ================= */}
               {activeTab === 'PRODUCTS_STOCK' && (
-                <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Package className="w-4 h-4 text-amber-600" />
-                      <span>สินค้า / สต็อก (Products & Stock Configuration)</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      จัดการหมวดหมู่สินค้า รูปแบบการเช่า และหน่วยนับ พร้อมทั้งกำหนดพฤติกรรมการควบคุมสต็อก
-                    </p>
-                  </div>
-
+                <div className="space-y-4">
                   {/* Section A: Category Rules (1 row = 1 Product Category Rule) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="space-y-3 pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
-                        <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-500" />
-                          <span>ส่วนที่ 1: หมวดหมู่และกฎสินค้า (หมวดหมู่ + รูปแบบคิดเงิน + หน่วยนับ)</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            ส่วนที่ 1: หมวดหมู่และกฎสินค้า (หมวดหมู่ + รูปแบบคิดเงิน + หน่วยนับ)
+                          </h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 ml-6">
                           เมื่อเลือกหมวดหมู่ตอนเพิ่มสินค้า ระบบจะดึงรูปแบบการคำนวณและหน่วยนับของชุดกฎนี้ไปใช้ทันที
                         </p>
                       </div>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2.5 py-1 rounded-xl">
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
                         ทั้งหมด {categoryRules.length} ชุดกฎ
                       </span>
                     </div>
 
                     {/* Add Rule Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-1">
                       <div className="sm:col-span-4">
                         <input
                           type="text"
@@ -1854,14 +1829,14 @@ export default function SettingsPage() {
 
                     {/* Category Rules Table: ลำดับ | ชื่อหมวดหมู่ | รูปแบบการคำนวณ | หน่วยนับ | จัดการ */}
                     <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs">
-                      <table className="w-full text-left text-xs border-collapse">
+                      <table className="w-full table-fixed text-left text-xs border-collapse">
                         <thead>
-                          <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
-                            <th className="py-2 px-3 w-14 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
-                            <th className="py-2 px-3 w-40 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
-                            <th className="py-2 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
-                            <th className="py-2 px-3 w-28 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
-                            <th className="py-2 px-2 w-24 text-center">จัดการ</th>
+                          <tr className="bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
+                            <th className="py-2 px-3 w-12 text-center">ลำดับ</th>
+                            <th className="py-2 px-3 w-40">ชื่อหมวดหมู่</th>
+                            <th className="py-2 px-3 w-auto">รูปแบบการคำนวณ</th>
+                            <th className="py-2 px-3 w-24 text-center">หน่วยนับ</th>
+                            <th className="py-2 px-2 w-20 text-center">จัดการ</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -1879,10 +1854,10 @@ export default function SettingsPage() {
                               >
                                 {ruleEditId === rule.id ? (
                                   <>
-                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500">
                                       {idx + 1}
                                     </td>
-                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2">
                                       <input
                                         type="text"
                                         value={ruleEditName}
@@ -1891,7 +1866,7 @@ export default function SettingsPage() {
                                         autoFocus
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2">
                                       <CustomSelect
                                         buttonClassName="h-7 px-2 py-0 rounded-lg text-xs"
                                         value={ruleEditCalcType}
@@ -1902,7 +1877,7 @@ export default function SettingsPage() {
                                         }))}
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2">
                                       <input
                                         type="text"
                                         value={ruleEditUnit}
@@ -1937,10 +1912,10 @@ export default function SettingsPage() {
                                   </>
                                 ) : ruleDeleteConfirmId === rule.id ? (
                                   <>
-                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500">
                                       {idx + 1}
                                     </td>
-                                    <td colSpan={3} className="py-1.5 px-3 text-xs text-red-600 dark:text-red-400 font-bold">
+                                    <td colSpan={3} className="py-1.5 px-3 text-xs text-red-600 dark:text-red-400 font-bold truncate">
                                       ยืนยันลบชุดกฎ &quot;{rule.name}&quot; ({rule.unit}) หรือไม่?
                                     </td>
                                     <td className="py-1.5 px-2 text-center">
@@ -1964,17 +1939,17 @@ export default function SettingsPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <td className="py-1.5 px-3 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-400">
                                       {idx + 1}
                                     </td>
-                                    <td className="py-1.5 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 font-extrabold text-slate-900 dark:text-slate-100 truncate">
                                       {rule.name}
                                     </td>
-                                    <td className="py-1.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 truncate">
                                       {rule.calculationLabel}
                                     </td>
-                                    <td className="py-1.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
-                                      <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300">
+                                      <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 inline-block">
                                         {rule.unit}
                                       </span>
                                     </td>
@@ -2018,8 +1993,13 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section B: Inventory Configurations */}
-                  <div className="space-y-2.5 pt-2">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100">ส่วนที่ 2: การควบคุมสต็อกและการเตือน (Stock Behavior & Control)</h4>
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-amber-500" />
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        ส่วนที่ 2: การควบคุมสต็อกและการเตือน (Stock Behavior & Control)
+                      </h4>
+                    </div>
                     
                     <div>
                       <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -2088,16 +2068,6 @@ export default function SettingsPage() {
               {/* ================= TAB 3: การเช่าและบิล ================= */}
               {activeTab === 'RENTAL_BILLS' && (
                 <div className="space-y-4">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-emerald-600" />
-                      <span>เช่า / บิล (Rental & Billing Configuration)</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      กำหนดค่าเริ่มต้นการเช่า รูปแบบการนับวันและเวลาตัดรอบ นโยบายค่าปรับคืนล่าช้า และนโยบายการจอง
-                    </p>
-                  </div>
-
                   {/* กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults) */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -2506,16 +2476,6 @@ export default function SettingsPage() {
                   {/* Subtab 1: รูปแบบเลขที่เอกสาร (NUMBERS) */}
                   {documentsSubTab === 'NUMBERS' && (
                     <div className="space-y-3">
-                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-indigo-600" />
-                          <span>รูปแบบเลขที่เอกสาร</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          กำหนดรูปแบบ Prefix, จำนวนหลักลำดับ, การรีเซ็ตรอบลำดับ (รายวัน/เดือน/ปี) และรูปแบบวันที่
-                        </p>
-                      </div>
-
                   {(
                     [
                       { key: 'rentalBill', name: 'บิลเช่า / สัญญาเช่า' },
@@ -2675,17 +2635,7 @@ export default function SettingsPage() {
                   {/* Subtab 2: รูปแบบและการพิมพ์ (PRINTING) */}
                   {documentsSubTab === 'PRINTING' && (
                     <div className="space-y-3">
-                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-rose-600" />
-                          <span>รูปแบบและการพิมพ์</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          เลือกแบบฟอร์มเอกสารเริ่มต้น ขนาดกระดาษ ระยะขอบ และองค์ประกอบบนใบพิมพ์ A4
-                        </p>
-                      </div>
-
-                  {/* Section 1: แบบฟอร์มเริ่มต้น */}
+                      {/* Section 1: แบบฟอร์มเริ่มต้น */}
                   <div className="space-y-2">
                     <span className="font-bold text-slate-900 dark:text-slate-100 block">แบบฟอร์มเริ่มต้น</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -3066,16 +3016,6 @@ export default function SettingsPage() {
               {/* ================= TAB 5: การเงิน ================= */}
               {activeTab === 'FINANCE' && (
                 <div className="space-y-4">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-violet-600" />
-                      <span>การเงินและการชำระเงิน (Finance & Payment)</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      บัญชีรับเงิน ช่องทางชำระเงิน ค่าเริ่มต้นภาษี ส่วนลด เงินมัดจำ และการปัดเศษทศนิยม
-                    </p>
-                  </div>
-
                   {/* Section A: บัญชีรับเงินของร้าน & PromptPay (ยกมาจากหมวดกิจการเดิม) */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -3531,16 +3471,6 @@ export default function SettingsPage() {
               {/* ================= TAB 6: นัดหมายและการแจ้งเตือน ================= */}
               {activeTab === 'NOTIFICATIONS' && (
                 <div className="space-y-3">
-                  <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <BellRing className="w-4 h-4 text-teal-600" />
-                      <span>นัดหมายและการแจ้งเตือน</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      จัดการประเภทนัดหมายของกิจการ และกำหนดเงื่อนไขการแจ้งเตือนอัตโนมัติของระบบ
-                    </p>
-                  </div>
-
                   {/* Group A: ประเภทการนัดหมาย (Appointment Types) */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
@@ -4014,17 +3944,7 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   {systemAccountSubTab === 'SECURITY' && (
                     <div className="space-y-3">
-                      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-indigo-600" />
-                          <span>บัญชีและความปลอดภัย</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          จัดการข้อมูลบัญชีผู้ใช้งาน ความปลอดภัย รหัสผ่าน รหัส PIN 6 หลัก และการล็อกหน้าจออัตโนมัติ
-                        </p>
-                      </div>
-
-                  {/* 1. User Profile Information */}
+                      {/* 1. User Profile Information */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <User className="w-4 h-4 text-blue-500" />
@@ -4657,16 +4577,6 @@ export default function SettingsPage() {
                 {/* Subtab 2: สำรองและกู้คืนข้อมูล (BACKUP) */}
                 {systemAccountSubTab === 'BACKUP' && (
                   <div className="space-y-3">
-                    <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Save className="w-4 h-4 text-amber-500" />
-                        <span>สำรองและกู้คืนข้อมูล (Backup & Restore)</span>
-                      </h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        จัดการสำรองข้อมูลทั้งหมดของระบบลงในเครื่องแบบออฟไลน์ หรือนำเข้าไฟล์สำรองเพื่อกู้คืนข้อมูล
-                      </p>
-                    </div>
-
                     {/* Manual Local Offline Backup */}
                     <ManualBackupCard />
                   </div>
