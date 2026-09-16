@@ -138,8 +138,8 @@ export default function QuotationsPage() {
 
   const quotationAutoFit = useAutoFitPageSize({
     totalItems: filteredQuotations.length,
-    defaultRowHeight: 40,
-    defaultHeaderHeight: 38,
+    defaultRowHeight: 38,
+    defaultHeaderHeight: 36,
   })
 
   useEffect(() => {
@@ -205,8 +205,8 @@ export default function QuotationsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 shrink-0">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
         <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
           <span className="text-[11px] text-slate-500 font-semibold block">ใบเสนอราคาทั้งหมด</span>
           <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{quotations.length}</h3>
@@ -246,7 +246,7 @@ export default function QuotationsPage() {
           {/* 1. Mobile Card View (< md screens) */}
           <div className="md:hidden flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
             {/* Mobile Toolbar */}
-            <div className="bg-white dark:bg-slate-800 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2 shrink-0">
+            <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-2 shrink-0">
               <div className="relative w-full">
                 <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -254,7 +254,7 @@ export default function QuotationsPage() {
                   placeholder="ค้นหาเลขที่ใบเสนอราคา หรือ ชื่อลูกค้า..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -263,6 +263,7 @@ export default function QuotationsPage() {
                   <CustomSelect
                     value={statusFilter}
                     onChange={(value) => setStatusFilter(String(value))}
+                    buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                     options={[
                       { value: 'ALL', label: 'สถานะ: ทั้งหมด' },
                       { value: 'ACCEPTED', label: 'ตอบรับ / จองสินค้าแล้ว' },
@@ -274,10 +275,10 @@ export default function QuotationsPage() {
 
                 <button
                   onClick={() => router.push('/pos?mode=quotation')}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+                  className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ สร้าง</span>
+                  <Plus className="w-4 h-4" />
+                  <span>สร้าง</span>
                 </button>
               </div>
             </div>
@@ -415,8 +416,8 @@ export default function QuotationsPage() {
             className="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex-1 min-h-0 flex-col"
           >
             {/* Table Toolbar */}
-            <div className="p-2.5 sm:p-3 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+            <div className="p-2 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                 {/* Search */}
                 <div className="relative min-w-[140px] flex-1 max-w-xs">
                   <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -425,7 +426,7 @@ export default function QuotationsPage() {
                     placeholder="ค้นหาเลขที่ใบเสนอราคา หรือ ชื่อลูกค้า..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
@@ -434,6 +435,7 @@ export default function QuotationsPage() {
                   <CustomSelect
                     value={statusFilter}
                     onChange={(value) => setStatusFilter(String(value))}
+                    buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                     options={[
                       { value: 'ALL', label: 'สถานะ: ทั้งหมด' },
                       { value: 'ACCEPTED', label: 'ตอบรับ / จองสินค้าแล้ว' },
@@ -444,14 +446,14 @@ export default function QuotationsPage() {
                 </div>
               </div>
 
-              {/* Action Buttons: + สร้างใบเสนอราคา */}
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Action Buttons: สร้างใบเสนอราคา */}
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => router.push('/pos?mode=quotation')}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                  className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ สร้างใบเสนอราคา</span>
+                  <Plus className="w-4 h-4" />
+                  <span>สร้างใบเสนอราคา</span>
                 </button>
               </div>
             </div>
@@ -461,26 +463,28 @@ export default function QuotationsPage() {
               ref={quotationAutoFit.containerRef}
               className="flex-1 min-h-0 min-w-0 flex flex-col justify-between overflow-hidden"
             >
-              <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-                <table className="w-full table-fixed text-left text-[11px] leading-tight border-collapse">
+              <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+                <table className={`w-full table-fixed text-left text-xs leading-tight border-collapse ${paginatedQuotations.length === 0 ? 'h-full' : ''}`}>
                   <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold">
                     <tr>
-                      <th className="w-[15%] py-2.5 px-3 whitespace-nowrap">เลขที่ใบเสนอราคา</th>
-                      <th className="w-[11%] py-2.5 px-3 whitespace-nowrap">วันที่เอกสาร</th>
-                      <th className="w-[20%] py-2.5 px-3 whitespace-nowrap">ชื่อลูกค้า</th>
-                      <th className="w-[18%] py-2.5 px-3 whitespace-nowrap">ช่วงเช่าสินค้า</th>
-                      <th className="w-[13%] py-2.5 px-3 text-right whitespace-nowrap">ยอดรวมสุทธิ</th>
-                      <th className="w-[11%] py-2.5 px-3 text-center whitespace-nowrap">สถานะ</th>
-                      <th className="w-[12%] py-2.5 px-3 text-center whitespace-nowrap">การกระทำ</th>
+                      <th className="w-[15%] py-2 px-3 whitespace-nowrap">เลขที่ใบเสนอราคา</th>
+                      <th className="w-[11%] py-2 px-3 whitespace-nowrap">วันที่เอกสาร</th>
+                      <th className="w-[20%] py-2 px-3 whitespace-nowrap">ชื่อลูกค้า</th>
+                      <th className="w-[18%] py-2 px-3 whitespace-nowrap">ช่วงเช่าสินค้า</th>
+                      <th className="w-[13%] py-2 px-3 text-right whitespace-nowrap">ยอดรวมสุทธิ</th>
+                      <th className="w-[11%] py-2 px-3 text-center whitespace-nowrap">สถานะ</th>
+                      <th className="w-[12%] py-2 px-3 text-center whitespace-nowrap">การกระทำ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody className={`divide-y divide-slate-100 dark:divide-slate-700 ${paginatedQuotations.length === 0 ? 'h-full' : ''}`}>
                     {paginatedQuotations.length === 0 ? (
-                      <tr data-empty-row="true">
-                        <td colSpan={7} className="px-4 py-12 text-center text-slate-400 italic">
-                          <FileText className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
-                          <p className="font-bold text-xs text-slate-600 dark:text-slate-400">ไม่พบรายการใบเสนอราคา</p>
-                          <span className="text-[10px] text-slate-400">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</span>
+                      <tr data-empty-row="true" className="h-full">
+                        <td colSpan={7} className="h-full px-4 text-center text-slate-400 italic align-middle">
+                          <div className="flex flex-col items-center justify-center">
+                            <FileText className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-1.5 opacity-50" />
+                            <p className="font-bold text-xs text-slate-600 dark:text-slate-400">ไม่พบรายการใบเสนอราคา</p>
+                            <span className="text-[10px] text-slate-400">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</span>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -489,14 +493,14 @@ export default function QuotationsPage() {
                         const buttonLabel = isConverted ? 'เปิดแล้ว' : q.status === 'ACCEPTED' ? 'เปิดบิล' : 'ตอบรับ/จอง'
                         return (
                           <tr key={q.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400 font-mono whitespace-nowrap truncate">{q.quotationNo}</td>
-                            <td className="py-2.5 px-3 text-slate-500 font-mono whitespace-nowrap truncate">{q.quotationDate}</td>
-                            <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap truncate">{q.customerName}</td>
-                            <td className="py-2.5 px-3 text-slate-500 font-mono whitespace-nowrap truncate">{q.rentalStartDate} ถึง {q.rentalEndDate}</td>
-                            <td className="py-2.5 px-3 text-right font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
+                            <td className="py-1.5 px-3 font-bold text-blue-600 dark:text-blue-400 font-mono whitespace-nowrap truncate">{q.quotationNo}</td>
+                            <td className="py-1.5 px-3 text-slate-500 font-mono whitespace-nowrap truncate">{q.quotationDate}</td>
+                            <td className="py-1.5 px-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap truncate">{q.customerName}</td>
+                            <td className="py-1.5 px-3 text-slate-500 font-mono whitespace-nowrap truncate">{q.rentalStartDate} ถึง {q.rentalEndDate}</td>
+                            <td className="py-1.5 px-3 text-right font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
                               ฿{q.grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                            <td className="py-1.5 px-3 text-center whitespace-nowrap">
                               <span className={`inline-flex px-2 py-0.5 rounded-full font-bold text-[10px] ${
                                 q.status === 'ACCEPTED'
                                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
@@ -507,7 +511,7 @@ export default function QuotationsPage() {
                                 {q.status === 'ACCEPTED' ? 'ตอบรับ / จองแล้ว' : q.status === 'CONVERTED' ? 'เปิดบิลแล้ว' : 'รอยืนยัน'}
                               </span>
                             </td>
-                            <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                            <td className="py-1.5 px-3 text-center whitespace-nowrap">
                               <div className="inline-flex items-center gap-1">
                                 <button
                                   type="button"
