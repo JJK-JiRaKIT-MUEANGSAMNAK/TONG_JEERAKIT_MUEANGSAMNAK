@@ -527,11 +527,11 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 gap-2.5 sm:gap-3">
+    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-2 gap-2">
       {/* AREA 1: การ์ดสรุปภาพรวม 6 ใบ */}
       <div className="shrink-0">
         {/* Stock Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
           <div
             onClick={() => setActiveViewTab('ALL')}
             className={`p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-2xl border shadow-xs cursor-pointer transition-all ${
@@ -576,14 +576,22 @@ export default function ProductsPage() {
       {/* AREA 2: กรอบเดียว ครอบแถบ 4 ปุ่มหลัก + พื้นที่ทำงาน */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* แถบปุ่มแท็บหลัก [ รายการสินค้า | เพิ่มสินค้า | ตั้งค่าเสริม | นับสต็อก ] */}
-        <div className="p-1.5 sm:p-2 border-b border-slate-200 dark:border-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-1.5 shrink-0">
+        <div className="p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-900/60 grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
           <ActionButton
             onClick={() => setActiveMainTab('LIST')}
-            variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
-            className="w-full"
-            icon={<Layers className="text-blue-600 dark:text-blue-400" />}
+            variant={activeMainTab === 'LIST' ? 'active' : 'neutral'}
+            className={`w-full h-10 min-h-10 ${
+              activeMainTab === 'LIST'
+                ? '!bg-white dark:!bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm font-extrabold ring-1 ring-black/5 dark:ring-white/5'
+                : 'hover:bg-slate-200/70 dark:hover:bg-slate-800/80'
+            }`}
+            icon={<Layers className={activeMainTab === 'LIST' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'} />}
             badge={
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono font-bold">
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                activeMainTab === 'LIST'
+                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
                 {products.length}
               </span>
             }
@@ -593,9 +601,13 @@ export default function ProductsPage() {
 
           <ActionButton
             onClick={() => setActiveMainTab('ADD')}
-            variant={activeMainTab === 'ADD' ? 'primary' : 'ghost'}
-            className={`w-full ${activeMainTab !== 'ADD' ? 'hover:text-emerald-600 dark:hover:text-emerald-400' : ''}`}
-            icon={<PackagePlus />}
+            variant={activeMainTab === 'ADD' ? 'primary' : 'neutral'}
+            className={`w-full h-10 min-h-10 ${
+              activeMainTab === 'ADD'
+                ? 'shadow-sm font-extrabold ring-1 ring-emerald-600/30'
+                : 'hover:bg-slate-200/70 dark:hover:bg-slate-800/80 hover:text-emerald-600 dark:hover:text-emerald-400'
+            }`}
+            icon={<PackagePlus className={activeMainTab === 'ADD' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />}
             badge={
               createDraftRows.some((r) => r.name.trim() !== '') ? (
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
@@ -607,18 +619,26 @@ export default function ProductsPage() {
 
           <ActionButton
             onClick={() => setActiveMainTab('SETTINGS')}
-            variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
-            className="w-full"
-            icon={<Settings className="text-purple-600 dark:text-purple-400" />}
+            variant={activeMainTab === 'SETTINGS' ? 'active' : 'neutral'}
+            className={`w-full h-10 min-h-10 ${
+              activeMainTab === 'SETTINGS'
+                ? '!bg-white dark:!bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm font-extrabold ring-1 ring-black/5 dark:ring-white/5'
+                : 'hover:bg-slate-200/70 dark:hover:bg-slate-800/80'
+            }`}
+            icon={<Settings className={activeMainTab === 'SETTINGS' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-500 dark:text-slate-400'} />}
           >
             ตั้งค่าเสริม
           </ActionButton>
 
           <ActionButton
             onClick={() => setActiveMainTab('COUNT')}
-            variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
-            className="w-full"
-            icon={<ClipboardList className="text-purple-600 dark:text-purple-400" />}
+            variant={activeMainTab === 'COUNT' ? 'active' : 'neutral'}
+            className={`w-full h-10 min-h-10 ${
+              activeMainTab === 'COUNT'
+                ? '!bg-white dark:!bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm font-extrabold ring-1 ring-black/5 dark:ring-white/5'
+                : 'hover:bg-slate-200/70 dark:hover:bg-slate-800/80'
+            }`}
+            icon={<ClipboardList className={activeMainTab === 'COUNT' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-500 dark:text-slate-400'} />}
           >
             นับสต็อก
           </ActionButton>
