@@ -1126,17 +1126,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2.5 sm:gap-3 overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
         {/* Left Navigation: 9 Main Categories */}
         <div className="w-full md:w-56 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex flex-row overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col gap-1 text-xs no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab('BUSINESS')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'BUSINESS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <Building className="w-4 h-4 shrink-0 text-blue-500" />
@@ -1146,10 +1146,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('PRODUCTS_STOCK')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'PRODUCTS_STOCK'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <Package className="w-4 h-4 shrink-0 text-amber-500" />
@@ -1159,10 +1159,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('RENTAL_BILLS')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'RENTAL_BILLS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <CalendarDays className="w-4 h-4 shrink-0 text-emerald-500" />
@@ -1172,10 +1172,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('DOC_NUMBERS')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'DOC_NUMBERS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <Hash className="w-4 h-4 shrink-0 text-indigo-500" />
@@ -1185,10 +1185,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('DOCS_PRINT')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'DOCS_PRINT'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0 text-rose-500" />
@@ -1198,10 +1198,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('FINANCE_PAYMENT')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'FINANCE_PAYMENT'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <CreditCard className="w-4 h-4 shrink-0 text-violet-500" />
@@ -1211,10 +1211,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('APPOINTMENTS_NOTIFICATIONS')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'APPOINTMENTS_NOTIFICATIONS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <BellRing className="w-4 h-4 shrink-0 text-teal-500" />
@@ -1224,10 +1224,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('ACCOUNT_SECURITY')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'ACCOUNT_SECURITY'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <Shield className="w-4 h-4 shrink-0 text-indigo-500" />
@@ -1237,10 +1237,10 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab('PROFILE_BRANDING')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
+            className={`w-full flex items-center gap-2 h-9 px-3 py-0 rounded-xl text-xs transition-all text-left shrink-0 ${
               activeTab === 'PROFILE_BRANDING'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold shadow-xs'
+                : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750 font-medium'
             }`}
           >
             <ImageIcon className="w-4 h-4 shrink-0 text-pink-500" />
@@ -1249,16 +1249,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Right Settings Workspace */}
-        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3.5 sm:p-4 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
           <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
             {/* Scrollable Container (internal scroll only, no page-level scroll) */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-4 text-xs max-w-4xl">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-3 text-xs">
               
               {/* ================= TAB 1: ข้อมูลกิจการ ================= */}
               {activeTab === 'BUSINESS' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Building className="w-4 h-4 text-blue-600" />
                       <span>ข้อมูลสถานประกอบการ / ร้านค้า</span>
                     </h3>
@@ -1268,8 +1268,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Logo Section */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <ImageIcon className="w-4 h-4 text-blue-500" />
                       <span>โลโก้กิจการ</span>
                     </h4>
@@ -1305,9 +1305,9 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => logoInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                           >
-                            <Upload className="w-3.5 h-3.5" />
+                            <Upload className="w-4 h-4" />
                             <span>{config.business.logoDataUrl ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้'}</span>
                           </button>
 
@@ -1315,9 +1315,9 @@ export default function SettingsPage() {
                             <button
                               type="button"
                               onClick={handleRemoveLogo}
-                              className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 font-bold text-xs flex items-center gap-1.5 transition-all"
+                              className="h-9 px-3.5 py-0 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                               <span>ลบโลโก้</span>
                             </button>
                           )}
@@ -1340,7 +1340,7 @@ export default function SettingsPage() {
                         value={config.business.businessName}
                         onChange={(e) => setConfig({ ...config, business: { ...config.business, businessName: e.target.value } })}
                         placeholder="ระบุชื่อร้าน หรือ ชื่อบริษัท..."
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                       />
                     </div>
 
@@ -1358,7 +1358,7 @@ export default function SettingsPage() {
                           }}
                           placeholder="เช่น 0105565012345 (ตัวเลข 13 หลัก)"
                           maxLength={13}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div>
@@ -1370,7 +1370,7 @@ export default function SettingsPage() {
                           value={config.business.phone}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, phone: e.target.value } })}
                           placeholder="เช่น 02-999-8888, 081-234-5678"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1385,7 +1385,7 @@ export default function SettingsPage() {
                           value={config.business.email}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, email: e.target.value } })}
                           placeholder="เช่น contact@example.com"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div>
@@ -1397,7 +1397,7 @@ export default function SettingsPage() {
                           value={config.business.lineId}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, lineId: e.target.value } })}
                           placeholder="เช่น @myrentalshop"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
                         />
                       </div>
                     </div>
@@ -1424,14 +1424,14 @@ export default function SettingsPage() {
                         value={config.business.authorizedPerson}
                         onChange={(e) => setConfig({ ...config, business: { ...config.business, authorizedPerson: e.target.value } })}
                         placeholder="เช่น นายสมชาย ใจดี (ผู้จัดการ)"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   {/* Bank Account & PromptPay Card */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
                       <span>บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
                     </h4>
@@ -1443,7 +1443,7 @@ export default function SettingsPage() {
                           value={config.business.bankName}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, bankName: e.target.value } })}
                           placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
-                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
                         />
                       </div>
                       <div>
@@ -1453,7 +1453,7 @@ export default function SettingsPage() {
                           value={config.business.bankAccountNumber}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountNumber: e.target.value } })}
                           placeholder="เช่น 045-2-12345-6"
-                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-blue-600"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-blue-600"
                         />
                       </div>
                       <div>
@@ -1463,7 +1463,7 @@ export default function SettingsPage() {
                           value={config.business.bankAccountName}
                           onChange={(e) => setConfig({ ...config, business: { ...config.business, bankAccountName: e.target.value } })}
                           placeholder="เช่น ร้าน หรือ บจก..."
-                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold"
                         />
                       </div>
                     </div>
@@ -1472,6 +1472,7 @@ export default function SettingsPage() {
                       <div>
                         <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ประเภท PromptPay</label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.business.promptPayType || ''}
                           onChange={(val) => setConfig({ ...config, business: { ...config.business, promptPayType: val as any } })}
                           options={[
@@ -1498,7 +1499,7 @@ export default function SettingsPage() {
                               ? 'เช่น 0812345678 (10 หลัก)'
                               : 'ระบุหมายเลข PromptPay'
                           }
-                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-emerald-600"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-emerald-600"
                         />
                       </div>
                     </div>
@@ -1543,17 +1544,17 @@ export default function SettingsPage() {
                               <button
                                 type="button"
                                 onClick={() => bankQrInputRef.current?.click()}
-                                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                                className="h-9 px-3.5 py-0 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 cursor-pointer"
                               >
-                                <Upload className="w-3.5 h-3.5" />
+                                <Upload className="w-4 h-4" />
                                 <span>เปลี่ยน QR</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={handleRemoveBankQr}
-                                className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-semibold flex items-center gap-1 border border-red-200 dark:border-red-800 cursor-pointer"
+                                className="h-9 px-3.5 py-0 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-semibold flex items-center gap-1.5 border border-red-200 dark:border-red-800 cursor-pointer"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                                 <span>ลบ QR</span>
                               </button>
                             </div>
@@ -1577,9 +1578,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 2: สินค้าและสต็อก ================= */}
               {activeTab === 'PRODUCTS_STOCK' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-600" />
                       <span>2. สินค้าและสต็อก (Master Data & Inventory Config)</span>
                     </h3>
@@ -1589,10 +1590,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section A: Category Rules (1 row = 1 Product Category Rule) */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-500" />
                           <span>ตั้งค่าเสริมสินค้า (ชุดกฎสินค้า: 1 แถว = หมวดหมู่ + การคำนวณ + หน่วยนับ)</span>
                         </h4>
@@ -1614,11 +1615,12 @@ export default function SettingsPage() {
                           onChange={(e) => setRuleNewName(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
                           placeholder="ชื่อหมวดหมู่ (เช่น แบบคาน, แบบเสา)..."
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div className="sm:col-span-5">
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={ruleNewCalcType}
                           onChange={(val) => setRuleNewCalcType(val as CalculationType)}
                           options={CALCULATION_OPTIONS.map((opt) => ({
@@ -1634,7 +1636,7 @@ export default function SettingsPage() {
                           onChange={(e) => setRuleNewUnit(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleRuleAdd())}
                           placeholder="หน่วยนับ (เช่น แผ่น, ชิ้น)..."
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div className="sm:col-span-1">
@@ -1642,10 +1644,10 @@ export default function SettingsPage() {
                           type="button"
                           onClick={handleRuleAdd}
                           disabled={!ruleNewName.trim() || !ruleNewUnit.trim()}
-                          className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-sm transition-all cursor-pointer"
+                          className="w-full h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
                           title="เพิ่มชุดกฎ"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-4 h-4" />
                           <span>เพิ่ม</span>
                         </button>
                       </div>
@@ -1656,11 +1658,11 @@ export default function SettingsPage() {
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
-                            <th className="py-2.5 px-3 w-14 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
-                            <th className="py-2.5 px-3 w-40 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
-                            <th className="py-2.5 px-3 w-28 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
-                            <th className="py-2.5 px-2 w-24 text-center">จัดการ</th>
+                            <th className="py-2 px-3 w-14 text-center border-r border-slate-200 dark:border-slate-700">ลำดับ</th>
+                            <th className="py-2 px-3 w-40 border-r border-slate-200 dark:border-slate-700">ชื่อหมวดหมู่</th>
+                            <th className="py-2 px-3 border-r border-slate-200 dark:border-slate-700">รูปแบบการคำนวณ</th>
+                            <th className="py-2 px-3 w-28 text-center border-r border-slate-200 dark:border-slate-700">หน่วยนับ</th>
+                            <th className="py-2 px-2 w-24 text-center">จัดการ</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -1678,20 +1680,21 @@ export default function SettingsPage() {
                               >
                                 {ruleEditId === rule.id ? (
                                   <>
-                                    <td className="py-2 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
                                       {idx + 1}
                                     </td>
-                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
                                       <input
                                         type="text"
                                         value={ruleEditName}
                                         onChange={(e) => setRuleEditName(e.target.value)}
-                                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-bold text-xs"
+                                        className="w-full h-7 px-2.5 py-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-bold text-xs"
                                         autoFocus
                                       />
                                     </td>
-                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
                                       <CustomSelect
+                                        buttonClassName="h-7 px-2 py-0 rounded-lg text-xs"
                                         value={ruleEditCalcType}
                                         onChange={(val) => setRuleEditCalcType(val as CalculationType)}
                                         options={CALCULATION_OPTIONS.map((opt) => ({
@@ -1700,20 +1703,20 @@ export default function SettingsPage() {
                                         }))}
                                       />
                                     </td>
-                                    <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-2 border-r border-slate-200 dark:border-slate-700">
                                       <input
                                         type="text"
                                         value={ruleEditUnit}
                                         onChange={(e) => setRuleEditUnit(e.target.value)}
-                                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-center font-semibold"
+                                        className="w-full h-7 px-2.5 py-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-center font-semibold"
                                       />
                                     </td>
-                                    <td className="py-2 px-2 text-center">
+                                    <td className="py-1.5 px-2 text-center">
                                       <div className="flex items-center justify-center gap-1">
                                         <button
                                           type="button"
                                           onClick={() => handleRuleUpdate(rule.id)}
-                                          className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 cursor-pointer"
+                                          className="h-7 w-7 p-0 flex items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 cursor-pointer"
                                           title="บันทึก"
                                         >
                                           <CheckCircle2 className="w-4 h-4" />
@@ -1725,7 +1728,7 @@ export default function SettingsPage() {
                                             setRuleEditName('')
                                             setRuleEditUnit('')
                                           }}
-                                          className="p-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 cursor-pointer"
+                                          className="h-7 w-7 p-0 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 cursor-pointer"
                                           title="ยกเลิก"
                                         >
                                           <X className="w-4 h-4" />
@@ -1735,25 +1738,25 @@ export default function SettingsPage() {
                                   </>
                                 ) : ruleDeleteConfirmId === rule.id ? (
                                   <>
-                                    <td className="py-2 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200 dark:border-slate-700">
                                       {idx + 1}
                                     </td>
-                                    <td colSpan={3} className="py-2 px-3 text-xs text-red-600 dark:text-red-400 font-bold">
+                                    <td colSpan={3} className="py-1.5 px-3 text-xs text-red-600 dark:text-red-400 font-bold">
                                       ยืนยันลบชุดกฎ &quot;{rule.name}&quot; ({rule.unit}) หรือไม่?
                                     </td>
-                                    <td className="py-2 px-2 text-center">
+                                    <td className="py-1.5 px-2 text-center">
                                       <div className="flex items-center justify-center gap-1">
                                         <button
                                           type="button"
                                           onClick={() => handleRuleDelete(rule.id)}
-                                          className="px-2 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-[11px] cursor-pointer"
+                                          className="h-7 px-2.5 py-0 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs cursor-pointer"
                                         >
                                           ลบ
                                         </button>
                                         <button
                                           type="button"
                                           onClick={() => setRuleDeleteConfirmId(null)}
-                                          className="px-2 py-1 rounded-lg border border-slate-300 text-slate-600 font-semibold text-[11px] cursor-pointer"
+                                          className="h-7 px-2.5 py-0 rounded-lg border border-slate-300 text-slate-600 font-semibold text-xs cursor-pointer"
                                         >
                                           ยกเลิก
                                         </button>
@@ -1762,21 +1765,21 @@ export default function SettingsPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <td className="py-2 px-3 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-400 border-r border-slate-200 dark:border-slate-700">
                                       {idx + 1}
                                     </td>
-                                    <td className="py-2 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700">
                                       {rule.name}
                                     </td>
-                                    <td className="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
                                       {rule.calculationLabel}
                                     </td>
-                                    <td className="py-2 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
+                                    <td className="py-1.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">
                                       <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                                         {rule.unit}
                                       </span>
                                     </td>
-                                    <td className="py-2 px-2 text-center">
+                                    <td className="py-1.5 px-2 text-center">
                                       <div className="flex items-center justify-center gap-1">
                                         <button
                                           type="button"
@@ -1787,7 +1790,7 @@ export default function SettingsPage() {
                                             setRuleEditUnit(rule.unit)
                                             setRuleDeleteConfirmId(null)
                                           }}
-                                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                          className="h-7 w-7 p-0 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                                           title="แก้ไข"
                                         >
                                           <Edit2 className="w-3.5 h-3.5" />
@@ -1798,7 +1801,7 @@ export default function SettingsPage() {
                                             setRuleDeleteConfirmId(rule.id)
                                             setRuleEditId(null)
                                           }}
-                                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                          className="h-7 w-7 p-0 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                                           title="ลบ"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -1837,7 +1840,7 @@ export default function SettingsPage() {
                         defaultValueOnBlur={0}
                         min={0}
                         allowDecimals={false}
-                        className="w-full sm:w-60 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold"
+                        className="w-full sm:w-60 h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-xs"
                       />
                     </div>
 
@@ -1885,9 +1888,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 3: การเช่าและบิล ================= */}
               {activeTab === 'RENTAL_BILLS' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-emerald-600" />
                       <span>3. การเช่าและบิล (Rental & Billing Configuration)</span>
                     </h3>
@@ -1902,6 +1905,7 @@ export default function SettingsPage() {
                         รูปแบบการเช่าเริ่มต้น (Default Rental Type)
                       </label>
                       <CustomSelect
+                        buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                         value={config.rentalBilling.defaultRentalType}
                         onChange={(val) =>
                           setConfig({
@@ -1941,7 +1945,7 @@ export default function SettingsPage() {
                         defaultValueOnBlur={1}
                         min={1}
                         allowDecimals={false}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -2007,8 +2011,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Grace Period and Late Fee */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
                       <span>Grace Period & การคำนวณค่าปรับคืนล่าช้า (Late Fee)</span>
                     </h4>
@@ -2032,7 +2036,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-xs"
                         />
                         <span className="text-[10px] text-slate-400 mt-0.5 block">จำนวนวันหลังกำหนดคืนที่ยังไม่เริ่มคิดค่าปรับ</span>
                       </div>
@@ -2042,6 +2046,7 @@ export default function SettingsPage() {
                           วิธีคิดค่าปรับ (Late Fee Mode)
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.rentalBilling.lateFeeMode}
                           onChange={(val) =>
                             setConfig({
@@ -2080,7 +2085,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           disabled={config.rentalBilling.lateFeeMode === 'NONE'}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold disabled:opacity-40"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold disabled:opacity-40 text-xs"
                         />
                       </div>
                     </div>
@@ -2124,7 +2129,7 @@ export default function SettingsPage() {
                             },
                           })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
+                        className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
                       />
                       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">ค่าเริ่มต้น 12:00 — คืนเช้าวันถัดไปก่อนเวลานี้ไม่เพิ่มวัน DAILY</p>
                     </div>
@@ -2208,8 +2213,8 @@ export default function SettingsPage() {
                     </label>
 
                     {/* Reservation Expiry Policy */}
-                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 pt-3">
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 pt-2">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         <Clock className="w-4 h-4 text-emerald-500" />
                         <span>นโยบายการหมดอายุการจองสต็อก (Reservation Expiry Policy)</span>
                       </h4>
@@ -2219,6 +2224,7 @@ export default function SettingsPage() {
                             กฎการหมดอายุการจอง
                           </label>
                           <CustomSelect
+                            buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                             value={config.rentalBilling.reservationExpiryPolicy || 'UNTIL_START_DATE'}
                             onChange={(val) =>
                               setConfig({
@@ -2255,7 +2261,7 @@ export default function SettingsPage() {
                               defaultValueOnBlur={7}
                               min={1}
                               allowDecimals={false}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
+                              className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-xs"
                             />
                           </div>
                         )}
@@ -2267,9 +2273,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 4: เลขที่เอกสาร ================= */}
               {activeTab === 'DOC_NUMBERS' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Hash className="w-4 h-4 text-indigo-600" />
                       <span>รูปแบบเลขที่เอกสาร</span>
                     </h3>
@@ -2290,7 +2296,7 @@ export default function SettingsPage() {
                     const preview = previewDocumentNumber(dConfig)
 
                     return (
-                      <div key={doc.key} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                      <div key={doc.key} className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <h4 className="font-bold text-slate-900 dark:text-slate-100">{doc.name}</h4>
                           <div className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-xs border border-indigo-200 dark:border-indigo-800">
@@ -2314,13 +2320,14 @@ export default function SettingsPage() {
                                   },
                                 })
                               }
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-blue-600"
+                              className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-blue-600 text-xs"
                             />
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-medium text-slate-500 mb-1">จำนวนหลัก Running</label>
                             <CustomSelect
+                              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                               value={dConfig.runningDigits}
                               onChange={(val) =>
                                 setConfig({
@@ -2343,6 +2350,7 @@ export default function SettingsPage() {
                           <div>
                             <label className="block text-[11px] font-medium text-slate-500 mb-1">รอบการรีเซ็ตเลข</label>
                             <CustomSelect
+                              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                               value={dConfig.resetCycle}
                               onChange={(val) =>
                                 setConfig({
@@ -2365,6 +2373,7 @@ export default function SettingsPage() {
                           <div>
                             <label className="block text-[11px] font-medium text-slate-500 mb-1">รูปแบบปี</label>
                             <CustomSelect
+                              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                               value={dConfig.yearMode}
                               onChange={(val) =>
                                 setConfig({
@@ -2385,6 +2394,7 @@ export default function SettingsPage() {
                           <div>
                             <label className="block text-[11px] font-medium text-slate-500 mb-1">รูปแบบวันที่</label>
                             <CustomSelect
+                              buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                               disabled={!dConfig.includeDate}
                               value={dConfig.datePattern}
                               onChange={(val) =>
@@ -2418,7 +2428,7 @@ export default function SettingsPage() {
                                     },
                                   })
                                 }
-                                className="w-3.5 h-3.5 text-indigo-600 rounded"
+                                className="w-4 h-4 text-indigo-600 rounded"
                               />
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">ใส่วันที่ในรหัส</span>
                             </label>
@@ -2432,9 +2442,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 5: เอกสารและการพิมพ์ ================= */}
               {activeTab === 'DOCS_PRINT' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-rose-600" />
                       <span>เอกสารและการพิมพ์</span>
                     </h3>
@@ -2452,6 +2462,7 @@ export default function SettingsPage() {
                           บิลเช่า
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.documentPrinting.defaultTemplates.rentalBill}
                           onChange={(val) =>
                             setConfig({
@@ -2478,6 +2489,7 @@ export default function SettingsPage() {
                           ใบเสนอราคา
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.documentPrinting.defaultTemplates.quotation}
                           onChange={(val) =>
                             setConfig({
@@ -2503,6 +2515,7 @@ export default function SettingsPage() {
                           ใบเสร็จรับเงิน
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.documentPrinting.defaultTemplates.receipt}
                           onChange={(val) =>
                             setConfig({
@@ -2528,6 +2541,7 @@ export default function SettingsPage() {
                           ใบรับคืนสินค้า
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.documentPrinting.defaultTemplates.returnSlip}
                           onChange={(val) =>
                             setConfig({
@@ -2559,6 +2573,7 @@ export default function SettingsPage() {
                           ขนาดกระดาษ
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.documentPrinting.paperSize}
                           disabled
                           onChange={() => {}}
@@ -2590,7 +2605,7 @@ export default function SettingsPage() {
                           min={0}
                           max={50}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs"
                         />
                       </div>
 
@@ -2616,7 +2631,7 @@ export default function SettingsPage() {
                           min={0}
                           max={50}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs"
                         />
                       </div>
 
@@ -2642,7 +2657,7 @@ export default function SettingsPage() {
                           min={0}
                           max={50}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs"
                         />
                       </div>
 
@@ -2668,7 +2683,7 @@ export default function SettingsPage() {
                           min={0}
                           max={50}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs"
                         />
                       </div>
                     </div>
@@ -2805,7 +2820,7 @@ export default function SettingsPage() {
                           min={1}
                           max={10}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs"
                         />
                         <span className="text-[10px] text-slate-400 mt-1 block">พิมพ์ 1-10 ชุดต่อครั้ง</span>
                       </div>
@@ -2816,9 +2831,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 6: การเงินและการชำระเงิน ================= */}
               {activeTab === 'FINANCE_PAYMENT' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-violet-600" />
                       <span>6. การเงินและการชำระเงิน (Finance, Payment & Taxes)</span>
                     </h3>
@@ -2919,7 +2934,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Bank & PromptPay Info Read-only from Business Settings */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-900 dark:text-slate-100 block">
                         ข้อมูลบัญชีธนาคาร & PromptPay (ดึงจากข้อมูลกิจการ)
@@ -2990,7 +3005,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           max={100}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3012,7 +3027,7 @@ export default function SettingsPage() {
                           defaultValueOnBlur={0}
                           min={0}
                           max={100}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3035,7 +3050,7 @@ export default function SettingsPage() {
                           min={0}
                           max={100}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3058,7 +3073,7 @@ export default function SettingsPage() {
                           min={0}
                           max={100}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3067,6 +3082,7 @@ export default function SettingsPage() {
                           วิธีคิดภาษีมูลค่าเพิ่ม (VAT Mode)
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.financePayment.vatCalculationMode || 'EXCLUSIVE'}
                           onChange={(val) =>
                             setConfig({
@@ -3103,7 +3119,7 @@ export default function SettingsPage() {
                           min={0}
                           max={4}
                           allowDecimals={false}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                          className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none"
                         />
                       </div>
 
@@ -3112,6 +3128,7 @@ export default function SettingsPage() {
                           กฎการปัดเศษทศนิยม (Rounding Mode)
                         </label>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={config.financePayment.roundingMode || 'ROUND_HALF_UP'}
                           onChange={(val) =>
                             setConfig({
@@ -3164,9 +3181,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 7: นัดหมายและการแจ้งเตือน ================= */}
               {activeTab === 'APPOINTMENTS_NOTIFICATIONS' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <BellRing className="w-4 h-4 text-teal-600" />
                       <span>นัดหมายและการแจ้งเตือน</span>
                     </h3>
@@ -3200,14 +3217,14 @@ export default function SettingsPage() {
                             handleAptTypeAdd()
                           }
                         }}
-                        className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        className="flex-1 h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={handleAptTypeAdd}
-                        className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                        className="h-9 px-3.5 py-0 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                         <span>เพิ่ม</span>
                       </button>
                     </div>
@@ -3232,19 +3249,19 @@ export default function SettingsPage() {
                                     setAptEditingTypeId(null)
                                   }
                                 }}
-                                className="flex-1 px-2 py-1 rounded-lg border border-teal-500 text-xs bg-white dark:bg-slate-800 focus:outline-none"
+                                className="flex-1 h-7 px-2.5 py-0 rounded-lg border border-teal-500 text-xs bg-white dark:bg-slate-800 focus:outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={() => handleAptTypeUpdate(type.id)}
-                                className="px-2 py-1 rounded-lg bg-teal-600 text-white text-[10px] font-bold shrink-0 cursor-pointer"
+                                className="h-7 px-2.5 py-0 rounded-lg bg-teal-600 text-white text-xs font-bold shrink-0 cursor-pointer"
                               >
                                 บันทึก
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setAptEditingTypeId(null)}
-                                className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold shrink-0 cursor-pointer"
+                                className="h-7 px-2.5 py-0 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold shrink-0 cursor-pointer"
                               >
                                 ยกเลิก
                               </button>
@@ -3259,14 +3276,14 @@ export default function SettingsPage() {
                                   <button
                                     type="button"
                                     onClick={() => handleAptTypeDelete(type.id)}
-                                    className="px-2 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold cursor-pointer"
+                                    className="h-7 px-2.5 py-0 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs cursor-pointer"
                                   >
                                     ยืนยันลบ
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setAptDeleteConfirmId(null)}
-                                    className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold cursor-pointer"
+                                    className="h-7 px-2.5 py-0 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold cursor-pointer"
                                   >
                                     ยกเลิก
                                   </button>
@@ -3280,7 +3297,7 @@ export default function SettingsPage() {
                                       setAptEditingTypeLabel(type.label)
                                       setAptDeleteConfirmId(null)
                                     }}
-                                    className="p-1 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors cursor-pointer"
+                                    className="h-7 w-7 p-0 flex items-center justify-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors cursor-pointer"
                                     title="แก้ไขชื่อประเภท"
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
@@ -3291,7 +3308,7 @@ export default function SettingsPage() {
                                       setAptDeleteConfirmId(type.id)
                                       setAptEditingTypeId(null)
                                     }}
-                                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                    className="h-7 w-7 p-0 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                                     title="ลบประเภท"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -3364,7 +3381,7 @@ export default function SettingsPage() {
                             max={365}
                             allowDecimals={false}
                             disabled={!config.notifications?.deliveryReminder?.enabled}
-                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                            className="w-12 h-7 px-1.5 py-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold text-xs disabled:opacity-50"
                           />
                           <span className="text-[11px] text-slate-500">วัน</span>
                         </div>
@@ -3421,7 +3438,7 @@ export default function SettingsPage() {
                             max={365}
                             allowDecimals={false}
                             disabled={!config.notifications?.returnReminder?.enabled}
-                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                            className="w-12 h-7 px-1.5 py-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold text-xs disabled:opacity-50"
                           />
                           <span className="text-[11px] text-slate-500">วัน</span>
                         </div>
@@ -3478,7 +3495,7 @@ export default function SettingsPage() {
                             max={365}
                             allowDecimals={false}
                             disabled={!config.notifications?.paymentReminder?.enabled}
-                            className="w-12 px-1.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold disabled:opacity-50"
+                            className="w-12 h-7 px-1.5 py-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center font-bold text-xs disabled:opacity-50"
                           />
                           <span className="text-[11px] text-slate-500">วัน</span>
                         </div>
@@ -3558,9 +3575,9 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section 3: LINE Notify / OA Configuration */}
-                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-300 dark:border-emerald-800 space-y-3">
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
+                      <h4 className="font-bold text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-emerald-600" />
                         <span>การเชื่อมต่อ LINE Notify / LINE Official Account</span>
                       </h4>
@@ -3587,7 +3604,7 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
+                            className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
                           />
                           <button
                             type="button"
@@ -3617,7 +3634,7 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
+                            className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
                           />
                           <button
                             type="button"
@@ -3633,9 +3650,9 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => showToast('ทดสอบส่ง LINE สำเร็จ', 'ส่งสัญญาณข้อความทดสอบเข้า LINE Notify เรียบร้อยแล้ว', 'SUCCESS')}
-                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" />
+                        <MessageSquare className="w-4 h-4" />
                         <span>⚡ ทดสอบส่งข้อความ LINE แจ้งเตือน</span>
                       </button>
                     </div>
@@ -3645,9 +3662,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 8: บัญชีและความปลอดภัย ================= */}
               {activeTab === 'ACCOUNT_SECURITY' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Shield className="w-4 h-4 text-indigo-600" />
                       <span>บัญชีและความปลอดภัย</span>
                     </h3>
@@ -3657,8 +3674,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* 1. User Profile Information */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <User className="w-4 h-4 text-blue-500" />
                       <span>ข้อมูลบัญชีผู้ใช้งาน</span>
                     </h4>
@@ -3708,8 +3725,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* 2. Security: PIN 6-digits & Auto-Lock */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3.5">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-500" />
                       <span>ความปลอดภัยและการล็อกหน้าจอ</span>
                     </h4>
@@ -3726,9 +3743,9 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={lock}
-                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
-                          <Lock className="w-3.5 h-3.5" />
+                          <Lock className="w-4 h-4" />
                           <span>ล็อกหน้าจอทันที</span>
                         </button>
                       </div>
@@ -3738,6 +3755,7 @@ export default function SettingsPage() {
                           ตั้งเวลาล็อกอัตโนมัติเมื่อไม่ได้ใช้งาน (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก) (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก)
                         </span>
                         <CustomSelect
+                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
                           value={autoLockDuration}
                           onChange={(val) => updateAutoLockSetting(val as AutoLockDuration)}
                           options={[
@@ -3803,7 +3821,7 @@ export default function SettingsPage() {
                                   value={forgotPinPwd}
                                   onChange={(e) => setForgotPinPwd(e.target.value)}
                                   placeholder="รหัสผ่านผู้ใช้งาน"
-                                  className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                                 />
                                 <button
                                   type="button"
@@ -3824,7 +3842,7 @@ export default function SettingsPage() {
                                   value={forgotPinNew}
                                   onChange={(e) => setForgotPinNew(e.target.value.replace(/\D/g, ''))}
                                   placeholder={showForgotPinNew ? "000000" : "••••••"}
-                                  className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
                                 />
                                 <button
                                   type="button"
@@ -3845,7 +3863,7 @@ export default function SettingsPage() {
                                   value={forgotPinConfirm}
                                   onChange={(e) => setForgotPinConfirm(e.target.value.replace(/\D/g, ''))}
                                   placeholder={showForgotPinConfirm ? "000000" : "••••••"}
-                                  className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
                                 />
                                 <button
                                   type="button"
@@ -3864,7 +3882,7 @@ export default function SettingsPage() {
                               type="button"
                               onClick={handleForgotPinReset}
                               disabled={forgotPinLoad}
-                              className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                              className="h-9 px-3.5 py-0 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
                             >
                               {forgotPinLoad ? 'กำลังตรวจสอบ...' : 'ยืนยันรีเซ็ต PIN'}
                             </button>
@@ -3881,7 +3899,7 @@ export default function SettingsPage() {
                                 value={oldPin}
                                 onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
                                 placeholder={showOldPin ? "000000" : "••••••"}
-                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
                               />
                               <button
                                 type="button"
@@ -3903,7 +3921,7 @@ export default function SettingsPage() {
                                 value={newPin}
                                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
                                 placeholder={showNewPin ? "000000" : "••••••"}
-                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
                               />
                               <button
                                 type="button"
@@ -3925,7 +3943,7 @@ export default function SettingsPage() {
                                 value={confirmNewPin}
                                 onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ''))}
                                 placeholder={showConfirmNewPin ? "000000" : "••••••"}
-                                className="w-full pl-2.5 pr-7 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
+                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
                               />
                               <button
                                 type="button"
@@ -3946,7 +3964,7 @@ export default function SettingsPage() {
                             type="button"
                             onClick={handleChangePin}
                             disabled={pinLoading}
-                            className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
                           >
                             {pinLoading ? 'กำลังบันทึก...' : 'บันทึก PIN ใหม่'}
                           </button>
@@ -3985,9 +4003,9 @@ export default function SettingsPage() {
                             type="button"
                             onClick={handleStartMfaEnroll}
                             disabled={mfaLoading}
-                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                           >
-                            <QrCode className="w-3.5 h-3.5" />
+                            <QrCode className="w-4 h-4" />
                             <span>{mfaLoading ? 'กำลังสร้างคำขอ...' : 'เปิดใช้งาน 2-Factor Authentication'}</span>
                           </button>
                         </div>
@@ -3995,7 +4013,7 @@ export default function SettingsPage() {
 
                       {/* Enrollment Step-by-step Flow */}
                       {!isMfaEnrolled && isEnrollingMfa && mfaEnrollData && (
-                        <div className="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4 animate-in fade-in">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in">
                           <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
                             <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                               <Smartphone className="w-3.5 h-3.5 text-blue-500" />
@@ -4064,13 +4082,13 @@ export default function SettingsPage() {
                                 value={mfaVerifyCode}
                                 onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, ''))}
                                 placeholder="000000"
-                                className="w-36 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-center font-mono font-bold tracking-widest text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
+                                className="w-36 h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-center font-mono font-bold tracking-widest text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
                                 autoFocus
                               />
                               <button
                                 type="submit"
                                 disabled={mfaLoading || mfaVerifyCode.trim().length !== 6}
-                                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                                className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                               >
                                 {mfaLoading ? 'กำลังตรวจสอบ...' : 'ยืนยันและเปิดใช้งาน 2FA'}
                               </button>
@@ -4078,7 +4096,7 @@ export default function SettingsPage() {
                                 type="button"
                                 onClick={handleCancelMfaEnroll}
                                 disabled={mfaLoading}
-                                className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                                className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
                               >
                                 ยกเลิก
                               </button>
@@ -4109,7 +4127,7 @@ export default function SettingsPage() {
                               <button
                                 type="button"
                                 onClick={() => setShowUnenrollConfirm(true)}
-                                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] border border-rose-200 dark:border-rose-900 transition-colors cursor-pointer"
+                                className="h-9 px-3.5 py-0 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-xs border border-rose-200 dark:border-rose-900 transition-colors cursor-pointer"
                               >
                                 ปิดใช้งาน 2FA
                               </button>
@@ -4130,7 +4148,7 @@ export default function SettingsPage() {
                                   type="button"
                                   onClick={handleUnenrollMfa}
                                   disabled={mfaLoading}
-                                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                                  className="h-9 px-3.5 py-0 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                                 >
                                   {mfaLoading ? 'กำลังดำเนินการ...' : 'ยืนยันปิดใช้งาน 2FA'}
                                 </button>
@@ -4138,7 +4156,7 @@ export default function SettingsPage() {
                                   type="button"
                                   onClick={() => setShowUnenrollConfirm(false)}
                                   disabled={mfaLoading}
-                                  className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                                  className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
                                 >
                                   ยกเลิก
                                 </button>
@@ -4179,7 +4197,7 @@ export default function SettingsPage() {
                               value={oldPwd}
                               onChange={(e) => setOldPwd(e.target.value)}
                               placeholder="••••••••"
-                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                              className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                             />
                             <button
                               type="button"
@@ -4200,7 +4218,7 @@ export default function SettingsPage() {
                               value={newPwd}
                               onChange={(e) => setNewPwd(e.target.value)}
                               placeholder="••••••••"
-                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                              className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                             />
                             <button
                               type="button"
@@ -4221,7 +4239,7 @@ export default function SettingsPage() {
                               value={confirmNewPwd}
                               onChange={(e) => setConfirmNewPwd(e.target.value)}
                               placeholder="••••••••"
-                              className="w-full pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                              className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                             />
                             <button
                               type="button"
@@ -4240,7 +4258,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={handleChangePassword}
                           disabled={pwdLoading}
-                          className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                          className="h-9 px-3.5 py-0 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
                         >
                           {pwdLoading ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
                         </button>
@@ -4252,8 +4270,8 @@ export default function SettingsPage() {
                     <ManualBackupCard />
 
                     {/* 6. Session Management */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <LogOut className="w-4 h-4 text-rose-500" />
                       <span>เซสชันการใช้งาน</span>
                     </h4>
@@ -4262,9 +4280,9 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => logout()}
-                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                        className="h-9 px-3.5 py-0 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-4 h-4" />
                         <span>ออกจากระบบปัจจุบัน</span>
                       </button>
 
@@ -4278,9 +4296,9 @@ export default function SettingsPage() {
                             await logout()
                           }
                         }}
-                        className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                        <Shield className="w-4 h-4 text-indigo-500" />
                         <span>ออกจากระบบทุกอุปกรณ์ (Logout All Devices)</span>
                       </button>
                     </div>
@@ -4290,27 +4308,27 @@ export default function SettingsPage() {
 
               {/* ================= TAB 9: โปรไฟล์และแบรนด์ ================= */}
               {activeTab === 'PROFILE_BRANDING' && (
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {/* Section Header */}
                   <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-pink-500" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-pink-500" />
                       <span>การปรับแต่งระบบ / โปรไฟล์และแบรนด์</span>
                     </h3>
-                    <p className="text-[11px] text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       จัดการชื่อระบบ รูปภาพพื้นหลังเข้าสู่ระบบ รูปโปรไฟล์ประจำตัวผู้ใช้ และโลโก้ระบบ
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className="grid grid-cols-1 gap-3">
                                         {/* CARD 0: ชื่อระบบ (System Name) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
                       <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                         <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
                           <Store className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                             ชื่อระบบ
                           </h4>
                           <p className="text-[11px] text-slate-500">
@@ -4337,21 +4355,21 @@ export default function SettingsPage() {
                               })
                             }
                             placeholder="JJK_JeeRaKiT"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs"
+                            className="w-full h-9 px-3 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
                             <Sparkles className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                               พื้นหลังเข้าสู่ระบบและปลดล็อก PIN
                             </h4>
                             
@@ -4369,18 +4387,18 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => authBgInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
                           >
-                            <Upload className="w-3.5 h-3.5" />
+                            <Upload className="w-4 h-4" />
                             <span>{config.branding?.authBackgroundImageUrl ? 'เปลี่ยนรูปพื้นหลัง' : 'อัปโหลดรูปพื้นหลัง'}</span>
                           </button>
                           {config.branding?.authBackgroundImageUrl && (
                             <button
                               type="button"
                               onClick={handleRemoveAuthBg}
-                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                               <span>ลบรูป</span>
                             </button>
                           )}
@@ -4434,14 +4452,14 @@ export default function SettingsPage() {
                     </div>
 
                     {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
                             <User className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                               รูปโปรไฟล์ผู้ใช้งาน
                             </h4>
                             <p className="text-[11px] text-slate-500">
@@ -4461,18 +4479,18 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => avatarInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
                           >
-                            <Upload className="w-3.5 h-3.5" />
+                            <Upload className="w-4 h-4" />
                             <span>{user?.avatarUrl ? 'เปลี่ยนรูปโปรไฟล์' : 'อัปโหลดรูปโปรไฟล์'}</span>
                           </button>
                           {user?.avatarUrl && (
                             <button
                               type="button"
                               onClick={handleRemoveAvatar}
-                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-950/60 text-slate-700 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                               <span>ลบรูป</span>
                             </button>
                           )}
@@ -4480,7 +4498,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* Avatar Preview Area */}
-                      <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+                      <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                         <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20 shrink-0 overflow-hidden">
                           {user?.avatarUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -4508,14 +4526,14 @@ export default function SettingsPage() {
                     </div>
 
                     {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
-                    <div className="bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
                             <Building className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
                               โลโก้แอปและไอคอนระบบ
                             </h4>
                             <p className="text-[11px] text-slate-500">
@@ -4535,18 +4553,18 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => appLogoInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
                           >
-                            <Upload className="w-3.5 h-3.5" />
+                            <Upload className="w-4 h-4" />
                             <span>{config.branding?.appLogoUrl || config.business?.logoDataUrl ? 'เปลี่ยนโลโก้แอป' : 'อัปโหลดโลโก้แอป'}</span>
                           </button>
                           {(config.branding?.appLogoUrl || config.business?.logoDataUrl) && (
                             <button
                               type="button"
                               onClick={handleRemoveAppLogo}
-                              className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="h-9 px-3.5 py-0 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <RotateCcw className="w-3.5 h-3.5" />
+                              <RotateCcw className="w-4 h-4" />
                               <span>คืนค่าเริ่มต้น</span>
                             </button>
                           )}
@@ -4556,7 +4574,7 @@ export default function SettingsPage() {
                       {/* Dual Mockup: PC Browser Tab & Mobile App Icon */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Mockup 1: PC Browser Tab */}
-                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
                             🖥️ ตัวอย่างการแสดงผลบน PC (Browser Tab & Favicon)
                           </span>
@@ -4587,7 +4605,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Mockup 2: Mobile App Icon */}
-                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">
                             📱 ตัวอย่างการแสดงผลบน Smartphone (Home Screen Icon)
                           </span>
@@ -4625,18 +4643,18 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={handleResetDefaults}
-                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                className="h-9 px-3.5 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <RotateCcw className="w-4 h-4 text-slate-400" />
                 <span>คืนค่าเดิม</span>
               </button>
 
               <button
                 type="submit"
-                className={`px-6 py-2 rounded-xl text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all ${
+                className={`h-9 px-3.5 py-0 rounded-xl text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                   isSaved
                     ? 'bg-emerald-700 shadow-emerald-700/30'
-                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 active:scale-95'
+                    : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
                 }`}
               >
                 {isSaved ? (
