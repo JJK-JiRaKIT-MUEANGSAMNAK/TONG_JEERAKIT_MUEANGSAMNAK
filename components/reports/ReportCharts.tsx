@@ -32,7 +32,7 @@ export function ReportAreaTrendChart({
 }: ReportAreaTrendChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-xs text-slate-400">
+      <div className="flex items-center justify-center h-32 text-xs text-slate-500">
         ยังไม่มีข้อมูลแนวโน้ม
       </div>
     )
@@ -77,8 +77,8 @@ export function ReportAreaTrendChart({
         <defs>
           {series.map((s) => (
             <linearGradient key={s.gradientId} id={s.gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={s.color} stopOpacity="0.28" />
-              <stop offset="100%" stopColor={s.color} stopOpacity="0.02" />
+              <stop offset="0%" stopColor={s.color} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={s.color} stopOpacity="0.06" />
             </linearGradient>
           ))}
         </defs>
@@ -92,7 +92,7 @@ export function ReportAreaTrendChart({
               x2={width - paddingRight}
               y2={t.y}
               stroke="currentColor"
-              className="text-slate-200 dark:text-slate-800"
+              className="text-slate-300 dark:text-slate-800"
               strokeDasharray="3 3"
               strokeWidth="1"
             />
@@ -100,7 +100,7 @@ export function ReportAreaTrendChart({
               x={paddingLeft - 6}
               y={t.y + 3}
               textAnchor="end"
-              className="fill-slate-400 font-mono text-[9px]"
+              className="fill-slate-500 font-mono text-[9px]"
             >
               {valuePrefix}
               {t.val >= 1000 ? `${(t.val / 1000).toFixed(0)}k` : t.val.toLocaleString()}
@@ -163,7 +163,7 @@ export function ReportAreaTrendChart({
               x={x}
               y={height - 8}
               textAnchor="middle"
-              className="fill-slate-400 font-mono text-[9px]"
+              className="fill-slate-500 font-mono text-[9px]"
             >
               {d[xKey]}
             </text>
@@ -201,7 +201,7 @@ export function ReportBarChart({
 }: ReportBarChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-xs text-slate-400">
+      <div className="flex items-center justify-center h-32 text-xs text-slate-500">
         ยังไม่มีข้อมูลเปรียบเทียบ
       </div>
     )
@@ -256,7 +256,7 @@ export function ReportBarChart({
               x2={width - paddingRight}
               y2={t.y}
               stroke="currentColor"
-              className="text-slate-200 dark:text-slate-800"
+              className="text-slate-300 dark:text-slate-800"
               strokeDasharray="3 3"
               strokeWidth="1"
             />
@@ -264,7 +264,7 @@ export function ReportBarChart({
               x={paddingLeft - 6}
               y={t.y + 3}
               textAnchor="end"
-              className="fill-slate-400 font-mono text-[9px]"
+              className="fill-slate-500 font-mono text-[9px]"
             >
               {valuePrefix}
               {t.val >= 1000 ? `${(t.val / 1000).toFixed(0)}k` : t.val.toLocaleString()}
@@ -306,7 +306,7 @@ export function ReportBarChart({
                   x={groupCenter}
                   y={height - 8}
                   textAnchor="middle"
-                  className="fill-slate-400 font-mono text-[8.5px]"
+                  className="fill-slate-500 font-mono text-[8.5px]"
                 >
                   {d[xKey]}
                 </text>

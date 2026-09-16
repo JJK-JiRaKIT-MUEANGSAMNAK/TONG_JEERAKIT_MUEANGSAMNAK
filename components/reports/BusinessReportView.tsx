@@ -63,7 +63,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
               ช่วงก่อนหน้า: ฿{formatCurrency(data.previousRevenue)}
             </div>
           </div>
-          <div className="text-[9.5px] text-slate-400 font-mono">
+          <div className="text-[9.5px] text-slate-500 font-mono">
             {isRevGrowthPos ? 'รายได้เพิ่มขึ้นจากงวดก่อน' : 'รายได้ลดลงเมื่อเทียบงวดก่อน'}
           </div>
         </div>
@@ -89,7 +89,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
           <div className="my-1">
             <div className="text-base sm:text-lg font-black font-mono text-blue-700 dark:text-blue-400">
               {formatNumber(data.currentOrders)}{' '}
-              <span className="text-xs font-normal text-slate-400">บิล</span>
+              <span className="text-xs font-normal text-slate-500">บิล</span>
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
               ช่วงก่อนหน้า: {formatNumber(data.previousOrders)} บิล
@@ -140,13 +140,13 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
           <div className="my-1">
             <div className="text-base sm:text-lg font-black font-mono text-slate-900 dark:text-slate-100">
               {formatNumber(data.currentActiveCustomers)}{' '}
-              <span className="text-xs font-normal text-slate-400">ราย</span>
+              <span className="text-xs font-normal text-slate-500">ราย</span>
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
               ช่วงก่อนหน้า: {formatNumber(data.previousActiveCustomers)} ราย
             </div>
           </div>
-          <div className="text-[9.5px] text-slate-400 font-bold">
+          <div className="text-[9.5px] text-slate-500 font-bold">
             การกระจายตัวของฐานลูกค้า
           </div>
         </div>
@@ -161,7 +161,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
               กราฟแนวโน้มรายได้ (Line / Area รายวัน / รายเดือน)
             </h3>
           </div>
-          <span className="text-[10px] text-slate-400">
+          <span className="text-[10px] text-slate-500">
             วิเคราะห์ทิศทางและยอดขายย้อนหลัง
           </span>
         </div>
@@ -190,11 +190,11 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
               ลูกค้าหลักที่สร้างรายได้สูงสุด (Top Customers Ranking)
             </h3>
           </div>
-          <span className="text-[10px] text-slate-400">เรียงตามยอดใช้จ่ายรวม</span>
+          <span className="text-[10px] text-slate-500">เรียงตามยอดใช้จ่ายรวม</span>
         </div>
 
         {data.topCustomers.length === 0 ? (
-          <div className="text-xs text-slate-400 py-6 text-center">
+          <div className="text-xs text-slate-500 py-6 text-center">
             ยังไม่มีข้อมูลลูกค้าที่ทำรายการในช่วงเวลานี้
           </div>
         ) : (
@@ -228,7 +228,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate">
+                    <div className="text-[10px] text-slate-500 truncate">
                       {c.companyName || c.customerPhone || 'ลูกค้าบุคคล'}
                     </div>
                   </div>
@@ -238,7 +238,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
                   <div className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">
                     ฿{formatCurrency(c.totalSpend)}
                   </div>
-                  <div className="text-[9px] text-slate-400">
+                  <div className="text-[9px] text-slate-500">
                     {c.ordersCount} บิล
                   </div>
                 </div>
@@ -257,11 +257,11 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
               ตารางจัดอันดับลูกค้าและวิเคราะห์ย้อนหลัง ({data.customerRankings.length} รายการ)
             </h3>
           </div>
-          <span className="text-[10px] text-slate-400">จัดอันดับตามมูลค่าการใช้บริการ</span>
+          <span className="text-[10px] text-slate-500">จัดอันดับตามมูลค่าการใช้บริการ</span>
         </div>
 
         {data.customerRankings.length === 0 ? (
-          <div className="text-xs text-slate-400 py-8 text-center">
+          <div className="text-xs text-slate-500 py-8 text-center">
             ไม่มีข้อมูลลูกค้าในช่วงเวลานี้
           </div>
         ) : (
@@ -286,7 +286,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {data.customerRankings.slice(0, 50).map((c) => (
                   <tr key={c.rank} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="py-1 px-2 text-center font-mono font-bold text-slate-400">
+                    <td className="py-1 px-2 text-center font-mono font-bold text-slate-500">
                       #{c.rank}
                     </td>
                     <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
