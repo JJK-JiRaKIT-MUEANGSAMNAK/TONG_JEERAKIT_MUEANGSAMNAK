@@ -77,6 +77,9 @@ function SidebarContent() {
   const searchParams = useSearchParams()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(() => pathname === '/dashboard')
+  const [isReportsExpanded, setIsReportsExpanded] = useState(
+    () => pathname === '/reports' || pathname?.startsWith('/reports/')
+  )
   const { user, signOut } = useAuth()
 
   const logoUrl = ''
@@ -87,6 +90,13 @@ function SidebarContent() {
   useEffect(() => {
     if (pathname === '/dashboard') {
       setIsDashboardExpanded(true)
+    }
+  }, [pathname])
+
+  // Keep reports expanded if user navigates to /reports
+  useEffect(() => {
+    if (pathname === '/reports' || pathname?.startsWith('/reports/')) {
+      setIsReportsExpanded(true)
     }
   }, [pathname])
 
@@ -226,6 +236,78 @@ function SidebarContent() {
                     <div className="pl-6 pr-1 py-1 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
                       {subItems.map((sub) => {
                         const isSubActive = isDashboardActive && currentView === sub.view
+
+                        return (
+                          <Link
+                            key={sub.view}
+                            href={sub.href}
+                            onClick={handleMenuClick}
+                            className={`flex min-h-8 items-center justify-between gap-2 px-3 py-1.5 rounded-md font-semibold text-[10.5px] leading-4 transition-all duration-150 ${
+                              isSubActive
+                                ? 'bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                            }`}
+                          >
+                            <span className="truncate">{sub.name}</span>
+                            {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (item.href === '/reports') {
+              const isReportsActive = pathname === '/reports' || pathname?.startsWith('/reports/')
+              const currentView = searchParams.get('view') || 'finance'
+
+              const subItems = [
+                { name: 'การเงิน', view: 'finance', href: '/reports?view=finance' },
+                { name: 'ขาย เช่า และเอกสาร', view: 'sales-rental', href: '/reports?view=sales-rental' },
+                { name: 'งานปฏิบัติการ', view: 'operations', href: '/reports?view=operations' },
+                { name: 'สต็อกและสินค้า', view: 'stock', href: '/reports?view=stock' },
+                { name: 'วิเคราะห์ธุรกิจ', view: 'business', href: '/reports?view=business' },
+              ]
+
+              return (
+                <div key={item.href} className="space-y-1">
+                  <div
+                    onClick={() => {
+                      setIsReportsExpanded((prev) => !prev)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setIsReportsExpanded((prev) => !prev)
+                      }
+                    }}
+                    className={`flex min-h-10 items-center justify-between gap-2 px-3 py-2 rounded-lg font-bold text-[11px] leading-4 transition-all duration-150 cursor-pointer select-none ${
+                      isReportsActive
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BarChart3 className={`w-3.5 h-3.5 shrink-0 ${isReportsActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span className="min-w-0 whitespace-nowrap">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isReportsExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submenu: การเงิน, ขาย เช่า และเอกสาร, งานปฏิบัติการ, สต็อกและสินค้า, วิเคราะห์ธุรกิจ */}
+                  {isReportsExpanded && (
+                    <div className="pl-6 pr-1 py-1 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {subItems.map((sub) => {
+                        const isSubActive = isReportsActive && currentView === sub.view
 
                         return (
                           <Link
