@@ -30,7 +30,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-500" />
-              5. ยอดขายสินค้า
+              ยอดขายสินค้า
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               {formatNumber(data.salesUnits)} ชิ้น
@@ -54,7 +54,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-blue-500" />
-              6. รายได้จากการเช่า
+              รายได้จากการเช่า
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
               {formatNumber(data.rentalCount)} งาน
@@ -78,7 +78,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Receipt className="w-3.5 h-3.5 text-slate-500" />
-              9. บิลทั้งหมด
+              บิลทั้งหมด
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               {formatNumber(data.totalBillsCount)} ฉบับ
@@ -102,7 +102,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-purple-500" />
-              10. ใบเสนอราคา
+              ใบเสนอราคา
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400">
               {data.quotationConversionRate}% แปลงบิล
@@ -126,7 +126,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
-              11. งานเช่าปัจจุบัน
+              งานเช่าปัจจุบัน
             </span>
             {data.overdueRentalsCount > 0 ? (
               <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center gap-0.5">
@@ -238,7 +238,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-purple-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              10. ท่อส่งเอกสารใบเสนอราคา (ร่าง → ส่งแล้ว → ยืนยัน → เป็นบิล)
+              ท่อส่งเอกสารใบเสนอราคา (ร่าง → ส่งแล้ว → ยืนยัน → เป็นบิล)
             </h3>
           </div>
           <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 font-mono">
@@ -255,7 +255,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
           <div className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-blue-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              11. งานเช่าปัจจุบันที่กำลังดำเนินการ ({data.activeRentals.length} งาน)
+              งานเช่าปัจจุบันที่กำลังดำเนินการ ({data.activeRentals.length} งาน)
             </h3>
           </div>
           <span className="text-[10px] text-slate-400">

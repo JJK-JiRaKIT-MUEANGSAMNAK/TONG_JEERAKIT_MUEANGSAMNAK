@@ -30,7 +30,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <Boxes className="w-3.5 h-3.5 text-slate-500" />
-              14. สินค้าทั้งหมด
+              สินค้าทั้งหมด
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               {data.totalSkuCount} SKU
@@ -105,7 +105,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <Wrench className="w-3.5 h-3.5 text-rose-500" />
-              15. ชำรุดรอซ่อม
+              ชำรุดรอซ่อม
             </span>
             <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
               {data.damagedItems.length} รายการ
@@ -219,7 +219,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                15. บันทึกสินค้าชำรุดและสูญหาย
+                บันทึกสินค้าชำรุดและสูญหาย
               </h3>
             </div>
             <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400 font-bold">
@@ -292,13 +292,13 @@ export function StockReportView({ data }: { data: StockReportData }) {
           )}
         </div>
 
-        {/* 16. สินค้าทำเงินสูงสุด (Top / Bottom Products) */}
+        {/* สินค้าทำเงินสูงสุด (Top / Bottom Products) */}
         <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                16. สินค้าทำเงินสูงสุด (Top Revenue)
+                สินค้าทำเงินสูงสุด (Top Revenue)
               </h3>
             </div>
             <span className="text-[10px] text-slate-400">เรียงตามรายได้</span>

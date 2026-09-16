@@ -33,7 +33,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              1. รายรับรวม
+              รายรับรวม
             </span>
             <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -68,7 +68,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-              2. รายจ่าย / คืนเงิน
+              รายจ่าย / คืนเงิน
             </span>
             <div className="p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <ArrowDownRight className="w-3.5 h-3.5" />
@@ -115,7 +115,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
               }`}
             >
               <Wallet className="w-3 h-3" />
-              3. รายรับสุทธิ
+              รายรับสุทธิ
             </span>
             {isNetPositive ? (
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -157,7 +157,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
               <AlertCircle className="w-3 h-3 text-amber-500" />
-              7. ลูกหนี้ค้าง
+              ลูกหนี้ค้าง
             </span>
             <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Receipt className="w-3.5 h-3.5" />
@@ -181,7 +181,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-purple-500" />
-              8. เงินมัดจำคงเหลือ
+              เงินมัดจำคงเหลือ
             </span>
             <div className="p-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
               <CreditCard className="w-3.5 h-3.5" />
@@ -242,7 +242,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                18. ช่องทางรับเงิน
+                ช่องทางรับเงิน
               </h3>
             </div>
             <span className="text-[10px] text-slate-400">สัดส่วนรายรับ</span>
@@ -285,7 +285,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
             <div className="flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                7. รายการลูกหนี้ค้างชำระ ({data.debtorCount} รายการ)
+                รายการลูกหนี้ค้างชำระ ({data.debtorCount} รายการ)
               </h3>
             </div>
             <span className="text-[11px] font-bold font-mono text-amber-600 dark:text-amber-400">
@@ -354,7 +354,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                8. สรุปความเคลื่อนไหวเงินมัดจำ
+                สรุปความเคลื่อนไหวเงินมัดจำ
               </h3>
             </div>
             <span className="text-[11px] font-bold font-mono text-purple-600 dark:text-purple-400">
