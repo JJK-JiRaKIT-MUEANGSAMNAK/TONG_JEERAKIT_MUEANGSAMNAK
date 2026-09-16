@@ -212,22 +212,22 @@ export default function QuotationsPage() {
           <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{quotations.length}</h3>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] text-slate-500 font-semibold block">ตอบรับ / จองสินค้าแล้ว</span>
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2.5 sm:p-3 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 shadow-sm">
+          <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold block">ตอบรับ / จองสินค้าแล้ว</span>
           <h3 className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
             {quotations.filter((q) => q.status === 'ACCEPTED').length}
           </h3>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] text-slate-500 font-semibold block">รอยืนยัน</span>
+        <div className="bg-amber-50 dark:bg-amber-950/30 p-2.5 sm:p-3 rounded-2xl border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
+          <span className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold block">รอยืนยัน</span>
           <h3 className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">
             {quotations.filter((q) => q.status === 'WAITING' || q.status === 'SENT' || q.status === 'DRAFT').length}
           </h3>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] text-slate-500 font-semibold block">ทำรายการสำเร็จ</span>
+        <div className="bg-blue-50 dark:bg-blue-950/30 p-2.5 sm:p-3 rounded-2xl border border-blue-200/60 dark:border-blue-900/40 shadow-sm">
+          <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold block">ทำรายการสำเร็จ</span>
           <h3 className="text-lg sm:text-xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
             {quotations.filter((q) => q.status === 'CONVERTED').length}
           </h3>
