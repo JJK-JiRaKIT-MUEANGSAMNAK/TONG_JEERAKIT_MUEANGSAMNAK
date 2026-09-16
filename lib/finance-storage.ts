@@ -5,7 +5,6 @@
  * Single source of truth for financial transactions, cash inflow/outflow, and statement records.
  */
 
-import { DailyPaymentTrend } from '@/components/dashboard/PaymentTrendChart'
 import { loadBills } from '@/lib/bill-storage'
 
 const STORAGE_KEY = 'app_finance_storage'
@@ -289,88 +288,4 @@ export function getBillFinanceSummary(billId: string, billNo?: string): {
     netDepositHeld: Math.max(0, depositReceived - depositRefunded),
     transactions: txs,
   }
-}
-
-/** Get today's real income, expense, and total outstanding debt (excluding deposits from revenue) */
-export function getTodayFinance(): { income: number; expense: number; outstanding: number } {
-  const todayStr = new Date().toISOString().slice(0, 10)
-  const txs = loadTransactions()
-  let income = 0
-  let expense = 0
-
-  for (const t of txs) {
-    if (t.dateTime.slice(0, 10) === todayStr) {
-      const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
-      if (!isDep) {
-        if (t.type === 'INCOME') income += t.incomeAmount || 0
-        if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
-      }
-    }
-  }
-
-  // Calculate real outstanding amount from active bills
-  const bills = loadBills()
-  const outstanding = bills.reduce((sum, b) => {
-    if (b.rentalStatus === 'CLOSED' || b.rentalStatus === 'CANCELLED' || b.rentalStatus === 'VOID') return sum
-    return sum + (b.outstandingAmount || 0)
-  }, 0)
-
-  return { income, expense, outstanding }
-}
-
-/** Get this month's real income and expense (excluding deposits from revenue) */
-export function getMonthlyFinance(): { income: number; expense: number } {
-  const thisMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
-  const txs = loadTransactions()
-  let income = 0
-  let expense = 0
-
-  for (const t of txs) {
-    if (t.dateTime.slice(0, 7) === thisMonth) {
-      const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
-      if (!isDep) {
-        if (t.type === 'INCOME') income += t.incomeAmount || 0
-        if (t.type === 'EXPENSE') expense += t.expenseAmount || 0
-      }
-    }
-  }
-
-  return { income, expense }
-}
-
-const THAI_DAY_LABELS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-
-/** Get 7-day payment trend from real income transactions (excluding deposits) */
-export function getDailyPaymentTrends(days: number = 7): DailyPaymentTrend[] {
-  const txs = loadTransactions().filter((t) => t.type === 'INCOME' && !t.isDeposit && t.category !== 'เงินมัดจำ')
-  const result: DailyPaymentTrend[] = []
-
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().slice(0, 10)
-
-    const dayOfWeek = d.getDay()
-    const dayLabel = THAI_DAY_LABELS[dayOfWeek]
-    const fullThaiDate = `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`
-
-    // Sum income for this date
-    const dayTxs = txs.filter((t) => t.dateTime.slice(0, 10) === dateStr)
-    const amount = dayTxs.reduce((sum, t) => sum + (t.incomeAmount || 0), 0)
-    const billCount = dayTxs.length
-
-    result.push({
-      date: dateStr,
-      dayLabel,
-      amount,
-      billCount,
-      fullThaiDate,
-    })
-  }
-
-  return result
 }
