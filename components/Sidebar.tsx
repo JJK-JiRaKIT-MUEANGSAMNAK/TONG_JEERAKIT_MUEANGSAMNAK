@@ -185,19 +185,19 @@ function SidebarContent() {
 
       {/* Sidebar Drawer Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#6D8190] text-slate-100 flex flex-col h-dvh max-h-dvh xl:h-full shrink-0 border-r border-white/15 select-none shadow-2xl transition-transform duration-300 ease-in-out xl:static xl:w-64 xl:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#E3E3E3] text-slate-900 flex flex-col h-dvh max-h-dvh xl:h-full shrink-0 border-r border-slate-300 select-none shadow-2xl transition-transform duration-300 ease-in-out xl:static xl:w-64 xl:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Drawer Header (Close button only on mobile, clean header with no duplicate logo/system name) */}
-        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-white/15 shrink-0">
-          <span className="text-xs font-extrabold tracking-wider uppercase text-slate-200">
+        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-300 shrink-0">
+          <span className="text-xs font-extrabold tracking-wider uppercase text-slate-700">
             เมนูหลัก
           </span>
 
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="xl:hidden p-1.5 rounded-xl text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+            className="xl:hidden p-1.5 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-300/60 transition-colors"
             aria-label="ปิดเมนู"
           >
             <X className="w-5 h-5" />
@@ -236,18 +236,18 @@ function SidebarContent() {
                     className={`flex min-h-10 items-center justify-between gap-2 px-3 py-2 rounded-lg font-bold text-[11px] leading-4 transition-all duration-150 cursor-pointer select-none ${
                       isDashboardActive
                         ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                        : 'text-slate-100 hover:text-white hover:bg-white/15'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <LayoutDashboard className={`w-3.5 h-3.5 shrink-0 ${isDashboardActive ? 'text-white' : 'text-slate-200'}`} />
+                      <LayoutDashboard className={`w-3.5 h-3.5 shrink-0 ${isDashboardActive ? 'text-white' : 'text-slate-600'}`} />
                       <span className="min-w-0 whitespace-nowrap">{item.name}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {isDashboardExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isDashboardActive ? 'text-white/80' : 'text-slate-500'}`} />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                        <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isDashboardActive ? 'text-white/80' : 'text-slate-500'}`} />
                       )}
                     </div>
                   </div>
@@ -265,8 +265,8 @@ function SidebarContent() {
                             onClick={handleMenuClick}
                             className={`flex min-h-8 items-center justify-between gap-2 px-3 py-1.5 rounded-md font-semibold text-[10.5px] leading-4 transition-all duration-150 ${
                               isSubActive
-                                ? 'bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400'
-                                : 'text-slate-200 hover:text-white hover:bg-white/10'
+                                ? 'bg-emerald-500/20 text-emerald-700 font-bold border-l-2 border-emerald-400'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/50'
                             }`}
                           >
                             <span className="truncate">{sub.name}</span>
@@ -308,18 +308,18 @@ function SidebarContent() {
                     className={`flex min-h-10 items-center justify-between gap-2 px-3 py-2 rounded-lg font-bold text-[11px] leading-4 transition-all duration-150 cursor-pointer select-none ${
                       isReportsActive
                         ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                        : 'text-slate-100 hover:text-white hover:bg-white/15'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <BarChart3 className={`w-3.5 h-3.5 shrink-0 ${isReportsActive ? 'text-white' : 'text-slate-200'}`} />
+                      <BarChart3 className={`w-3.5 h-3.5 shrink-0 ${isReportsActive ? 'text-white' : 'text-slate-600'}`} />
                       <span className="min-w-0 whitespace-nowrap">{item.name}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {isReportsExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                        <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isReportsActive ? 'text-white/80' : 'text-slate-500'}`} />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/80" />
+                        <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isReportsActive ? 'text-white/80' : 'text-slate-500'}`} />
                       )}
                     </div>
                   </div>
@@ -337,8 +337,8 @@ function SidebarContent() {
                             onClick={handleMenuClick}
                             className={`flex min-h-8 items-center justify-between gap-2 px-3 py-1.5 rounded-md font-semibold text-[10.5px] leading-4 transition-all duration-150 ${
                               isSubActive
-                                ? 'bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400'
-                                : 'text-slate-200 hover:text-white hover:bg-white/10'
+                                ? 'bg-emerald-500/20 text-emerald-700 font-bold border-l-2 border-emerald-400'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/50'
                             }`}
                           >
                             <span className="truncate">{sub.name}</span>
@@ -364,11 +364,11 @@ function SidebarContent() {
                 className={`flex min-h-10 items-center justify-between gap-2 px-3 py-2 rounded-lg font-bold text-[11px] leading-4 transition-all duration-150 ${
                   isActive
                     ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                    : 'text-slate-100 hover:text-white hover:bg-white/15'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white' : 'text-slate-200'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white' : 'text-slate-600'}`} />
                   <span className="min-w-0 whitespace-nowrap">{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="w-3 h-3 shrink-0 text-white/80" />}
@@ -378,10 +378,10 @@ function SidebarContent() {
         </nav>
 
         {/* User Footer & Logout */}
-        <div className="p-4 border-t border-white/15 bg-black/10 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+        <div className="p-4 border-t border-slate-300 bg-slate-200/60 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 text-white font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-slate-300 border border-slate-400 text-slate-800 font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden">
                 {user?.avatarUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={user.avatarUrl} alt={user.displayName || user.fullName || user.username} className="w-full h-full object-cover" />
@@ -390,11 +390,11 @@ function SidebarContent() {
                 )}
               </div>
               <div className="flex-1 truncate">
-                <p className="text-xs font-bold text-white truncate">
+                <p className="text-xs font-bold text-slate-900 truncate">
                   {user?.displayName || user?.fullName || user?.username || 'ผู้ใช้งาน'}
                 </p>
-                <p className="text-[10px] text-slate-200 truncate flex items-center gap-1">
-                  <span className="text-amber-300 font-bold">
+                <p className="text-[10px] text-slate-600 truncate flex items-center gap-1">
+                  <span className="text-amber-700 font-bold">
                     {user?.role === 'OWNER' ? '👑 เจ้าของร้าน' : '💻 พนักงาน'}
                   </span>
                 </p>
@@ -406,7 +406,7 @@ function SidebarContent() {
                 setIsMobileOpen(false)
                 await signOut()
               }}
-              className="p-1.5 text-slate-200 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
               title="ออกจากระบบ"
               aria-label="ออกจากระบบ"
             >
