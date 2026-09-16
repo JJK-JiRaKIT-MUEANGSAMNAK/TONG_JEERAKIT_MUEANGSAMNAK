@@ -241,7 +241,7 @@ export function ProductListView({
               </>
             ) : (
               <>
-                <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
+                <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
                   <tr>
                     <th className="py-2 px-2 text-left whitespace-nowrap">ชื่อสินค้า</th>
                     <th className="py-2 px-2 w-28 text-left whitespace-nowrap">หมวดหมู่</th>

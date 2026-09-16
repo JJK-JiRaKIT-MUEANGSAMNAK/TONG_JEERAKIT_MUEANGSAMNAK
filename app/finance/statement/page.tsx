@@ -396,7 +396,7 @@ export default function StatementPage() {
         {/* Table Content */}
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
           <table className={`w-full table-fixed text-left text-xs leading-tight border-collapse ${filtered.length === 0 ? 'h-full' : ''}`}>
-            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold z-10">
+            <thead className="sticky top-0 bg-[#E3E3E3] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold z-10">
               <tr>
                 <th className="w-[13%] py-2 px-3 whitespace-nowrap">วัน-เวลา</th>
                 <th className="w-[13%] py-2 px-3 whitespace-nowrap">เลขที่เอกสาร</th>

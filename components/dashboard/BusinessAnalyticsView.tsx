@@ -251,8 +251,8 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400">
+                <thead className="bg-[#E3E3E3] dark:bg-slate-800">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300">
                     <th className="py-2 px-1.5 text-center w-6">#</th>
                     <th className="py-2 px-2">ชื่อลูกค้า</th>
                     <th className="py-2 px-2">ประเภทลูกค้า</th>

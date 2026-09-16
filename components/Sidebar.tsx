@@ -135,7 +135,7 @@ function SidebarContent() {
   return (
     <>
       {/* Mobile & Tablet Header Bar (Visible on screens < xl) */}
-      <header className="xl:hidden sticky top-0 z-30 bg-[#6D8190] text-slate-100 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/15 shadow-md shrink-0 relative flex items-center justify-between min-h-[56px]">
+      <header className="xl:hidden sticky top-0 z-30 bg-[#E3E3E3] text-slate-900 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-300 shadow-md shrink-0 relative flex items-center justify-between min-h-[56px]">
         {/* Left: Hamburger menu toggle button + Current menu name */}
         <div className="flex items-center gap-2 z-10 shrink-0 max-w-[40%] min-w-0">
           <button
@@ -145,7 +145,7 @@ function SidebarContent() {
           >
             {isMobileOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="font-extrabold text-xs sm:text-sm text-slate-100 truncate" title={pageName}>
+          <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate" title={pageName}>
             {pageName}
           </span>
         </div>
@@ -161,7 +161,7 @@ function SidebarContent() {
                 <Store className="w-4 h-4" />
               )}
             </div>
-            <span className="font-extrabold text-sm sm:text-base text-white truncate tracking-tight">
+            <span className="font-extrabold text-sm sm:text-base text-slate-900 truncate tracking-tight">
               {systemDisplayName}
             </span>
           </div>

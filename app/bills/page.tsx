@@ -708,18 +708,18 @@ export default function BillsPage() {
                   <col className="w-[64px] sm:w-[72px] lg:w-[80px]" />
                   <col className="w-[58px] sm:w-[76px] lg:w-[104px]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
-                  <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-xs">
-                    <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">เลขที่บิล</th>
-                    <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">ลูกค้า / เบอร์</th>
-                    <th className="px-1 py-2 bg-slate-50 dark:bg-slate-900 whitespace-nowrap">กำหนดคืน</th>
-                    <th className="px-1 py-2 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">วันเกิน</th>
-                    <th className="px-1 py-2 text-right bg-slate-50 dark:bg-slate-900 whitespace-nowrap">ยอดสุทธิ</th>
-                    <th className="px-1 py-2 text-right bg-slate-50 dark:bg-slate-900 whitespace-nowrap">ชำระแล้ว</th>
-                    <th className="px-1 py-2 text-right bg-slate-50 dark:bg-slate-900 whitespace-nowrap">คงค้าง</th>
-                    <th className="px-1 py-2 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">สถานะเช่า</th>
-                    <th className="px-1 py-2 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">การชำระ</th>
-                    <th className="px-1 py-2 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">จัดการ</th>
+                <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 text-slate-500 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
+                  <tr className="bg-[#E3E3E3] dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-xs">
+                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">เลขที่บิล</th>
+                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ลูกค้า / เบอร์</th>
+                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">กำหนดคืน</th>
+                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">วันเกิน</th>
+                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ยอดสุทธิ</th>
+                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ชำระแล้ว</th>
+                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">คงค้าง</th>
+                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">สถานะเช่า</th>
+                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">การชำระ</th>
+                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">

@@ -300,7 +300,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
           ) : (
             <div className="overflow-x-auto max-h-56">
               <table className="w-full text-left border-collapse text-[11px]">
-                <thead>
+                <thead className="bg-[#E3E3E3] dark:bg-slate-800">
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                     <th className="py-2 px-1.5 font-bold">เลขที่บิล</th>
                     <th className="py-2 px-1.5 font-bold">ลูกค้า</th>
@@ -427,7 +427,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         ) : (
           <div className="overflow-x-auto max-h-72">
             <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
+              <thead className="sticky top-0 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่ / เวลา</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง / บิล</th>

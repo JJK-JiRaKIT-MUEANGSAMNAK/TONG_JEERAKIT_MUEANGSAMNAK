@@ -357,7 +357,7 @@ export function ProductSettingsView({
           {/* Table Content */}
           <div className="flex-1 min-h-0 overflow-auto">
             <table className="w-full text-center text-xs border-collapse table-fixed">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
+              <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                     ลำดับ
@@ -556,7 +556,7 @@ export function ProductSettingsView({
           {/* Table Content */}
           <div className="flex-1 min-h-0 overflow-auto">
             <table className="w-full text-center text-xs border-collapse table-fixed">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
+              <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                     ลำดับ
@@ -747,7 +747,7 @@ export function ProductSettingsView({
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 flex flex-col justify-between">
           <div className="overflow-x-auto">
             <table className="w-full text-center text-xs border-collapse table-fixed min-w-[580px]">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
+              <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2.5 px-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">
                     ลำดับ

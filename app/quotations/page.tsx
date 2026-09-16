@@ -465,7 +465,7 @@ export default function QuotationsPage() {
             >
               <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
                 <table className={`w-full table-fixed text-left text-xs leading-tight border-collapse ${paginatedQuotations.length === 0 ? 'h-full' : ''}`}>
-                  <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold">
+                  <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold">
                     <tr>
                       <th className="w-[15%] py-2 px-3 whitespace-nowrap">เลขที่ใบเสนอราคา</th>
                       <th className="w-[11%] py-2 px-3 whitespace-nowrap">วันที่เอกสาร</th>

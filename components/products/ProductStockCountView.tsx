@@ -288,7 +288,7 @@ export function ProductStockCountView({
               <col className="w-14 sm:w-16" />
               <col className="w-24 sm:w-36" />
             </colgroup>
-            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-xs border-b border-slate-200 dark:border-slate-700 shadow-xs">
+            <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 text-slate-500 font-bold text-xs border-b border-slate-200 dark:border-slate-700 shadow-xs">
               <tr>
                 <th className="w-9 sm:w-10 py-2 px-2 text-center whitespace-nowrap">ลำดับ</th>
                 <th className="py-2 px-3 text-left whitespace-nowrap">ชื่อสินค้า</th>
@@ -467,7 +467,7 @@ function StockCountPrintSheet({
       {/* Table with all required columns */}
       <table className="w-full text-left border-collapse border border-black text-[11px] mb-4">
         <thead
-          className="bg-slate-100 font-bold border-b border-black text-center"
+          className="bg-[#E3E3E3] font-bold border-b border-black text-center"
           style={{ display: 'table-header-group' }}
         >
           <tr>
