@@ -21,10 +21,9 @@ import {
   Menu,
   X,
   ChevronRight,
-  Lock,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
-import { ThemeToggle } from '@/components/common/ThemeToggle'
+import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
 import { useAuth } from '@/lib/contexts/AuthContext'
 
 interface MenuItem {
@@ -130,17 +129,10 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Right: Actions (Theme Toggle & Notification Bell) */}
+        {/* Right: Actions (Notification Bell & Quick Action Launcher) */}
         <div className="flex items-center gap-2 z-10 shrink-0">
-          <button
-            onClick={() => {}}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 transition-colors"
-            title="ล็อกหน้าจอ (Lock Screen)"
-          >
-            <Lock className="w-4 h-4" />
-          </button>
-          <ThemeToggle />
           <NotificationBell />
+          <QuickActionLauncher />
         </div>
       </header>
 

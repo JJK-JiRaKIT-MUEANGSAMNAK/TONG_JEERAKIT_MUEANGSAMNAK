@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { Calendar, Clock, Lock } from 'lucide-react'
+import { Calendar, Clock } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
-import { ThemeToggle } from '@/components/common/ThemeToggle'
+import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
 
 // Map pathname prefixes to Thai page names according to specification
 const PAGE_NAME_MAP: Record<string, string> = {
@@ -92,23 +92,11 @@ export function TopHeader() {
           <span className="font-mono text-slate-100 font-bold">{currentTimeStr}</span>
         </div>
 
-        {/* Lock Screen Now Button */}
-        <button
-          onClick={() => {}}
-          type="button"
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer"
-          title="ล็อกหน้าจอตอนนี้ (Lock Screen)"
-          aria-label="ล็อกหน้าจอตอนนี้"
-        >
-          <Lock className="w-3.5 h-3.5 text-blue-500" />
-          <span className="hidden 2xl:inline">ล็อกหน้าจอ</span>
-        </button>
-
-        {/* Theme Switcher */}
-        <ThemeToggle />
-
         {/* Notification Bell */}
         <NotificationBell />
+
+        {/* Quick Action Launcher */}
+        <QuickActionLauncher />
       </div>
     </header>
   )

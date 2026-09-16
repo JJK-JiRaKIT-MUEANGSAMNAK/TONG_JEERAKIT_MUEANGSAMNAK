@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Plus,
   Search,
@@ -54,7 +55,8 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
 import { getDefaultMinimumStock } from '@/lib/settings-storage'
 
-export default function ProductsPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams()
   const { showToast } = useToast()
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
@@ -81,7 +83,15 @@ export default function ProductsPage() {
   const [activeViewTab, setActiveViewTab] = useState<'ALL' | 'DAMAGED'>('ALL')
 
   // Main 4-Tab Workspace State
-  const [activeMainTab, setActiveMainTab] = useState<'LIST' | 'ADD' | 'SETTINGS' | 'COUNT'>('LIST')
+  const initialTab = searchParams.get('tab') === 'count' ? 'COUNT' : 'LIST'
+  const [activeMainTab, setActiveMainTab] = useState<'LIST' | 'ADD' | 'SETTINGS' | 'COUNT'>(initialTab)
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'count') {
+      setActiveMainTab('COUNT')
+    }
+  }, [searchParams])
 
   // Master Units, Categories & Composite Rules
   const [masterUnits, setMasterUnits] = useState<Unit[]>([])
@@ -1292,5 +1302,13 @@ export default function ProductsPage() {
       </AppModal>
 
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsContent />
+    </Suspense>
   )
 }
