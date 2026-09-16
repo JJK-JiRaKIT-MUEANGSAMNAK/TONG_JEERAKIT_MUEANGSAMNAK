@@ -32,7 +32,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {/* Metric 1: การเติบโตของรายได้ (Revenue Growth) */}
         <div
-          className={`p-2.5 rounded-xl border flex flex-col justify-between ${
+          className={`p-2 rounded-xl border flex flex-col justify-between ${
             isRevGrowthPos
               ? 'border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20'
               : 'border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20'
@@ -69,7 +69,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
         </div>
 
         {/* Metric 2: จำนวนออเดอร์ / บิล (Order Volume) */}
-        <div className="p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
               <Receipt className="w-3.5 h-3.5 text-blue-500" />
@@ -101,7 +101,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
         </div>
 
         {/* Metric 3: ยอดเฉลี่ยต่อบิล (Average Ticket Size) */}
-        <div className="p-2.5 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <TrendingUp className="w-3.5 h-3.5 text-purple-500" />
@@ -126,7 +126,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
         </div>
 
         {/* Metric 4: ลูกค้าที่เข้ามาใช้บริการ (Active Customers) */}
-        <div className="p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <Users className="w-3.5 h-3.5 text-slate-500" />
@@ -153,7 +153,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       </div>
 
       {/* ─── 2. TOPIC 19: REVENUE TREND LINE/AREA CHART ────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -182,7 +182,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       </div>
 
       {/* ─── 3. TOPIC 17: TOP CUSTOMERS LEADERBOARD ────────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Award className="w-3.5 h-3.5 text-amber-500" />
@@ -249,7 +249,7 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       </div>
 
       {/* ─── 4. DETAILED CUSTOMER & PERFORMANCE RANKING TABLE ──────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-slate-500" />
@@ -269,18 +269,18 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
             <table className="w-full text-left border-collapse text-[11px]">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-1.5 px-2 font-bold text-center">อันดับ</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">เบอร์โทร</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">สถานที่ / หน่วยงาน</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center">จำนวนบิล</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+                  <th className="py-2 px-2 font-bold text-center">อันดับ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">เบอร์โทร</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">สถานที่ / หน่วยงาน</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">จำนวนบิล</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
                     ยอดใช้จ่ายรวม
                   </th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right text-amber-600">
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-amber-600">
                     หนี้ค้างชำระ
                   </th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ทำรายการล่าสุด</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ทำรายการล่าสุด</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">

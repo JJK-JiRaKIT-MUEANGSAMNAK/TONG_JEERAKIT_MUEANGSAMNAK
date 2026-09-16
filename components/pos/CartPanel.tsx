@@ -192,7 +192,7 @@ export function CartPanel({
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
       
       {/* Top Header & Customer Selector & Dates */}
-      <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-2.5">
+      <div className="p-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isQuotationMode ? (
@@ -294,7 +294,7 @@ export function CartPanel({
       </div>
 
       {/* Cart Items List */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2.5">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-center text-slate-400">
             <ShoppingBag className="w-12 h-12 stroke-1 mb-2 text-slate-300" />
@@ -349,7 +349,7 @@ export function CartPanel({
 
       {/* Adjustments & Totals Summary */}
       {items.length > 0 && (
-        <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 space-y-2.5">
+        <div className="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 space-y-2">
           
           {/* Quick Adjustments: Discount, Shipping, Deposit, VAT */}
           <div className="grid grid-cols-2 gap-2 text-xs">

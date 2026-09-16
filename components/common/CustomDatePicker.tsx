@@ -399,7 +399,7 @@ export function CustomDatePicker({
         className={`w-full min-w-0 flex items-center justify-between gap-1 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs transition-all text-left cursor-pointer ${
           buttonClassName
             ? buttonClassName
-            : 'px-2 py-1 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] sm:text-xs font-mono font-semibold hover:border-slate-300 dark:hover:border-slate-600'
+            : 'h-9 px-2.5 py-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] sm:text-xs font-mono font-semibold hover:border-slate-300 dark:hover:border-slate-600'
         } ${
           disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''
         }`}

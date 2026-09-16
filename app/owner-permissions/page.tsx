@@ -271,8 +271,8 @@ export default function OwnerPermissionsPage() {
   ]
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2.5 sm:gap-3 overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
         {/* Left Navigation: 2 Tabs */}
         <div className="w-full md:w-56 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex flex-row overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col gap-1 text-xs no-scrollbar">
           <button
@@ -303,9 +303,9 @@ export default function OwnerPermissionsPage() {
         </div>
 
         {/* Right Settings Workspace */}
-        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3.5 sm:p-4 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
           {/* Scrollable Container (internal scroll only, no page-level scroll) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-4 text-xs max-w-4xl">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-2 text-xs max-w-4xl">
             {/* Feedback alert toast */}
             {feedback && (
               <div
@@ -326,7 +326,7 @@ export default function OwnerPermissionsPage() {
 
             {/* ================= TAB 1: PERMISSION MATRIX ================= */}
             {activeTab === 'PERMISSIONS' && (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {/* Section Header */}
                 <div className="border-b border-slate-200 dark:border-slate-700 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
@@ -529,7 +529,7 @@ export default function OwnerPermissionsPage() {
 
             {/* ================= TAB 2: AUDIT REPORT ================= */}
             {activeTab === 'AUDIT_REPORT' && (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {/* Section Header */}
                 <div className="border-b border-slate-200 dark:border-slate-700 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
@@ -569,8 +569,8 @@ export default function OwnerPermissionsPage() {
                 </div>
 
                 {/* Filter Controls */}
-                <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Select Employee Dropdown with CustomSelect */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">

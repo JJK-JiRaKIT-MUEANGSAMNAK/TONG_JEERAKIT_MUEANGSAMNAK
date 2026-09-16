@@ -26,10 +26,10 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
 
   return (
     <div className="space-y-2">
-      {/* ─── 1. KPI SUMMARY CARDS (Topics 1, 2, 3, 7, 8) ──────────────────── */}
+      {/* ─── 1. TOP KPI CARDS (Topic 1, 2, 7 & 8) ──────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         {/* Card 1: รายรับ (Income) */}
-        <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
@@ -64,7 +64,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         </div>
 
         {/* Card 2: รายจ่าย / เงินคืน (Expense / Refund) */}
-        <div className="p-2.5 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
@@ -100,7 +100,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
 
         {/* Card 3: รายรับสุทธิ (Net Income) */}
         <div
-          className={`p-2.5 rounded-xl border flex flex-col justify-between ${
+          className={`p-2 rounded-xl border flex flex-col justify-between ${
             isNetPositive
               ? 'border-emerald-500/30 bg-emerald-500/10'
               : 'border-rose-500/30 bg-rose-500/10'
@@ -153,7 +153,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         </div>
 
         {/* Card 4: ลูกหนี้ค้าง (Outstanding Debt - Topic 7) */}
-        <div className="p-2.5 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
               <AlertCircle className="w-3 h-3 text-amber-500" />
@@ -177,7 +177,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         </div>
 
         {/* Card 5: เงินมัดจำ (Deposits - Topic 8) */}
-        <div className="col-span-2 md:col-span-1 p-2.5 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
+        <div className="col-span-2 md:col-span-1 p-2 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-purple-500" />
@@ -205,7 +205,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
       {/* ─── 2. CHARTS SECTION (Topic 1, 2, 3 & 18) ────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {/* Trend Area Chart (Left 2 cols) */}
-        <div className="lg:col-span-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+        <div className="lg:col-span-2 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -237,7 +237,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         </div>
 
         {/* Donut: ช่องทางรับเงิน (Right 1 col - Topic 18) */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -280,7 +280,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
       {/* ─── 3. DETAILS: ลูกหนี้ค้าง & การจัดการเงินมัดจำ (Topics 7 & 8) ────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* ลูกหนี้ค้างชำระ (Topic 7) */}
-        <div className="p-2.5 rounded-xl border border-amber-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+        <div className="p-2 rounded-xl border border-amber-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
@@ -302,11 +302,11 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
               <table className="w-full text-left border-collapse text-[11px]">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-1 px-1.5 font-bold">เลขที่บิล</th>
-                    <th className="py-1 px-1.5 font-bold">ลูกค้า</th>
-                    <th className="py-1 px-1.5 font-bold text-right">ยอดรวม</th>
-                    <th className="py-1 px-1.5 font-bold text-right text-amber-600">ยอดค้าง</th>
-                    <th className="py-1 px-1.5 font-bold text-center">สถานะ</th>
+                    <th className="py-2 px-1.5 font-bold">เลขที่บิล</th>
+                    <th className="py-2 px-1.5 font-bold">ลูกค้า</th>
+                    <th className="py-2 px-1.5 font-bold text-right">ยอดรวม</th>
+                    <th className="py-2 px-1.5 font-bold text-right text-amber-600">ยอดค้าง</th>
+                    <th className="py-2 px-1.5 font-bold text-center">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -349,7 +349,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
         </div>
 
         {/* รายงานเงินมัดจำ (Topic 8) */}
-        <div className="p-2.5 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-purple-500" />
@@ -409,7 +409,7 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
       </div>
 
       {/* ─── 4. TRANSACTIONS DETAIL TABLE ─────────────────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Receipt className="w-3.5 h-3.5 text-slate-500" />
@@ -429,18 +429,18 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
             <table className="w-full text-left border-collapse text-[11px]">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">วันที่ / เวลา</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">เลขอ้างอิง / บิล</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">รายละเอียด / ลูกค้า</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ช่องทาง</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่ / เวลา</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง / บิล</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">รายละเอียด / ลูกค้า</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ช่องทาง</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
                     รายรับ
                   </th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right text-rose-600">
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-rose-600">
                     รายจ่าย
                   </th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right">ยอดสะสม</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดสะสม</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">

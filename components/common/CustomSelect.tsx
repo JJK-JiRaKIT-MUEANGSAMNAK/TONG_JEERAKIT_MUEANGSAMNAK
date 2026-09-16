@@ -91,7 +91,7 @@ export function CustomSelect({
           if (!prev) setSearchTerm('')
           return !prev
         })}
-        className={`w-full min-w-0 ${buttonClassName ? buttonClassName : 'px-3 py-2 rounded-xl'} border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs transition-all text-left ${
+        className={`w-full min-w-0 ${buttonClassName ? buttonClassName : 'h-9 px-2.5 py-0 rounded-xl'} border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-xs transition-all text-left ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >

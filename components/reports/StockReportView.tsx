@@ -26,7 +26,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 1. INVENTORY STATUS KPIS (Topic 14 & 15) ──────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         {/* KPI 1: สต็อกทั้งหมด */}
-        <div className="p-2.5 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <Boxes className="w-3.5 h-3.5 text-slate-500" />
@@ -51,7 +51,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* KPI 2: สต็อกพร้อมใช้ (Available - Green) */}
-        <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
@@ -76,7 +76,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* KPI 3: กำลังเช่า (Rented - Blue) */}
-        <div className="p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-blue-500" />
@@ -101,7 +101,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* KPI 4: ชำรุด (Damaged - Red - Topic 15) */}
-        <div className="p-2.5 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <Wrench className="w-3.5 h-3.5 text-rose-500" />
@@ -126,7 +126,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* KPI 5: สูญหาย (Lost - Orange - Topic 15) */}
-        <div className="col-span-2 md:col-span-1 p-2.5 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col justify-between">
+        <div className="col-span-2 md:col-span-1 p-2 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
               <XCircle className="w-3.5 h-3.5 text-amber-500" />
@@ -154,7 +154,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 2. DONUT สัดส่วนสถานะ & BAR การใช้ตามหมวดหมู่ ──────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {/* Donut Chart: สัดส่วนสถานะสต็อก (Left 1 col) */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -185,7 +185,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* Bar Chart: การกระจายสต็อกตามหมวด (Right 2 cols) */}
-        <div className="lg:col-span-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+        <div className="lg:col-span-2 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -214,7 +214,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 3. TOPIC 15: ประวัติชำรุด / สูญหาย & TOPIC 16: สินค้าทำเงิน ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* รายการชำรุด / สูญหาย (Topic 15) */}
-        <div className="p-2.5 rounded-xl border border-rose-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-rose-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
@@ -236,11 +236,11 @@ export function StockReportView({ data }: { data: StockReportData }) {
               <table className="w-full text-left border-collapse text-[11px]">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-1 px-1.5 font-bold">รหัส</th>
-                    <th className="py-1 px-1.5 font-bold">ชื่อสินค้า</th>
-                    <th className="py-1 px-1.5 font-bold text-center">สถานะ</th>
-                    <th className="py-1 px-1.5 font-bold text-center">จำนวน</th>
-                    <th className="py-1 px-1.5 font-bold text-right">ค่าเสียหาย/ซ่อม</th>
+                    <th className="py-2 px-1.5 font-bold">รหัส</th>
+                    <th className="py-2 px-1.5 font-bold">ชื่อสินค้า</th>
+                    <th className="py-2 px-1.5 font-bold text-center">สถานะ</th>
+                    <th className="py-2 px-1.5 font-bold text-center">จำนวน</th>
+                    <th className="py-2 px-1.5 font-bold text-right">ค่าเสียหาย/ซ่อม</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -294,7 +294,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
 
         {/* สินค้าทำเงินสูงสุด (Top / Bottom Products) */}
         <div className="rounded-xl border border-emerald-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between overflow-hidden">
-          <div className="px-2.5 pt-2.5 pb-2 flex items-center justify-between">
+          <div className="p-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -308,11 +308,11 @@ export function StockReportView({ data }: { data: StockReportData }) {
             <table className="w-full text-left border-collapse text-[11px]">
               <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                  <th className="py-1 px-1.5 font-bold">อันดับ</th>
-                  <th className="py-1 px-1.5 font-bold">ชื่อสินค้า</th>
-                  <th className="py-1 px-1.5 font-bold text-center">หมวดหมู่</th>
-                  <th className="py-1 px-1.5 font-bold text-center">เช่า/ขาย</th>
-                  <th className="py-1 px-1.5 font-bold text-right text-emerald-600">รายได้รวม</th>
+                  <th className="py-2 px-1.5 font-bold">อันดับ</th>
+                  <th className="py-2 px-1.5 font-bold">ชื่อสินค้า</th>
+                  <th className="py-2 px-1.5 font-bold text-center">หมวดหมู่</th>
+                  <th className="py-2 px-1.5 font-bold text-center">เช่า/ขาย</th>
+                  <th className="py-2 px-1.5 font-bold text-right text-emerald-600">รายได้รวม</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -345,7 +345,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
 
       {/* ─── 4. DETAILED PRODUCT INVENTORY TABLE ───────────────────────────── */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-        <div className="px-2.5 pt-2.5 pb-2 flex items-center justify-between">
+        <div className="p-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5 text-slate-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -359,24 +359,24 @@ export function StockReportView({ data }: { data: StockReportData }) {
           <table className="w-full text-left border-collapse text-[11px]">
             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
               <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap">รหัส</th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap">ชื่อสินค้า</th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center">ทั้งหมด</th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center text-emerald-600">
+                <th className="py-2 px-2 font-bold whitespace-nowrap">รหัส</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อสินค้า</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-center">ทั้งหมด</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-emerald-600">
                   พร้อมใช้
                 </th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center text-blue-600">
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-blue-600">
                   กำลังเช่า
                 </th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center text-rose-600">
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-rose-600">
                   ชำรุด
                 </th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center text-amber-600">
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-amber-600">
                   สูญหาย
                 </th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right">ค่าเช่า/วัน</th>
-                <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ค่าเช่า/วัน</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
                   รายได้สะสม
                 </th>
               </tr>

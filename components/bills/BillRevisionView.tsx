@@ -326,9 +326,9 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
       </div>
 
       {/* 2. Workspace Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2 md:p-2.5 space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
         {/* Top Info & Dates Card: Always 4 fields in 1 single row */}
-        <div className="bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
           <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
             {/* Header Rental Date (Calendar Popover) */}
             <div className="space-y-1 min-w-0">
@@ -395,7 +395,7 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
         </div>
 
         {/* Product Search & Add Toolbar */}
-        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="flex-1 min-w-0">
             <CustomSelect
               value={selectedProductId}
@@ -410,7 +410,7 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
             type="button"
             disabled={!selectedProductId}
             onClick={addProduct}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="h-9 px-3.5 py-0 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มสินค้าในบิล</span>
@@ -434,15 +434,15 @@ export function BillRevisionView({ bill, mode, onClose, onSaved }: BillRevisionV
               </colgroup>
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider text-xs">
                 <tr>
-                  <th className="px-1.5 py-1.5 whitespace-nowrap">รายการสินค้า</th>
-                  <th className="px-1 py-1.5 text-right whitespace-nowrap">คืนแล้ว</th>
-                  <th className="px-1 py-1.5 text-right whitespace-nowrap">กำลังเช่า</th>
-                  <th className="px-1 py-1.5 text-right whitespace-nowrap">จำนวน</th>
-                  <th className="px-1 py-1.5 text-right whitespace-nowrap">ราคา/หน่วย</th>
-                  <th className="px-1 py-1.5 text-center whitespace-nowrap">วันที่เช่า</th>
-                  <th className="px-1 py-1.5 text-center whitespace-nowrap">กำหนดคืน</th>
-                  <th className="px-1 py-1.5 text-center whitespace-nowrap">รอบ</th>
-                  <th className="px-1 py-1.5 text-center whitespace-nowrap">จัดการ</th>
+                  <th className="px-1.5 py-2 whitespace-nowrap">รายการสินค้า</th>
+                  <th className="px-1 py-2 text-right whitespace-nowrap">คืนแล้ว</th>
+                  <th className="px-1 py-2 text-right whitespace-nowrap">กำลังเช่า</th>
+                  <th className="px-1 py-2 text-right whitespace-nowrap">จำนวน</th>
+                  <th className="px-1 py-2 text-right whitespace-nowrap">ราคา/หน่วย</th>
+                  <th className="px-1 py-2 text-center whitespace-nowrap">วันที่เช่า</th>
+                  <th className="px-1 py-2 text-center whitespace-nowrap">กำหนดคืน</th>
+                  <th className="px-1 py-2 text-center whitespace-nowrap">รอบ</th>
+                  <th className="px-1 py-2 text-center whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">

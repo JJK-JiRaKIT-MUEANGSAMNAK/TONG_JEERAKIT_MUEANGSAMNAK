@@ -541,13 +541,13 @@ export default function DocumentsPage() {
   }, [selectedTemplateForPreview, activeCustomer, business, sampleCustomerSnapshot, sampleBillSnapshot])
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2.5 sm:gap-3 text-xs">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
       {/* Mobile View Switcher (< md screens) */}
-      <div className="md:hidden flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+      <div className="md:hidden flex items-center bg-white dark:bg-slate-800 h-9 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
         <button
           type="button"
           onClick={() => setMobileTab('WORKSPACE')}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 h-7 py-0 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             mobileTab === 'WORKSPACE'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 dark:text-slate-300'
@@ -559,7 +559,7 @@ export default function DocumentsPage() {
         <button
           type="button"
           onClick={() => setMobileTab('PREVIEW')}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 h-7 py-0 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             mobileTab === 'PREVIEW'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 dark:text-slate-300'
@@ -574,7 +574,7 @@ export default function DocumentsPage() {
       {/* TAB 1: สร้างเอกสาร (DOCUMENT GENERATION & CUSTOMER HISTORY WORKSPACE)      */}
       {/* ========================================================================= */}
       {mainTab === 'CREATE_DOC' && (
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 overflow-hidden animate-in fade-in duration-200">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2 overflow-hidden animate-in fade-in duration-200">
 
           {/* LEFT PANEL: Document List / Add Document */}
           <div className={`md:col-span-5 xl:col-span-4 h-full min-h-0 overflow-hidden flex-col ${
@@ -582,7 +582,7 @@ export default function DocumentsPage() {
           }`}>
             
             {/* Unified White Card */}
-            <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-2">
+            <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-2">
               
               <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
                 {/* 0. Main Mode Switcher (50 / 50 Equal Width) */}
@@ -778,7 +778,7 @@ export default function DocumentsPage() {
       {/* TAB 2: จัดการเอกสาร (TEMPLATE MANAGEMENT & CONVERSION STUDIO)              */}
       {/* ========================================================================= */}
       {mainTab === 'MANAGE_TEMPLATES' && (
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 overflow-hidden animate-in fade-in duration-200">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2 overflow-hidden animate-in fade-in duration-200">
 
           {/* LEFT PANEL: Template Controls (Library / Add) */}
           <div className={`md:col-span-5 xl:col-span-4 h-full min-h-0 overflow-hidden flex-col ${
@@ -786,7 +786,7 @@ export default function DocumentsPage() {
           }`}>
 
             {/* Unified Card */}
-            <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-2">
+            <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-2">
 
               <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
                 {/* 0. Main Mode Switcher (50 / 50 Equal Width - Same Exact Position) */}

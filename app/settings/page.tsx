@@ -1153,7 +1153,7 @@ export default function SettingsPage() {
       <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
         {/* แถวที่ 1: แถบหลัก (Main Tabs) */}
         <div className="px-2 sm:px-2.5 py-1.5 sm:py-2 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-          <div className="h-9 p-0.5 sm:p-1 gap-0.5 sm:gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+          <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
             {[
               { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
               { id: 'PRODUCTS_STOCK' as const, label: 'สินค้า / สต็อก', icon: Package },
@@ -1170,7 +1170,7 @@ export default function SettingsPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`h-7 px-2 xl:px-3.5 rounded-lg text-[11px] xl:text-xs flex items-center gap-1 xl:gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                     isActive
                       ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm text-slate-900 dark:text-slate-100 font-bold'
                       : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1187,11 +1187,11 @@ export default function SettingsPage() {
         {/* แถวที่ 2: แถบย่อย (Subtabs) - แสดงเฉพาะแท็บที่มีแถบย่อย */}
         {activeTab === 'BUSINESS' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
                 onClick={() => setBusinessSubTab('INFO')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   businessSubTab === 'INFO'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1203,7 +1203,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setBusinessSubTab('BRANDING')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   businessSubTab === 'BRANDING'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1218,11 +1218,11 @@ export default function SettingsPage() {
 
         {activeTab === 'DOCUMENTS' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
                 onClick={() => setDocumentsSubTab('NUMBERS')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   documentsSubTab === 'NUMBERS'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1234,7 +1234,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setDocumentsSubTab('PRINTING')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   documentsSubTab === 'PRINTING'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1249,11 +1249,11 @@ export default function SettingsPage() {
 
         {activeTab === 'SYSTEM_ACCOUNT' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
                 onClick={() => setSystemAccountSubTab('SECURITY')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   systemAccountSubTab === 'SECURITY'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1265,7 +1265,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setSystemAccountSubTab('BACKUP')}
-                className={`h-6 px-3 rounded-md text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                   systemAccountSubTab === 'BACKUP'
                     ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
                     : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
@@ -1279,18 +1279,18 @@ export default function SettingsPage() {
         )}
 
         {/* แถวที่ 3: เนื้อหาของแท็บปัจจุบัน (Content Area) */}
-        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden p-3">
+        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden p-2">
           {/* Scrollable Container (internal scroll only, no page-level scroll) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-3 text-xs">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-2 text-xs">
               
               {/* ================= TAB 1: กิจการ ================= */}
               {activeTab === 'BUSINESS' && (
                 <div className="space-y-3">
                   {/* Subtab 1: ข้อมูลกิจการ (INFO) */}
                   {businessSubTab === 'INFO' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {/* Logo Section */}
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                         <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                           <ImageIcon className="w-4 h-4 text-blue-500" />
                           <span>โลโก้กิจการ</span>
@@ -1437,10 +1437,10 @@ export default function SettingsPage() {
 
                   {/* Subtab 2: แบรนด์และหน้าตาระบบ (BRANDING) */}
                   {businessSubTab === 'BRANDING' && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-1 gap-2">
                         {/* CARD 0: ชื่อระบบ (System Name) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
                           <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
                               <Store className="w-4 h-4" />
@@ -1480,7 +1480,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
@@ -1569,7 +1569,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
@@ -1643,7 +1643,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
@@ -1757,9 +1757,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 2: สินค้าและสต็อก ================= */}
               {activeTab === 'PRODUCTS_STOCK' && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {/* Section A: Category Rules (1 row = 1 Product Category Rule) */}
-                  <div className="space-y-3 pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="space-y-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
                         <div className="flex items-center gap-2">
@@ -1990,7 +1990,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section B: Inventory Configurations */}
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-2 pt-1">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-500" />
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
@@ -2020,7 +2020,7 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={config.productStock.allowZeroStock}
@@ -2033,7 +2033,7 @@ export default function SettingsPage() {
                       </div>
                     </label>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={config.productStock.allowBackdatedStockAdjustment}
@@ -2046,7 +2046,7 @@ export default function SettingsPage() {
                       </div>
                     </label>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={config.productStock.lowStockNotificationEnabled}
@@ -2064,9 +2064,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 3: การเช่าและบิล ================= */}
               {activeTab === 'RENTAL_BILLS' && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {/* กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-emerald-500" />
                       <span>กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults)</span>
@@ -2124,7 +2124,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
                       <span>กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff)</span>
@@ -2219,7 +2219,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
                       <span>กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy)</span>
@@ -2299,7 +2299,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                      <label className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-start gap-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.rentalBilling.dailyOverdueChargeEnabled}
@@ -2325,14 +2325,14 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-indigo-500" />
                       <span>กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies)</span>
                     </h4>
 
                     <div className="space-y-2">
-                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.rentalBilling.allowPartialReturn}
@@ -2357,7 +2357,7 @@ export default function SettingsPage() {
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.rentalBilling.allowPartialPayment}
@@ -2382,7 +2382,7 @@ export default function SettingsPage() {
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.rentalBilling.allowContinueAfterPaid}
@@ -2408,7 +2408,7 @@ export default function SettingsPage() {
                       </label>
 
                       {/* Reservation Expiry Policy */}
-                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 pt-2">
+                      <div className="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 pt-2">
                         <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-emerald-500" />
                           <span>นโยบายการหมดอายุการจองสต็อก (Reservation Expiry Policy)</span>
@@ -2469,10 +2469,10 @@ export default function SettingsPage() {
 
               {/* ================= TAB 4: เอกสาร ================= */}
               {activeTab === 'DOCUMENTS' && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Subtab 1: รูปแบบเลขที่เอกสาร (NUMBERS) */}
                   {documentsSubTab === 'NUMBERS' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                   {(
                     [
                       { key: 'rentalBill', name: 'บิลเช่า / สัญญาเช่า' },
@@ -2485,7 +2485,7 @@ export default function SettingsPage() {
                     const preview = previewDocumentNumber(dConfig)
 
                     return (
-                      <div key={doc.key} className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div key={doc.key} className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <h4 className="font-bold text-slate-900 dark:text-slate-100">{doc.name}</h4>
                           <div className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-xs border border-indigo-200 dark:border-indigo-800">
@@ -2631,7 +2631,7 @@ export default function SettingsPage() {
 
                   {/* Subtab 2: รูปแบบและการพิมพ์ (PRINTING) */}
                   {documentsSubTab === 'PRINTING' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {/* Section 1: แบบฟอร์มเริ่มต้น */}
                   <div className="space-y-2">
                     <span className="font-bold text-slate-900 dark:text-slate-100 block">แบบฟอร์มเริ่มต้น</span>
@@ -2873,7 +2873,7 @@ export default function SettingsPage() {
                     <span className="font-bold text-slate-900 dark:text-slate-100 block">องค์ประกอบเอกสาร</span>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.documentPrinting.showLogo}
@@ -2894,7 +2894,7 @@ export default function SettingsPage() {
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.documentPrinting.showQRCode}
@@ -2915,7 +2915,7 @@ export default function SettingsPage() {
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.documentPrinting.showAuthorizedPerson}
@@ -2936,7 +2936,7 @@ export default function SettingsPage() {
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.documentPrinting.showSignature}
@@ -3012,9 +3012,9 @@ export default function SettingsPage() {
 
               {/* ================= TAB 5: การเงิน ================= */}
               {activeTab === 'FINANCE' && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {/* Section A: บัญชีรับเงินของร้าน & PromptPay (ยกมาจากหมวดกิจการเดิม) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
                       <span>ส่วนที่ 1: บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
@@ -3159,7 +3159,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section B: ช่องทางรับชำระเงิน (Payment Methods) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-blue-500" />
                       <span>ส่วนที่ 2: ช่องทางการชำระเงินที่เปิดใช้งาน</span>
@@ -3253,7 +3253,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section C: ภาษีและส่วนลด (Tax & Discount Settings) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-amber-500" />
                       <span>ส่วนที่ 3: ภาษีและส่วนลด (Tax & Discount Settings)</span>
@@ -3352,7 +3352,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section D: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Save className="w-4 h-4 text-emerald-500" />
                       <span>ส่วนที่ 4: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation)</span>
@@ -3407,7 +3407,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section E: การปัดเศษทศนิยม (Currency & Rounding) */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Hash className="w-4 h-4 text-indigo-500" />
                       <span>ส่วนที่ 5: การปัดเศษทศนิยม (Currency & Rounding)</span>
@@ -3467,7 +3467,7 @@ export default function SettingsPage() {
 
               {/* ================= TAB 6: นัดหมายและการแจ้งเตือน ================= */}
               {activeTab === 'NOTIFICATIONS' && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Group A: ประเภทการนัดหมาย (Appointment Types) */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
@@ -3607,7 +3607,7 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* 1. กำหนดส่งสินค้า */}
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3664,7 +3664,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 2. กำหนดคืนสินค้า */}
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3721,7 +3721,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 3. ค้างชำระ */}
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3778,7 +3778,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 4. สต็อกต่ำ */}
-                      <label className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                      <label className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
                         <div className="flex items-center gap-2.5">
                           <input
                             type="checkbox"
@@ -3816,7 +3816,7 @@ export default function SettingsPage() {
                       </label>
 
                       {/* 5. สินค้าค้างคืน/คืนล่าช้า */}
-                      <label className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                      <label className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
                         <div className="flex items-center gap-2.5">
                           <input
                             type="checkbox"
@@ -3851,7 +3851,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Group C: LINE Notify / LINE Official Account */}
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-3">
+                  <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-300 dark:border-emerald-800 space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-emerald-600" />
@@ -3938,11 +3938,11 @@ export default function SettingsPage() {
 
               {/* ================= TAB 7: บัญชีและระบบ ================= */}
               {activeTab === 'SYSTEM_ACCOUNT' && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {systemAccountSubTab === 'SECURITY' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {/* 1. User Profile Information */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <User className="w-4 h-4 text-blue-500" />
                       <span>ข้อมูลบัญชีผู้ใช้งาน</span>
@@ -3993,7 +3993,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* 2. Security: PIN 6-digits & Auto-Lock */}
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-500" />
                       <span>ความปลอดภัยและการล็อกหน้าจอ</span>
@@ -4535,7 +4535,7 @@ export default function SettingsPage() {
                   </div>
 
                     {/* 5. Session Management */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
                       <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         <LogOut className="w-4 h-4 text-rose-500" />
                         <span>เซสชันการใช้งาน</span>
@@ -4573,7 +4573,7 @@ export default function SettingsPage() {
 
                 {/* Subtab 2: สำรองและกู้คืนข้อมูล (BACKUP) */}
                 {systemAccountSubTab === 'BACKUP' && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {/* Manual Local Offline Backup */}
                     <ManualBackupCard />
                   </div>

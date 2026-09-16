@@ -192,7 +192,7 @@ export default function BillsPage() {
   }
 
   return (
-    <div className={`h-full min-h-0 flex flex-col overflow-hidden ${activeWorkflow ? 'p-1 sm:p-1.5 md:p-2 gap-1.5 sm:gap-2' : 'p-2.5 sm:p-3 md:p-4 gap-2 sm:gap-2.5'} bg-slate-100 dark:bg-slate-900 text-xs`}>
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 gap-2 bg-slate-100 dark:bg-slate-900 text-xs">
 
       {activeWorkflow ? (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">

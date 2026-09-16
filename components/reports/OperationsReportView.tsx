@@ -25,7 +25,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
       {/* ─── 1. KPI SUMMARY CARDS (Topics 12, 13, 20) ──────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {/* KPI 1: งานส่งมอบ (Dispatches) */}
-        <div className="p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
@@ -50,7 +50,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* KPI 2: งานรับคืน (Returns) */}
-        <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <RotateCcw className="w-3.5 h-3.5 text-emerald-500" />
@@ -75,7 +75,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* KPI 3: การจองสินค้า (Reservations - Topic 13) */}
-        <div className="p-2.5 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <CalendarClock className="w-3.5 h-3.5 text-purple-500" />
@@ -100,7 +100,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* KPI 4: งาน / จุดที่ต้องจัดการ (Action Items - Topic 20) */}
-        <div className="p-2.5 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
@@ -134,7 +134,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
       {/* ─── 2. OPERATIONS VOLUME TREND & RESERVATIONS ────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* กราฟจำนวนงานตามวัน/เดือน */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+        <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -159,7 +159,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* รายการการจองสินค้า (Topic 13) */}
-        <div className="p-2.5 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <CalendarClock className="w-3.5 h-3.5 text-purple-500" />
@@ -181,11 +181,11 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
               <table className="w-full text-left border-collapse text-[11px]">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-1 px-1.5 font-bold">เลขที่จอง</th>
-                    <th className="py-1 px-1.5 font-bold">สินค้า</th>
-                    <th className="py-1 px-1.5 font-bold text-center">จำนวน</th>
-                    <th className="py-1 px-1.5 font-bold">ลูกค้า</th>
-                    <th className="py-1 px-1.5 font-bold whitespace-nowrap">ช่วงวันที่</th>
+                    <th className="py-2 px-1.5 font-bold">เลขที่จอง</th>
+                    <th className="py-2 px-1.5 font-bold">สินค้า</th>
+                    <th className="py-2 px-1.5 font-bold text-center">จำนวน</th>
+                    <th className="py-2 px-1.5 font-bold">ลูกค้า</th>
+                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">ช่วงวันที่</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -221,7 +221,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
       </div>
 
       {/* ─── 3. TOPIC 20: งาน / จุดที่ต้องจัดการ (Action Items) ─────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
@@ -296,7 +296,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
       </div>
 
       {/* ─── 4. OPERATIONS HISTORY & TIMELINE TABLE ───────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-slate-500" />
@@ -316,13 +316,13 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
             <table className="w-full text-left border-collapse text-[11px]">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">วันที่</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ประเภทงาน</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">เลขอ้างอิง</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-1.5 px-2 font-bold text-center">จำนวนชิ้น</th>
-                  <th className="py-1.5 px-2 font-bold">ผู้รับผิดชอบ</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทงาน</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
+                  <th className="py-2 px-2 font-bold text-center">จำนวนชิ้น</th>
+                  <th className="py-2 px-2 font-bold">ผู้รับผิดชอบ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">

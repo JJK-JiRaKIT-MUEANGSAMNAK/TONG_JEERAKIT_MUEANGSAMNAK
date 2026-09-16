@@ -26,7 +26,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       {/* ─── 1. KPI SUMMARY CARDS (Topics 5, 6, 9, 10, 11) ─────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         {/* Topic 5: ยอดขายสินค้า (Product Sales) */}
-        <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-500" />
@@ -50,7 +50,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 6: รายได้จากการเช่า (Rental Revenue) */}
-        <div className="p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-blue-500" />
@@ -74,7 +74,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 9: บิลทั้งหมด (Bills) */}
-        <div className="p-2.5 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 flex flex-col justify-between shadow-xs">
+        <div className="p-2 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Receipt className="w-3.5 h-3.5 text-slate-500" />
@@ -98,7 +98,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 10: ใบเสนอราคา (Quotations) */}
-        <div className="p-2.5 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-purple-500" />
@@ -122,7 +122,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 11: งานเช่าปัจจุบัน (Active Rentals) */}
-        <div className="col-span-2 md:col-span-1 p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between shadow-xs">
+        <div className="col-span-2 md:col-span-1 p-2 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
@@ -156,7 +156,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       {/* ─── 2. CHARTS: BAR ขาย VS เช่า & สรุปสถานะบิล ───────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {/* Bar Chart: ขาย vs เช่าตามช่วงเวลา (Left 2 cols) */}
-        <div className="lg:col-span-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
+        <div className="lg:col-span-2 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -179,7 +179,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* สถานะบิล (Right 1 col - Topic 9) */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Receipt className="w-3.5 h-3.5 text-slate-500" />
@@ -233,7 +233,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       </div>
 
       {/* ─── 3. TOPIC 10: ใบเสนอราคา FUNNEL (ร่าง → ส่ง → ยืนยัน → เป็นบิล) ── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-1.5">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-purple-500" />
@@ -250,7 +250,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       </div>
 
       {/* ─── 4. TOPIC 11: ประวัติและงานเช่าปัจจุบัน (Active Rentals) ───────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-blue-500" />
@@ -278,14 +278,14 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
             <table className="w-full text-left border-collapse text-[11px]">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                  <th className="py-1 px-1.5 font-bold">เลขที่บิล</th>
-                  <th className="py-1 px-1.5 font-bold">ลูกค้า</th>
-                  <th className="py-1 px-1.5 font-bold whitespace-nowrap">วันที่เริ่ม</th>
-                  <th className="py-1 px-1.5 font-bold whitespace-nowrap">กำหนดคืน</th>
-                  <th className="py-1 px-1.5 font-bold text-center">รายการ</th>
-                  <th className="py-1 px-1.5 font-bold text-right">มัดจำ</th>
-                  <th className="py-1 px-1.5 font-bold text-right">ยอดรวม</th>
-                  <th className="py-1 px-1.5 font-bold text-center">สถานะกำหนด</th>
+                  <th className="py-2 px-1.5 font-bold">เลขที่บิล</th>
+                  <th className="py-2 px-1.5 font-bold">ลูกค้า</th>
+                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">วันที่เริ่ม</th>
+                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">กำหนดคืน</th>
+                  <th className="py-2 px-1.5 font-bold text-center">รายการ</th>
+                  <th className="py-2 px-1.5 font-bold text-right">มัดจำ</th>
+                  <th className="py-2 px-1.5 font-bold text-right">ยอดรวม</th>
+                  <th className="py-2 px-1.5 font-bold text-center">สถานะกำหนด</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -337,7 +337,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       </div>
 
       {/* ─── 5. DETAILED DOCUMENTS TABLE ─────────────────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-slate-500" />
@@ -357,13 +357,13 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
             <table className="w-full text-left border-collapse text-[11px]">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">วันที่</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ประเภท</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-1.5 px-2 font-bold">รายการสินค้า</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-                  <th className="py-1.5 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
+                  <th className="py-2 px-2 font-bold">รายการสินค้า</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดรวม</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">

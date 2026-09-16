@@ -399,10 +399,10 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-slate-900 gap-2 sm:gap-2.5">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2">
 
       {/* Customer Selector & Add Action Toolbar (การ์ดค้นหาลูกค้า แยกอิสระ) */}
-      <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+      <div className="bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
         <div className="flex-1 min-w-0">
           <CustomSelect
             value={selectedCustomerId}
@@ -420,9 +420,9 @@ export default function CustomersPage() {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={handleOpenAdd}
-            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+            className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>+ เพิ่มลูกค้าใหม่</span>
           </button>
         </div>
@@ -431,11 +431,11 @@ export default function CustomersPage() {
       {/* Main Workspace Card (การ์ดเนื้อหา โดยมีปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
         {/* Sub-tabs Navigation Bar (ปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
-        <div className="p-1.5 sm:p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <div className="bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+        <div className="p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 items-center">
             <button
               onClick={() => setActive360Tab('GENERAL')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'GENERAL'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -447,7 +447,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('RENTAL_HISTORY')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'RENTAL_HISTORY'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -459,7 +459,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('PAYMENT_HISTORY')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'PAYMENT_HISTORY'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -471,7 +471,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('OUTSTANDING_ITEMS')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'OUTSTANDING_ITEMS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -483,7 +483,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('DOCUMENTS')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'DOCUMENTS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -495,7 +495,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('ANALYTICS')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'ANALYTICS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -507,7 +507,7 @@ export default function CustomersPage() {
 
             <button
               onClick={() => setActive360Tab('NOTES_TAGS')}
-              className={`w-full px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'NOTES_TAGS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'

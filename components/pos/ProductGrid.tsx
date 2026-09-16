@@ -80,15 +80,15 @@ export function ProductGrid({
   }, [modeProducts, searchTerm, selectedCategory])
 
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0 max-w-full space-y-3 overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 max-w-full space-y-2 overflow-hidden">
       {/* Header controls: Mode Switcher + Search & Category Dropdown */}
-      <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 min-w-0 max-w-full">
+      <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 min-w-0 max-w-full">
         {/* Mode Toggle: [ เช่า ] [ ขาย ] */}
-        <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+        <div className="flex items-center h-9 p-1 gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
           <button
             type="button"
             onClick={() => handleSetMode('RENT')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`h-7 px-3.5 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               posMode === 'RENT'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
@@ -100,7 +100,7 @@ export function ProductGrid({
           <button
             type="button"
             onClick={() => handleSetMode('SALE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`h-7 px-3.5 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               posMode === 'SALE'
                 ? 'bg-violet-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
@@ -119,7 +119,7 @@ export function ProductGrid({
             placeholder={posMode === 'RENT' ? 'ค้นหาสินค้าสำหรับเช่า...' : 'ค้นหาสินค้าสำหรับขาย...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+            className="w-full h-9 pl-9 pr-3 py-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function ProductGrid({
           <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรองหมวดหมู่สินค้า</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-2.5 overflow-y-auto overflow-x-hidden no-scrollbar pr-0.5 pb-2 content-start">
+        <div className="flex-1 min-h-0 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 overflow-y-auto overflow-x-hidden no-scrollbar pr-0.5 pb-2 content-start">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}

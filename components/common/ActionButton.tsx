@@ -13,7 +13,7 @@ export interface ActionButtonProps extends React.ButtonHTMLAttributes<HTMLButton
  * Base: px-3.5 py-2 rounded-xl text-xs gap-1.5 whitespace-nowrap icon 16x16
  */
 export const ACTION_BUTTON_BASE_CLASSES =
-  'px-3.5 py-2 rounded-xl text-xs gap-1.5 whitespace-nowrap inline-flex items-center justify-center font-bold transition-all cursor-pointer select-none [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
+  'h-9 px-3.5 py-0 rounded-xl text-xs gap-1.5 whitespace-nowrap inline-flex items-center justify-center font-bold transition-all cursor-pointer select-none [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
 
 export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProps>(
   (

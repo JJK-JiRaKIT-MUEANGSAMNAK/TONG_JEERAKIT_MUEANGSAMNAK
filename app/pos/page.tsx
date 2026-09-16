@@ -296,7 +296,7 @@ function POSContent() {
   const cartTotalItems = cartItems.reduce((sum, i) => sum + (i.quantity || 0), 0)
 
   return (
-    <div className="h-full p-2.5 sm:p-3 md:p-4 bg-slate-100 dark:bg-[#07111f] flex flex-col gap-2.5 md:gap-3 overflow-hidden min-h-0">
+    <div className="h-full p-2 bg-slate-100 dark:bg-[#07111f] flex flex-col gap-2 overflow-hidden min-h-0">
       {/* Quotation Mode Top Notification Banner */}
       {isQuotationMode && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 px-3 py-1.5 rounded-xl flex items-center justify-between gap-2 text-xs shrink-0 shadow-xs">
@@ -317,7 +317,7 @@ function POSContent() {
       )}
 
       {/* Main Workspace */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2.5 md:gap-3 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
         {/* Small Mobile View Toggle (< 768px) */}
         <div className="md:hidden flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
           <button
