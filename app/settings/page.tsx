@@ -1148,11 +1148,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-900 text-xs">
-      {/* Settings Header Area (Main Tabs + Active Subtabs) */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 py-2 shrink-0 flex flex-col gap-2">
-        {/* Main Tabs */}
-        <div className="flex items-center overflow-x-auto no-scrollbar">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-slate-100 dark:bg-slate-900 text-xs p-2">
+      {/* Workspace Card: พื้นที่ทำงานเดียว ครอบแถบหลัก + แถบย่อย + เนื้อหา */}
+      <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
+        {/* แถวที่ 1: แถบหลัก (Main Tabs) */}
+        <div className="px-2.5 py-2 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
           <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
             {[
               { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
@@ -1184,9 +1184,9 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Subtabs (shown only if active tab has subtabs) */}
+        {/* แถวที่ 2: แถบย่อย (Subtabs) - แสดงเฉพาะแท็บที่มีแถบย่อย */}
         {activeTab === 'BUSINESS' && (
-          <div className="flex items-center overflow-x-auto no-scrollbar">
+          <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
             <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
@@ -1217,7 +1217,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'DOCUMENTS' && (
-          <div className="flex items-center overflow-x-auto no-scrollbar">
+          <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
             <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
@@ -1248,7 +1248,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'SYSTEM_ACCOUNT' && (
-          <div className="flex items-center overflow-x-auto no-scrollbar">
+          <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
             <div className="h-8 p-0.5 gap-1 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
               <button
                 type="button"
@@ -1277,14 +1277,11 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* 3. Full-Width Settings Workspace */}
-      <div className="flex-1 min-h-0 min-w-0 p-2 overflow-hidden flex flex-col">
-        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
-          <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
-            {/* Scrollable Container (internal scroll only, no page-level scroll) */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-3 text-xs">
+        {/* แถวที่ 3: เนื้อหาของแท็บปัจจุบัน (Content Area) */}
+        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden p-3">
+          {/* Scrollable Container (internal scroll only, no page-level scroll) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-3 text-xs">
               
               {/* ================= TAB 1: กิจการ ================= */}
               {activeTab === 'BUSINESS' && (
@@ -4625,6 +4622,5 @@ export default function SettingsPage() {
           </form>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
