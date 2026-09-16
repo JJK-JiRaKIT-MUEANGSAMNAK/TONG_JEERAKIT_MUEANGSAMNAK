@@ -207,7 +207,7 @@ export default function QuotationsPage() {
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
-        <div className="bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-slate-100/70 dark:bg-slate-800/70 p-2.5 sm:p-3 rounded-2xl border border-slate-300/70 dark:border-slate-700 shadow-sm">
           <span className="text-[11px] text-slate-500 font-semibold block">ใบเสนอราคาทั้งหมด</span>
           <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{quotations.length}</h3>
         </div>

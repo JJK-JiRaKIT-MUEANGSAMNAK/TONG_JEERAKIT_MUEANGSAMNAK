@@ -544,9 +544,9 @@ function ProductsContent() {
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
           <div
             onClick={() => setActiveViewTab('ALL')}
-            className={`p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-2xl border shadow-xs cursor-pointer transition-all ${
+            className={`p-2.5 sm:p-3 bg-slate-100/70 dark:bg-slate-800/70 rounded-2xl border shadow-xs cursor-pointer transition-all ${
               activeViewTab === 'ALL'
-                ? 'border-slate-800 dark:border-slate-400 ring-2 ring-slate-400/20'
+                ? 'border-slate-400 ring-2 ring-slate-400/20'
                 : 'border-slate-200 dark:border-slate-800 hover:border-slate-400'
             }`}
           >

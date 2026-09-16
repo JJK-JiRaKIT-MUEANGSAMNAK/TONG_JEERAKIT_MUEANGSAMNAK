@@ -26,7 +26,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 1. INVENTORY STATUS KPIS (Topic 14 & 15) ──────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         {/* KPI 1: สต็อกทั้งหมด */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+        <div className="p-2.5 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <Boxes className="w-3.5 h-3.5 text-slate-500" />

@@ -32,7 +32,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
       {/* 1. TOP 5 KPI CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {/* 1. การเติบโตของธุรกิจ */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+        <div className="p-2 sm:p-2.5 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">1. การเติบโตของธุรกิจ</span>
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -50,7 +50,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         </div>
 
         {/* 2. แนวโน้มรายวัน / รายเดือน */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+        <div className="p-2 sm:p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. แนวโน้มรายวัน / รายเดือน</span>
             <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
@@ -71,7 +71,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         </div>
 
         {/* 3. สินค้าทำเงินสูงสุด */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+        <div className="p-2 sm:p-2.5 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl border border-amber-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">3. สินค้าทำเงินสูงสุด</span>
             <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -91,7 +91,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         </div>
 
         {/* 4. ลูกค้าหลัก */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+        <div className="p-2 sm:p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">4. ลูกค้าหลัก</span>
             <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -112,7 +112,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         </div>
 
         {/* 5. ช่องทางรับเงิน */}
-        <div className="p-2 sm:p-2.5 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
+        <div className="p-2 sm:p-2.5 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-500/20 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">5. ช่องทางรับเงิน</span>
             <div className="flex items-center gap-1">

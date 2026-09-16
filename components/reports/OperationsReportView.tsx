@@ -104,7 +104,7 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
           className={`p-2.5 rounded-xl border flex flex-col justify-between ${
             data.actionItemsCount > 0
               ? 'border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20'
-              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+              : 'border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70'
           }`}
         >
           <div className="flex items-center justify-between">

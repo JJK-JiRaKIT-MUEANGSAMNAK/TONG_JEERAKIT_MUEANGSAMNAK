@@ -74,7 +74,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 9: บิลทั้งหมด (Bills) */}
-        <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between shadow-xs">
+        <div className="p-2.5 rounded-xl border border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Receipt className="w-3.5 h-3.5 text-slate-500" />
@@ -122,7 +122,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         </div>
 
         {/* Topic 11: งานเช่าปัจจุบัน (Active Rentals) */}
-        <div className="col-span-2 md:col-span-1 p-2.5 rounded-xl border border-blue-500/20 bg-white dark:bg-slate-900 flex flex-col justify-between shadow-xs">
+        <div className="col-span-2 md:col-span-1 p-2.5 rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
