@@ -50,7 +50,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         </div>
 
         {/* 2. แนวโน้มรายวัน / รายเดือน */}
-        <div className="p-2 sm:p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
+        <div className="p-2 sm:p-2.5 bg-rose-50/60 dark:bg-rose-950/30 rounded-2xl border border-rose-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. แนวโน้มรายวัน / รายเดือน</span>
             <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">

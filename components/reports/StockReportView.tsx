@@ -293,8 +293,8 @@ export function StockReportView({ data }: { data: StockReportData }) {
         </div>
 
         {/* สินค้าทำเงินสูงสุด (Top / Bottom Products) */}
-        <div className="p-2.5 rounded-xl border border-emerald-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
+        <div className="rounded-xl border border-emerald-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between overflow-hidden">
+          <div className="px-2.5 pt-2.5 pb-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -304,9 +304,9 @@ export function StockReportView({ data }: { data: StockReportData }) {
             <span className="text-[10px] text-slate-400">เรียงตามรายได้</span>
           </div>
 
-          <div className="overflow-x-auto max-h-56">
+          <div className="overflow-x-auto max-h-56 w-full">
             <table className="w-full text-left border-collapse text-[11px]">
-              <thead>
+              <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                   <th className="py-1 px-1.5 font-bold">อันดับ</th>
                   <th className="py-1 px-1.5 font-bold">ชื่อสินค้า</th>
@@ -344,8 +344,8 @@ export function StockReportView({ data }: { data: StockReportData }) {
       </div>
 
       {/* ─── 4. DETAILED PRODUCT INVENTORY TABLE ───────────────────────────── */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+        <div className="px-2.5 pt-2.5 pb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5 text-slate-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -355,7 +355,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
           <span className="text-[10px] text-slate-400">ข้อมูลสถานะตามจริง</span>
         </div>
 
-        <div className="overflow-x-auto max-h-72">
+        <div className="overflow-x-auto max-h-72 w-full">
           <table className="w-full text-left border-collapse text-[11px]">
             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 z-10">
               <tr className="border-b border-slate-200 dark:border-slate-700">

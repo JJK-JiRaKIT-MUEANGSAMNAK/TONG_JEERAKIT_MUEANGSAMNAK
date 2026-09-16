@@ -100,21 +100,9 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* KPI 4: งาน / จุดที่ต้องจัดการ (Action Items - Topic 20) */}
-        <div
-          className={`p-2.5 rounded-xl border flex flex-col justify-between ${
-            data.actionItemsCount > 0
-              ? 'border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20'
-              : 'border-slate-300/70 bg-slate-100/70 dark:bg-slate-800/70'
-          }`}
-        >
+        <div className="p-2.5 rounded-xl border border-rose-500/20 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span
-              className={`text-[11px] font-bold flex items-center gap-1 ${
-                data.actionItemsCount > 0
-                  ? 'text-rose-800 dark:text-rose-300'
-                  : 'text-slate-700 dark:text-slate-300'
-              }`}
-            >
+            <span className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
               งานที่ต้องจัดการ
             </span>
@@ -122,20 +110,14 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
               className={`px-1.5 py-0.5 rounded-xs text-[9px] font-bold ${
                 data.actionItemsCount > 0
                   ? 'bg-rose-500 text-white'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
               }`}
             >
               {data.actionItemsCount} จุด
             </span>
           </div>
           <div className="my-1">
-            <div
-              className={`text-base sm:text-lg font-black font-mono ${
-                data.actionItemsCount > 0
-                  ? 'text-rose-600 dark:text-rose-400'
-                  : 'text-slate-800 dark:text-slate-200'
-              }`}
-            >
+            <div className="text-base sm:text-lg font-black font-mono text-rose-600 dark:text-rose-400">
               {formatNumber(data.actionItemsCount)}{' '}
               <span className="text-xs font-normal text-slate-400">ภารกิจ</span>
             </div>
