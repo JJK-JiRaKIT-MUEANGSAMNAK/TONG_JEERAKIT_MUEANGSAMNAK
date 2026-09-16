@@ -35,6 +35,7 @@ interface MenuItem {
 
 const MENU_ITEMS: MenuItem[] = [
   { name: 'แดชบอร์ด', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'รายงานสรุป', href: '/reports', icon: BarChart3 },
   { name: 'ปฏิทินนัดหมาย', href: '/appointments', icon: Calendar },
   { name: 'หน้าร้าน POS', href: '/pos', icon: ShoppingBag },
   { name: 'จัดการบิลเช่า', href: '/bills', icon: Receipt },
@@ -43,16 +44,15 @@ const MENU_ITEMS: MenuItem[] = [
   { name: 'สินค้า/สต็อก', href: '/products', icon: Package },
   { name: 'ใบเสนอราคา', href: '/quotations', icon: FileText },
   { name: 'การเงิน', href: '/finance/statement', icon: Wallet },
-  { name: 'รายงานสรุป', href: '/reports', icon: BarChart3 },
   { name: 'ตั้งค่าระบบ', href: '/settings', icon: Settings },
   { name: 'จัดการสิทธิ์ & รายงาน', href: '/owner-permissions', icon: ShieldCheck },
 ]
 
 const PAGE_NAME_MAP: Record<string, string> = {
   '/dashboard': 'แดชบอร์ด',
+  '/reports': 'รายงานสรุป',
   '/products': 'สินค้า / สต็อก',
   '/customers': 'ลูกค้า',
-  '/reports': 'รายงาน',
   '/appointments': 'ปฏิทินนัดหมาย',
   '/pos': 'หน้าร้าน POS',
   '/bills': 'จัดการบิลเช่า',
@@ -63,7 +63,25 @@ const PAGE_NAME_MAP: Record<string, string> = {
   '/owner-permissions': 'จัดการสิทธิ์ & รายงาน',
 }
 
-function getPageName(pathname: string): string {
+function getPageName(pathname: string, searchParams?: { get: (k: string) => string | null } | null): string {
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    const view = searchParams?.get('view')
+    if (view === 'assets') return 'ธุรกรรมสินทรัพย์'
+    if (view === 'stock') return 'บริหารงานสต็อก'
+    if (view === 'business') return 'วิเคราะห์ธุรกิจ'
+    return 'แดชบอร์ด'
+  }
+
+  if (pathname === '/reports' || pathname.startsWith('/reports/')) {
+    const view = searchParams?.get('view')
+    if (view === 'finance') return 'การเงิน'
+    if (view === 'sales-rental') return 'ขาย เช่า และเอกสาร'
+    if (view === 'operations') return 'งานปฏิบัติการ'
+    if (view === 'stock') return 'สต็อกและสินค้า'
+    if (view === 'business') return 'วิเคราะห์ธุรกิจ'
+    return 'รายงานสรุป'
+  }
+
   for (const [prefix, name] of Object.entries(PAGE_NAME_MAP)) {
     if (pathname === prefix || pathname.startsWith(prefix + '/')) {
       return name
@@ -84,7 +102,7 @@ function SidebarContent() {
 
   const logoUrl = ''
   const systemDisplayName = 'JJK_JeeRaKiT'
-  const pageName = getPageName(pathname || '')
+  const pageName = getPageName(pathname || '', searchParams)
 
   // Keep dashboard expanded if user navigates to /dashboard
   useEffect(() => {
