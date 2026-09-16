@@ -12,6 +12,15 @@ export interface DashboardMetrics {
   outstandingReceivable: number
   depositBalance: number
 
+  // Operations & Additional Assets Metrics (Items 6-10)
+  salesRevenue: number
+  rentalRevenue: number
+  inProgressBillsCount: number
+  activeRentalsCount: number
+  todayTasksCount: number
+  todayDeliveriesCount: number
+  todayReturnsCount: number
+
   // Stock
   availableStock: number
   rentedOrReservedStock: number
@@ -126,6 +135,59 @@ export function computeDashboardMetrics(
   activeBills.forEach((b) => {
     outstandingReceivable += b.outstandingAmount || 0
   })
+
+  // 2.1 Additional Operations Metrics (Items 6 - 10)
+  let salesRevenue = 0
+  let rentalRevenue = 0
+  activeBills.forEach((b) => {
+    b.items.forEach((it) => {
+      const amount = it.lineTotal ?? ((it.quantity || 0) * (it.dailyRate || 0))
+      if (it.rentalType === 'SALE' || it.requiresReturn === false) {
+        salesRevenue += amount
+      } else {
+        rentalRevenue += amount
+      }
+    })
+  })
+
+  // 8. บิลที่กำลังดำเนินการ
+  const inProgressBills = activeBills.filter(
+    (b) => b.rentalStatus === 'RENTING' || b.rentalStatus === 'PARTIAL_RETURNED'
+  )
+  const inProgressBillsCount = inProgressBills.length
+
+  // 9. งานเช่าปัจจุบัน
+  let activeRentalsCount = 0
+  activeBills.forEach((b) => {
+    b.items.forEach((it) => {
+      if (it.status === 'RENTING' || it.status === 'PARTIAL_RETURNED') {
+        activeRentalsCount += 1
+      }
+    })
+  })
+  if (activeRentalsCount === 0 && inProgressBillsCount > 0) {
+    inProgressBills.forEach((b) => {
+      b.items.forEach((it) => {
+        if (it.requiresReturn !== false && it.rentalType !== 'SALE') {
+          activeRentalsCount += 1
+        }
+      })
+    })
+  }
+
+  // 10. งานส่ง / รับคืนวันนี้
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayDeliveriesCount = activeBills.filter((b) => {
+    const isTodayStart = b.rentalStartDate ? b.rentalStartDate.slice(0, 10) === todayStr : false
+    return isTodayStart && b.dispatchStatus !== 'DISPATCHED'
+  }).length
+
+  const todayReturnsCount = activeBills.filter((b) => {
+    const isTodayReturn = b.scheduledReturnDate ? b.scheduledReturnDate.slice(0, 10) === todayStr : false
+    return isTodayReturn && (b.rentalStatus === 'RENTING' || b.rentalStatus === 'PARTIAL_RETURNED')
+  }).length
+
+  const todayTasksCount = todayDeliveriesCount + todayReturnsCount
 
   // 3. Stock Metrics from Products
   let availableStock = 0
@@ -354,6 +416,13 @@ export function computeDashboardMetrics(
     netIncome,
     outstandingReceivable,
     depositBalance,
+    salesRevenue,
+    rentalRevenue,
+    inProgressBillsCount,
+    activeRentalsCount,
+    todayTasksCount,
+    todayDeliveriesCount,
+    todayReturnsCount,
     availableStock,
     rentedOrReservedStock,
     rentedStock,
