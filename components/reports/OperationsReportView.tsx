@@ -159,8 +159,8 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         </div>
 
         {/* รายการการจองสินค้า (Topic 13) */}
-        <div className="p-2 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
+        <div className="p-2 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
+          <div className="flex items-center justify-between mb-2 shrink-0">
             <div className="flex items-center gap-1.5">
               <CalendarClock className="w-3.5 h-3.5 text-purple-500" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -172,48 +172,52 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
             </span>
           </div>
 
-          {data.reservations.length === 0 ? (
-            <div className="text-xs text-slate-400 py-8 text-center">
-              ไม่มีรายการจองสินค้าล่วงหน้าในขณะนี้
-            </div>
-          ) : (
-            <div className="overflow-x-auto max-h-56">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
               <table className="w-full text-left border-collapse text-[11px]">
-                <thead className="bg-[#E3E3E3] dark:bg-slate-800 font-bold">
+                <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 font-bold">
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-2 px-1.5 font-bold">เลขที่จอง</th>
-                    <th className="py-2 px-1.5 font-bold">สินค้า</th>
-                    <th className="py-2 px-1.5 font-bold text-center">จำนวน</th>
-                    <th className="py-2 px-1.5 font-bold">ลูกค้า</th>
+                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่จอง</th>
+                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">สินค้า</th>
+                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">จำนวน</th>
+                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
                     <th className="py-2 px-1.5 font-bold whitespace-nowrap">ช่วงวันที่</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {data.reservations.slice(0, 10).map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-1.5 font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                        {r.reservationNo}
-                      </td>
-                      <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
-                        {r.productName}
-                      </td>
-                      <td className="py-1 px-1.5 text-center font-mono font-bold">
-                        {r.quantity}
-                      </td>
-                      <td className="py-1 px-1.5 text-slate-600 dark:text-slate-300 truncate max-w-[100px]">
-                        {r.customerName}
-                      </td>
-                      <td className="py-1 px-1.5 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
-                        {formatThaiDate(r.startDate)} - {formatThaiDate(r.endDate)}
+                  {data.reservations.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
+                        ไม่มีรายการจองสินค้าล่วงหน้าในขณะนี้
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    data.reservations.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td className="py-1 px-1.5 font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                          {r.reservationNo}
+                        </td>
+                        <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
+                          {r.productName}
+                        </td>
+                        <td className="py-1 px-1.5 text-center font-mono font-bold">
+                          {r.quantity}
+                        </td>
+                        <td className="py-1 px-1.5 text-slate-600 dark:text-slate-300 truncate max-w-[100px]">
+                          {r.customerName}
+                        </td>
+                        <td className="py-1 px-1.5 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
+                          {formatThaiDate(r.startDate)} - {formatThaiDate(r.endDate)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
 
-          <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10.5px] text-purple-800 dark:text-purple-300 flex justify-between mt-1">
+          <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10.5px] text-purple-800 dark:text-purple-300 flex justify-between mt-1 shrink-0">
             <span>สถานะระบบจอง:</span>
             <span className="font-bold">ระบบตรวจสอบวันชนอัตโนมัติ</span>
           </div>
@@ -296,8 +300,8 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
       </div>
 
       {/* ─── 4. OPERATIONS HISTORY & TIMELINE TABLE ───────────────────────── */}
-      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
+        <div className="flex items-center justify-between mb-2 shrink-0">
           <div className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-slate-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -307,64 +311,68 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
           <span className="text-[10px] text-slate-400">เรียงตามวันที่ล่าสุด</span>
         </div>
 
-        {data.historyRecords.length === 0 ? (
-          <div className="text-xs text-slate-400 py-8 text-center">
-            ไม่มีประวัติงานปฏิบัติการในช่วงเวลานี้
-          </div>
-        ) : (
-          <div className="overflow-x-auto max-h-64">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
             <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold z-10">
+              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทงาน</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-2 px-2 font-bold text-center">จำนวนชิ้น</th>
-                  <th className="py-2 px-2 font-bold">ผู้รับผิดชอบ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">จำนวนชิ้น</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.historyRecords.slice(0, 50).map((h) => (
-                  <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
-                      {formatThaiDate(h.date)}
-                    </td>
-                    <td className="py-1 px-2 whitespace-nowrap">
-                      <span
-                        className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
-                          h.event === 'DISPATCH'
-                            ? 'bg-blue-500/10 text-blue-600'
-                            : 'bg-emerald-500/10 text-emerald-600'
-                        }`}
-                      >
-                        {h.event === 'DISPATCH' ? 'ส่งมอบสินค้า' : 'รับคืนสินค้า'}
-                      </span>
-                    </td>
-                    <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {h.refNo}
-                    </td>
-                    <td className="py-1 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      {h.customerName}
-                    </td>
-                    <td className="py-1 px-2 text-center font-mono font-bold">
-                      {h.itemsCount}
-                    </td>
-                    <td className="py-1 px-2 text-slate-600 dark:text-slate-400">
-                      {h.handler}
-                    </td>
-                    <td className="py-1 px-2 text-center whitespace-nowrap">
-                      <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        {h.status}
-                      </span>
+                {data.historyRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-slate-400">
+                      ไม่มีประวัติงานปฏิบัติการในช่วงเวลานี้
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  data.historyRecords.map((h) => (
+                    <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                        {formatThaiDate(h.date)}
+                      </td>
+                      <td className="py-1 px-2 whitespace-nowrap">
+                        <span
+                          className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
+                            h.event === 'DISPATCH'
+                              ? 'bg-blue-500/10 text-blue-600'
+                              : 'bg-emerald-500/10 text-emerald-600'
+                          }`}
+                        >
+                          {h.event === 'DISPATCH' ? 'ส่งมอบสินค้า' : 'รับคืนสินค้า'}
+                        </span>
+                      </td>
+                      <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {h.refNo}
+                      </td>
+                      <td className="py-1 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {h.customerName}
+                      </td>
+                      <td className="py-1 px-2 text-center font-mono font-bold">
+                        {h.itemsCount}
+                      </td>
+                      <td className="py-1 px-2 text-slate-600 dark:text-slate-400">
+                        {h.handler}
+                      </td>
+                      <td className="py-1 px-2 text-center whitespace-nowrap">
+                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          {h.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

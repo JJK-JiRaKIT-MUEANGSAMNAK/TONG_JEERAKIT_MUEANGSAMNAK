@@ -336,8 +336,8 @@ export function StockManagementView({ metrics, onRefresh }: ViewProps) {
       </div>
 
       {/* 4. BOTTOM ROW: รายการงานสต็อกเร่งด่วน (TABLE) */}
-      <div className="p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col min-h-0 overflow-hidden">
+        <div className="flex items-center justify-between mb-2 shrink-0">
           <div className="flex items-center gap-2">
             <AlertOctagon className="w-3.5 h-3.5 text-amber-500" />
             <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
@@ -352,59 +352,63 @@ export function StockManagementView({ metrics, onRefresh }: ViewProps) {
           </Link>
         </div>
 
-        {metrics.stockUrgentList.length === 0 ? (
-          <div className="py-6 text-center text-xs text-slate-400">
-            ไม่มีรายการงานสต็อกเร่งด่วน สต็อกพร้อมใช้งาน
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#E3E3E3] dark:bg-slate-800">
+              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-700 text-[10.5px] font-bold text-slate-600 dark:text-slate-300">
-                  <th className="py-2 px-2">เวลา</th>
-                  <th className="py-2 px-2">งาน</th>
-                  <th className="py-2 px-2">สินค้า</th>
-                  <th className="py-2 px-2 text-right">จำนวน</th>
-                  <th className="py-2 px-2">สถานะ</th>
-                  <th className="py-2 px-2">ผู้รับผิดชอบ</th>
-                  <th className="py-2 px-2">หมายเหตุ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">เวลา</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">งาน</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">สินค้า</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">จำนวน</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">สถานะ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap">หมายเหตุ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {metrics.stockUrgentList.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {item.time}
-                    </td>
-                    <td className="py-1.5 px-2 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${item.workBadgeColor}`}>
-                        {item.workType}
-                      </span>
-                    </td>
-                    <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {item.productName}
-                    </td>
-                    <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td className="py-1.5 px-2 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold">
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.statusColor.replace('text-', 'bg-')}`} />
-                        <span className={item.statusColor}>{item.status}</span>
-                      </span>
-                    </td>
-                    <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {item.assignee}
-                    </td>
-                    <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
-                      {item.remark}
+                {metrics.stockUrgentList.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-slate-400">
+                      ไม่มีรายการงานสต็อกเร่งด่วน สต็อกพร้อมใช้งาน
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  metrics.stockUrgentList.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                      <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {item.time}
+                      </td>
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${item.workBadgeColor}`}>
+                          {item.workType}
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {item.productName}
+                      </td>
+                      <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {item.quantity} {item.unit}
+                      </td>
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold">
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.statusColor.replace('text-', 'bg-')}`} />
+                          <span className={item.statusColor}>{item.status}</span>
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {item.assignee}
+                      </td>
+                      <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
+                        {item.remark}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

@@ -249,8 +249,8 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       </div>
 
       {/* ─── 4. DETAILED CUSTOMER & PERFORMANCE RANKING TABLE ──────────────── */}
-      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
+        <div className="flex items-center justify-between mb-2 shrink-0">
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-slate-500" />
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -260,16 +260,12 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
           <span className="text-[10px] text-slate-500">จัดอันดับตามมูลค่าการใช้บริการ</span>
         </div>
 
-        {data.customerRankings.length === 0 ? (
-          <div className="text-xs text-slate-500 py-8 text-center">
-            ไม่มีข้อมูลลูกค้าในช่วงเวลานี้
-          </div>
-        ) : (
-          <div className="overflow-x-auto max-h-72">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
             <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold z-10">
+              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-2 font-bold text-center">อันดับ</th>
+                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">อันดับ</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">เบอร์โทร</th>
                   <th className="py-2 px-2 font-bold whitespace-nowrap">สถานที่ / หน่วยงาน</th>
@@ -284,38 +280,46 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.customerRankings.slice(0, 50).map((c) => (
-                  <tr key={c.rank} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="py-1 px-2 text-center font-mono font-bold text-slate-500">
-                      #{c.rank}
-                    </td>
-                    <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {c.customerName}
-                    </td>
-                    <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
-                      {c.phone}
-                    </td>
-                    <td className="py-1 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {c.company}
-                    </td>
-                    <td className="py-1 px-2 text-center font-mono font-bold">
-                      {c.ordersCount}
-                    </td>
-                    <td className="py-1 px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                      ฿{formatCurrency(c.totalSpend)}
-                    </td>
-                    <td className="py-1 px-2 font-mono font-bold text-right text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                      {c.outstandingDebt > 0 ? `฿${formatCurrency(c.outstandingDebt)}` : '-'}
-                    </td>
-                    <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
-                      {formatThaiDate(c.lastOrderDate)}
+                {data.customerRankings.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
+                      ไม่มีข้อมูลลูกค้าในช่วงเวลานี้
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  data.customerRankings.map((c) => (
+                    <tr key={c.rank} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-1 px-2 text-center font-mono font-bold text-slate-500">
+                        #{c.rank}
+                      </td>
+                      <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {c.customerName}
+                      </td>
+                      <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                        {c.phone}
+                      </td>
+                      <td className="py-1 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {c.company}
+                      </td>
+                      <td className="py-1 px-2 text-center font-mono font-bold">
+                        {c.ordersCount}
+                      </td>
+                      <td className="py-1 px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        ฿{formatCurrency(c.totalSpend)}
+                      </td>
+                      <td className="py-1 px-2 font-mono font-bold text-right text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        {c.outstandingDebt > 0 ? `฿${formatCurrency(c.outstandingDebt)}` : '-'}
+                      </td>
+                      <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                        {formatThaiDate(c.lastOrderDate)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
