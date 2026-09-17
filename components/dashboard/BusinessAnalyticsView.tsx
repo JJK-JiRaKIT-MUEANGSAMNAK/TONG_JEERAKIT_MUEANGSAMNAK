@@ -253,12 +253,12 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                <th className="py-2 px-1.5 text-center w-6 font-bold whitespace-nowrap">#</th>
-                <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
-                <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทลูกค้า</th>
-                <th className="py-2 px-2 text-center font-bold whitespace-nowrap">จำนวนการใช้บริการ</th>
-                <th className="py-2 px-2 text-right font-bold whitespace-nowrap">รายได้ (บาท)</th>
-                <th className="py-2 px-2 text-right font-bold whitespace-nowrap">สัดส่วน</th>
+                <th className="px-1.5 text-center w-6">#</th>
+                <th className="px-2">ชื่อลูกค้า</th>
+                <th className="px-2">ประเภทลูกค้า</th>
+                <th className="px-2 text-center">จำนวนการใช้บริการ</th>
+                <th className="px-2 text-right">รายได้ (บาท)</th>
+                <th className="px-2 text-right">สัดส่วน</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -271,26 +271,26 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
               ) : (
                 metrics.topCustomers.map((cust, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="py-1.5 px-1.5 text-center">
+                    <td className="px-1.5 text-center">
                       <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 font-bold text-[9.5px] text-slate-600 dark:text-slate-300 inline-flex items-center justify-center">
                         {idx + 1}
                       </span>
                     </td>
-                    <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">
+                    <td className="px-2 font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">
                       {cust.name}
                     </td>
-                    <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    <td className="px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <span className="px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-slate-100 dark:bg-slate-700">
                         {cust.customerType}
                       </span>
                     </td>
-                    <td className="py-1.5 px-2 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <td className="px-2 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                       {cust.billsCount} ครั้ง
                     </td>
-                    <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                    <td className="px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                       {cust.totalSpent.toLocaleString()}
                     </td>
-                    <td className="py-1.5 px-2 text-right font-mono text-[10.5px] text-slate-400 whitespace-nowrap">
+                    <td className="px-2 text-right font-mono text-[10.5px] text-slate-400 whitespace-nowrap">
                       {cust.percentage}%
                     </td>
                   </tr>

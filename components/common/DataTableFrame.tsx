@@ -18,24 +18,6 @@ export const DATA_TABLE_TH_CLASSES = 'py-2 font-bold whitespace-nowrap'
 export const DATA_TABLE_TD_CLASSES = 'py-1.5'
 
 /**
- * DataTableThead: Optional helper component for table thead
- */
-export function DataTableThead({
-  children,
-  className = '',
-  ...props
-}: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return (
-    <thead
-      className={`${DATA_TABLE_THEAD_CLASSES} ${className}`.trim()}
-      {...props}
-    >
-      {children}
-    </thead>
-  )
-}
-
-/**
  * DataTableFrame: Source of truth for full data tables
  * Handles presentation: card container, scrollable area with 8-row height, sticky thead, and cell padding.
  */
@@ -63,7 +45,7 @@ export function DataTableFrame({
 
       <div className={`flex-1 min-h-0 overflow-hidden ${containerClassName}`.trim()}>
         <div
-          className={`overflow-y-auto overflow-x-hidden min-h-[320px] max-h-[380px] [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-20 [&_thead]:bg-[#E3E3E3] dark:[&_thead]:bg-slate-800 [&_thead]:font-bold [&_th]:py-2 [&_td]:py-1.5 ${bodyClassName}`.trim()}
+          className={`overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px] [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-20 [&_thead]:bg-[#E3E3E3] dark:[&_thead]:bg-slate-800 [&_thead]:font-bold [&_th]:py-2 [&_th]:font-bold [&_th]:whitespace-nowrap [&_td]:py-1.5 ${bodyClassName}`.trim()}
         >
           {empty && emptyState ? emptyState : children}
         </div>

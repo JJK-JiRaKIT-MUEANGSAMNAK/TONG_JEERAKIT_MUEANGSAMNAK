@@ -234,11 +234,11 @@ export function StockReportView({ data }: { data: StockReportData }) {
           <table className="w-full text-left border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">รหัส</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">ชื่อสินค้า</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะ</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">จำนวน</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ค่าเสียหาย/ซ่อม</th>
+                <th className="px-1.5">รหัส</th>
+                <th className="px-1.5">ชื่อสินค้า</th>
+                <th className="px-1.5 text-center">สถานะ</th>
+                <th className="px-1.5 text-center">จำนวน</th>
+                <th className="px-1.5 text-right">ค่าเสียหาย/ซ่อม</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -252,42 +252,42 @@ export function StockReportView({ data }: { data: StockReportData }) {
                 <>
                   {data.damagedItems.map((d) => (
                     <tr key={`dam-${d.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                      <td className="px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                         {d.code}
                       </td>
-                      <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
+                      <td className="px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
                         {d.name}
                       </td>
-                      <td className="py-1 px-1.5 text-center">
+                      <td className="px-1.5 text-center">
                         <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                           ชำรุด
                         </span>
                       </td>
-                      <td className="py-1 px-1.5 text-center font-mono font-bold text-rose-600">
+                      <td className="px-1.5 text-center font-mono font-bold text-rose-600">
                         {d.quantity} {d.unit}
                       </td>
-                      <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
+                      <td className="px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
                         ฿{formatNumber(d.estimatedFee)}
                       </td>
                     </tr>
                   ))}
                   {data.lostItems.map((l) => (
                     <tr key={`lost-${l.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                      <td className="px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                         {l.code}
                       </td>
-                      <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
+                      <td className="px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
                         {l.name}
                       </td>
-                      <td className="py-1 px-1.5 text-center">
+                      <td className="px-1.5 text-center">
                         <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                           สูญหาย
                         </span>
                       </td>
-                      <td className="py-1 px-1.5 text-center font-mono font-bold text-amber-600">
+                      <td className="px-1.5 text-center font-mono font-bold text-amber-600">
                         {l.quantity} {l.unit}
                       </td>
-                      <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
+                      <td className="px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
                         ฿{formatNumber(l.estimatedLoss)}
                       </td>
                     </tr>
@@ -352,7 +352,6 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 4. DETAILED PRODUCT INVENTORY TABLE ───────────────────────────── */}
       <DataTableFrame
         className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
-        bodyClassName="w-full"
         header={
           <div className="p-2 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1.5">
@@ -368,24 +367,24 @@ export function StockReportView({ data }: { data: StockReportData }) {
         <table className="w-full text-left border-collapse text-[11px]">
           <thead className="text-slate-600 dark:text-slate-300">
             <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 px-2 font-bold whitespace-nowrap">รหัส</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อสินค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">ทั้งหมด</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-emerald-600">
+              <th className="px-2">รหัส</th>
+              <th className="px-2">ชื่อสินค้า</th>
+              <th className="px-2">หมวดหมู่</th>
+              <th className="px-2 text-center">ทั้งหมด</th>
+              <th className="px-2 text-center text-emerald-600">
                 พร้อมใช้
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-blue-600">
+              <th className="px-2 text-center text-blue-600">
                 กำลังเช่า
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-rose-600">
+              <th className="px-2 text-center text-rose-600">
                 ชำรุด
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-amber-600">
+              <th className="px-2 text-center text-amber-600">
                 สูญหาย
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ค่าเช่า/วัน</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+              <th className="px-2 text-right">ค่าเช่า/วัน</th>
+              <th className="px-2 text-right text-emerald-600">
                 รายได้สะสม
               </th>
             </tr>
@@ -400,36 +399,36 @@ export function StockReportView({ data }: { data: StockReportData }) {
             ) : (
               data.productsTable.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {p.code}
                   </td>
-                  <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 max-w-[180px] truncate">
+                  <td className="px-2 font-bold text-slate-800 dark:text-slate-200 max-w-[180px] truncate">
                     {p.name}
                   </td>
-                  <td className="py-1 px-2 text-slate-500 whitespace-nowrap">
+                  <td className="px-2 text-slate-500 whitespace-nowrap">
                     <span className="px-1.5 py-0.5 rounded-md text-[9.5px] bg-slate-100 dark:bg-slate-800">
                       {p.category}
                     </span>
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold whitespace-nowrap">
+                  <td className="px-2 text-center font-mono font-bold whitespace-nowrap">
                     {p.totalQuantity}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <td className="px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                     {p.availableQuantity}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                  <td className="px-2 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                     {p.rentedQuantity}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                  <td className="px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
                     {p.damagedQuantity}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                  <td className="px-2 text-center font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
                     {p.lostQuantity}
                   </td>
-                  <td className="py-1 px-2 text-right font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  <td className="px-2 text-right font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
                     ฿{formatNumber(p.rentPrice)}
                   </td>
-                  <td className="py-1 px-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <td className="px-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                     ฿{formatCurrency(p.revenue)}
                   </td>
                 </tr>

@@ -276,14 +276,14 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         <table className="w-full text-left border-collapse text-[11px]">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่บิล</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap">วันที่เริ่ม</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap">กำหนดคืน</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">รายการ</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">มัดจำ</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะกำหนด</th>
+              <th className="px-1.5">เลขที่บิล</th>
+              <th className="px-1.5">ลูกค้า</th>
+              <th className="px-1.5">วันที่เริ่ม</th>
+              <th className="px-1.5">กำหนดคืน</th>
+              <th className="px-1.5 text-center">รายการ</th>
+              <th className="px-1.5 text-right">มัดจำ</th>
+              <th className="px-1.5 text-right">ยอดรวม</th>
+              <th className="px-1.5 text-center">สถานะกำหนด</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -296,10 +296,10 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
             ) : (
               data.activeRentals.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {r.billNo}
                   </td>
-                  <td className="py-1 px-1.5 max-w-[130px] truncate text-slate-700 dark:text-slate-300">
+                  <td className="px-1.5 max-w-[130px] truncate text-slate-700 dark:text-slate-300">
                     <div>{r.customerName}</div>
                     {r.customerPhone && (
                       <div className="text-[9.5px] text-slate-400 font-mono">
@@ -307,22 +307,22 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
                       </div>
                     )}
                   </td>
-                  <td className="py-1 px-1.5 font-mono text-slate-500 whitespace-nowrap">
+                  <td className="px-1.5 font-mono text-slate-500 whitespace-nowrap">
                     {formatThaiDate(r.rentalStartDate)}
                   </td>
-                  <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {formatThaiDate(r.scheduledReturnDate)}
                   </td>
-                  <td className="py-1 px-1.5 text-center font-mono">
+                  <td className="px-1.5 text-center font-mono">
                     {r.itemsCount} ชิ้น
                   </td>
-                  <td className="py-1 px-1.5 font-mono text-right text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                  <td className="px-1.5 font-mono text-right text-purple-600 dark:text-purple-400 whitespace-nowrap">
                     ฿{formatNumber(r.depositAmount)}
                   </td>
-                  <td className="py-1 px-1.5 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-1.5 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     ฿{formatCurrency(r.grandTotal)}
                   </td>
-                  <td className="py-1 px-1.5 text-center whitespace-nowrap">
+                  <td className="px-1.5 text-center whitespace-nowrap">
                     {r.isOverdue ? (
                       <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                         เกินกำหนด {r.daysOverdue} วัน
@@ -358,13 +358,13 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
         <table className="w-full text-left border-collapse text-[11px]">
           <thead className="text-slate-600 dark:text-slate-300">
             <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">รายการสินค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+              <th className="px-2">วันที่</th>
+              <th className="px-2">เลขที่เอกสาร</th>
+              <th className="px-2">ประเภท</th>
+              <th className="px-2">ลูกค้า</th>
+              <th className="px-2">รายการสินค้า</th>
+              <th className="px-2 text-right">ยอดรวม</th>
+              <th className="px-2 text-center">สถานะ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -377,13 +377,13 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
             ) : (
               data.detailedRecords.map((doc) => (
                 <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                  <td className="px-2 font-mono text-slate-500 whitespace-nowrap">
                     {formatThaiDate(doc.date)}
                   </td>
-                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {doc.docNo}
                   </td>
-                  <td className="py-1 px-2 whitespace-nowrap">
+                  <td className="px-2 whitespace-nowrap">
                     <span
                       className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
                         doc.type === 'BILL'
@@ -400,7 +400,7 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
                         : 'ใบเสนอราคา'}
                     </span>
                   </td>
-                  <td className="py-1 px-2 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                  <td className="px-2 whitespace-nowrap text-slate-700 dark:text-slate-300">
                     <div>{doc.customerName}</div>
                     {doc.customerPhone && (
                       <div className="text-[9px] text-slate-400 font-mono">
@@ -408,13 +408,13 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
                       </div>
                     )}
                   </td>
-                  <td className="py-1 px-2 max-w-[220px] truncate text-slate-600 dark:text-slate-400">
+                  <td className="px-2 max-w-[220px] truncate text-slate-600 dark:text-slate-400">
                     {doc.itemsSummary}
                   </td>
-                  <td className="py-1 px-2 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     ฿{formatCurrency(doc.amount)}
                   </td>
-                  <td className="py-1 px-2 text-center whitespace-nowrap">
+                  <td className="px-2 text-center whitespace-nowrap">
                     <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {doc.status}
                     </span>

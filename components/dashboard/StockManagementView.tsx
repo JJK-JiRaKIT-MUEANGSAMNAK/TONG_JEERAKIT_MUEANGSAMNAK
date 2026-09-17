@@ -359,13 +359,13 @@ export function StockManagementView({ metrics, onRefresh }: ViewProps) {
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-700 text-[10.5px] font-bold text-slate-600 dark:text-slate-300">
-              <th className="py-2 px-2 font-bold whitespace-nowrap">เวลา</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">งาน</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">สินค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">จำนวน</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">สถานะ</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">หมายเหตุ</th>
+              <th className="px-2">เวลา</th>
+              <th className="px-2">งาน</th>
+              <th className="px-2">สินค้า</th>
+              <th className="px-2 text-right">จำนวน</th>
+              <th className="px-2">สถานะ</th>
+              <th className="px-2">ผู้รับผิดชอบ</th>
+              <th className="px-2">หมายเหตุ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -378,30 +378,30 @@ export function StockManagementView({ metrics, onRefresh }: ViewProps) {
             ) : (
               metrics.stockUrgentList.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                  <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <td className="px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {item.time}
                   </td>
-                  <td className="py-1.5 px-2 whitespace-nowrap">
+                  <td className="px-2 whitespace-nowrap">
                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${item.workBadgeColor}`}>
                       {item.workType}
                     </span>
                   </td>
-                  <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {item.productName}
                   </td>
-                  <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {item.quantity} {item.unit}
                   </td>
-                  <td className="py-1.5 px-2 whitespace-nowrap">
+                  <td className="px-2 whitespace-nowrap">
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold">
                       <span className={`w-1.5 h-1.5 rounded-full ${item.statusColor.replace('text-', 'bg-')}`} />
                       <span className={item.statusColor}>{item.status}</span>
                     </span>
                   </td>
-                  <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <td className="px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {item.assignee}
                   </td>
-                  <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
+                  <td className="px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
                     {item.remark}
                   </td>
                 </tr>

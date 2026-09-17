@@ -185,11 +185,11 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
           <table className="w-full text-left border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่จอง</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">สินค้า</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">จำนวน</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
-                <th className="py-2 px-1.5 font-bold whitespace-nowrap">ช่วงวันที่</th>
+                <th className="px-1.5">เลขที่จอง</th>
+                <th className="px-1.5">สินค้า</th>
+                <th className="px-1.5 text-center">จำนวน</th>
+                <th className="px-1.5">ลูกค้า</th>
+                <th className="px-1.5">ช่วงวันที่</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -202,19 +202,19 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
               ) : (
                 data.reservations.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="py-1 px-1.5 font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                    <td className="px-1.5 font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
                       {r.reservationNo}
                     </td>
-                    <td className="py-1 px-1.5 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
+                    <td className="px-1.5 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
                       {r.productName}
                     </td>
-                    <td className="py-1 px-1.5 text-center font-mono font-bold">
+                    <td className="px-1.5 text-center font-mono font-bold">
                       {r.quantity}
                     </td>
-                    <td className="py-1 px-1.5 text-slate-600 dark:text-slate-300 truncate max-w-[100px]">
+                    <td className="px-1.5 text-slate-600 dark:text-slate-300 truncate max-w-[100px]">
                       {r.customerName}
                     </td>
-                    <td className="py-1 px-1.5 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
+                    <td className="px-1.5 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
                       {formatThaiDate(r.startDate)} - {formatThaiDate(r.endDate)}
                     </td>
                   </tr>
@@ -318,13 +318,13 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
         <table className="w-full text-left border-collapse text-[11px]">
           <thead className="text-slate-600 dark:text-slate-300">
             <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทงาน</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">จำนวนชิ้น</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+              <th className="px-2">วันที่</th>
+              <th className="px-2">ประเภทงาน</th>
+              <th className="px-2">เลขอ้างอิง</th>
+              <th className="px-2">ลูกค้า</th>
+              <th className="px-2 text-center">จำนวนชิ้น</th>
+              <th className="px-2">ผู้รับผิดชอบ</th>
+              <th className="px-2 text-center">สถานะ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -337,33 +337,33 @@ export function OperationsReportView({ data }: { data: OperationsReportData }) {
             ) : (
               data.historyRecords.map((h) => (
                 <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                  <td className="px-2 font-mono text-slate-500 whitespace-nowrap">
                     {formatThaiDate(h.date)}
                   </td>
-                  <td className="py-1 px-2 whitespace-nowrap">
+                  <td className="px-2 whitespace-nowrap">
                     <span
                       className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
                         h.event === 'DISPATCH'
-                          ? 'bg-blue-500/10 text-blue-600'
+                           ? 'bg-blue-500/10 text-blue-600'
                           : 'bg-emerald-500/10 text-emerald-600'
                       }`}
                     >
                       {h.event === 'DISPATCH' ? 'ส่งมอบสินค้า' : 'รับคืนสินค้า'}
                     </span>
                   </td>
-                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {h.refNo}
                   </td>
-                  <td className="py-1 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  <td className="px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                     {h.customerName}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold">
+                  <td className="px-2 text-center font-mono font-bold">
                     {h.itemsCount}
                   </td>
-                  <td className="py-1 px-2 text-slate-600 dark:text-slate-400">
+                  <td className="px-2 text-slate-600 dark:text-slate-400">
                     {h.handler}
                   </td>
-                  <td className="py-1 px-2 text-center whitespace-nowrap">
+                  <td className="px-2 text-center whitespace-nowrap">
                     <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {h.status}
                     </span>

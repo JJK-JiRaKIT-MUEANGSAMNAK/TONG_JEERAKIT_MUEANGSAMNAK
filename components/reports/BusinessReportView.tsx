@@ -252,7 +252,6 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
       {/* ─── 4. DETAILED CUSTOMER & PERFORMANCE RANKING TABLE ──────────────── */}
       <DataTableFrame
         className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
-        bodyClassName="overflow-x-auto"
         header={
           <div className="flex items-center justify-between mb-2 shrink-0">
             <div className="flex items-center gap-1.5">
@@ -268,18 +267,18 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
         <table className="w-full text-left border-collapse text-[11px]">
           <thead className="text-slate-600 dark:text-slate-300">
             <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">อันดับ</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">เบอร์โทร</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">สถานที่ / หน่วยงาน</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">จำนวนบิล</th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+              <th className="px-2 text-center">อันดับ</th>
+              <th className="px-2">ชื่อลูกค้า</th>
+              <th className="px-2">เบอร์โทร</th>
+              <th className="px-2">สถานที่ / หน่วยงาน</th>
+              <th className="px-2 text-center">จำนวนบิล</th>
+              <th className="px-2 text-right text-emerald-600">
                 ยอดใช้จ่ายรวม
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-amber-600">
+              <th className="px-2 text-right text-amber-600">
                 หนี้ค้างชำระ
               </th>
-              <th className="py-2 px-2 font-bold whitespace-nowrap">ทำรายการล่าสุด</th>
+              <th className="px-2">ทำรายการล่าสุด</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -292,28 +291,28 @@ export function BusinessReportView({ data }: { data: BusinessReportData }) {
             ) : (
               data.customerRankings.map((c) => (
                 <tr key={c.rank} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <td className="py-1 px-2 text-center font-mono font-bold text-slate-500">
+                  <td className="px-2 text-center font-mono font-bold text-slate-500">
                     #{c.rank}
                   </td>
-                  <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td className="px-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {c.customerName}
                   </td>
-                  <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                  <td className="px-2 font-mono text-slate-500 whitespace-nowrap">
                     {c.phone}
                   </td>
-                  <td className="py-1 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <td className="px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {c.company}
                   </td>
-                  <td className="py-1 px-2 text-center font-mono font-bold">
+                  <td className="px-2 text-center font-mono font-bold">
                     {c.ordersCount}
                   </td>
-                  <td className="py-1 px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                     ฿{formatCurrency(c.totalSpend)}
                   </td>
-                  <td className="py-1 px-2 font-mono font-bold text-right text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                  <td className="px-2 font-mono font-bold text-right text-amber-600 dark:text-amber-400 whitespace-nowrap">
                     {c.outstandingDebt > 0 ? `฿${formatCurrency(c.outstandingDebt)}` : '-'}
                   </td>
-                  <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                  <td className="px-2 font-mono text-slate-500 whitespace-nowrap">
                     {formatThaiDate(c.lastOrderDate)}
                   </td>
                 </tr>
