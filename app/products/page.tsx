@@ -585,17 +585,17 @@ function ProductsContent() {
 
       {/* AREA 2: กรอบเดียว ครอบแถบ 4 ปุ่มหลัก + พื้นที่ทำงาน */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
-        {/* Outer Row: สูง 56px พื้นหลังสีขาว */}
-        <div className="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-2 shrink-0 overflow-x-auto">
-          {/* Segmented Group: สูง 36px สีเทา */}
-          <div className="h-9 inline-flex items-center p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-900/80 border border-slate-300/70 dark:border-slate-700/70">
+        {/* Outer Row: p-2 border-b */}
+        <div className="p-2 border-b border-slate-200 dark:border-slate-700 flex items-center shrink-0 overflow-x-auto">
+          {/* Segmented Group: h-9 */}
+          <div className="h-9 inline-flex items-center p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-900/90 border border-slate-300/70 dark:border-slate-800">
             <ActionButton
               onClick={() => setActiveMainTab('LIST')}
               variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
-              className={`h-7 !py-0 !rounded-lg px-3.5 text-xs gap-1.5 ${
+              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
                 activeMainTab === 'LIST'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-100 shadow-sm border border-slate-200/80 dark:border-slate-700 ring-1 ring-slate-900/5 dark:ring-white/10 !font-extrabold'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-100 font-bold'
+                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
               }`}
               icon={<Layers className={`w-4 h-4 shrink-0 ${activeMainTab === 'LIST' ? 'text-blue-600 dark:text-blue-400' : 'text-blue-600/80 dark:text-blue-400/80'}`} />}
               badge={
@@ -614,10 +614,10 @@ function ProductsContent() {
             <ActionButton
               onClick={() => setActiveMainTab('ADD')}
               variant={activeMainTab === 'ADD' ? 'active' : 'ghost'}
-              className={`h-7 !py-0 !rounded-lg px-3.5 text-xs gap-1.5 ${
+              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
                 activeMainTab === 'ADD'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-100 shadow-sm border border-slate-200/80 dark:border-slate-700 ring-1 ring-slate-900/5 dark:ring-white/10 !font-extrabold'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-100 font-bold'
+                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
               }`}
               icon={<PackagePlus className={`w-4 h-4 shrink-0 ${activeMainTab === 'ADD' ? 'text-emerald-600 dark:text-emerald-400' : 'text-emerald-600/80 dark:text-emerald-400/80'}`} />}
               badge={
@@ -632,10 +632,10 @@ function ProductsContent() {
             <ActionButton
               onClick={() => setActiveMainTab('SETTINGS')}
               variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
-              className={`h-7 !py-0 !rounded-lg px-3.5 text-xs gap-1.5 ${
+              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
                 activeMainTab === 'SETTINGS'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-100 shadow-sm border border-slate-200/80 dark:border-slate-700 ring-1 ring-slate-900/5 dark:ring-white/10 !font-extrabold'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-100 font-bold'
+                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
               }`}
               icon={<Settings className={`w-4 h-4 shrink-0 ${activeMainTab === 'SETTINGS' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
             >
@@ -645,10 +645,10 @@ function ProductsContent() {
             <ActionButton
               onClick={() => setActiveMainTab('COUNT')}
               variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
-              className={`h-7 !py-0 !rounded-lg px-3.5 text-xs gap-1.5 ${
+              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
                 activeMainTab === 'COUNT'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-100 shadow-sm border border-slate-200/80 dark:border-slate-700 ring-1 ring-slate-900/5 dark:ring-white/10 !font-extrabold'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-100 font-bold'
+                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
               }`}
               icon={<ClipboardList className={`w-4 h-4 shrink-0 ${activeMainTab === 'COUNT' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
             >
