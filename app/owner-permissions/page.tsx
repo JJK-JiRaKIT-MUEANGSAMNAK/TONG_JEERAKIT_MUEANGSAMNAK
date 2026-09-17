@@ -19,6 +19,7 @@ import {
   Key,
   Save,
   X,
+  FileText,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { CustomSelect, SelectOption } from '@/components/common/CustomSelect'
@@ -75,7 +76,7 @@ const PERMISSIONS_CATALOG: Array<{ code: string; label: string; module: string; 
   { code: 'stock.manage', label: 'จัดการสต็อก', module: 'stock', description: 'เพิ่ม/แก้ไข/ปรับปรุงสต็อก' },
 ]
 
-type ActiveTab = 'PERMISSIONS' | 'AUDIT_REPORT'
+type ActiveTab = 'PERMISSIONS' | 'AUDIT_REPORT' | 'AUDIT_LOGS'
 type AuditSubTab = ActivityLogCategory
 
 const categoryNames: Record<AuditSubTab, string> = {
@@ -137,7 +138,7 @@ export default function OwnerPermissionsPage() {
   }, [loadMembers])
 
   useEffect(() => {
-    if (activeTab === 'AUDIT_REPORT') {
+    if (activeTab === 'AUDIT_REPORT' || activeTab === 'AUDIT_LOGS') {
       loadLogs()
     }
   }, [activeTab, auditSubTab, selectedActorId, loadLogs])
@@ -271,41 +272,41 @@ export default function OwnerPermissionsPage() {
   ]
 
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
-        {/* Left Navigation: 2 Tabs */}
-        <div className="w-full md:w-56 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex flex-row overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col gap-1 text-xs no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab('PERMISSIONS')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
-              activeTab === 'PERMISSIONS'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-            }`}
-          >
-            <Users className="w-4 h-4 shrink-0 text-emerald-500" />
-            <span className="truncate">จัดการสิทธิ์ผู้ใช้งาน</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('AUDIT_REPORT')}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all text-left shrink-0 ${
-              activeTab === 'AUDIT_REPORT'
-                ? 'bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-            }`}
-          >
-            <Activity className="w-4 h-4 shrink-0 text-blue-500" />
-            <span className="truncate">รายงานผู้ใช้งาน (Audit Log)</span>
-          </button>
+    <div className="h-full min-h-0 p-2 gap-2 bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden text-xs">
+      {/* Main Workspace Card */}
+      <div className="w-full flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+        {/* Top Segmented Bar */}
+        <div className="p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl grid grid-cols-2 items-center w-full min-w-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('PERMISSIONS')}
+              className={`h-7 px-3.5 py-0 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 min-w-0 transition-all cursor-pointer ${
+                activeTab === 'PERMISSIONS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate min-w-0">จัดการสิทธิ์ผู้ใช้งาน</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('AUDIT_REPORT')}
+              className={`h-7 px-3.5 py-0 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 min-w-0 transition-all cursor-pointer ${
+                activeTab === 'AUDIT_REPORT' || (activeTab as string) === 'AUDIT_LOGS'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate min-w-0">รายงานผู้ใช้งาน (Audit Log)</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right Settings Workspace */}
-        <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
-          {/* Scrollable Container (internal scroll only, no page-level scroll) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 space-y-2 text-xs max-w-4xl">
+        {/* Scrollable Container (internal scroll only, no page-level scroll) */}
+        <div className="w-full flex-1 min-h-0 min-w-0 p-2 space-y-2 overflow-y-auto overflow-x-hidden">
             {/* Feedback alert toast */}
             {feedback && (
               <div
@@ -360,14 +361,14 @@ export default function OwnerPermissionsPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
-                          <th className="py-2.5 px-3 sm:px-4">รหัสผู้ใช้</th>
-                          <th className="py-2.5 px-3 sm:px-4">ชื่อแสดงผล</th>
-                          <th className="py-2.5 px-3 sm:px-4">ชื่อเข้าสู่ระบบ (Username)</th>
-                          <th className="py-2.5 px-3 sm:px-4 text-center">ระดับสิทธิ์ (Role)</th>
-                          <th className="py-2.5 px-3 sm:px-4 text-center">สถานะ</th>
-                          <th className="py-2.5 px-3 sm:px-4">เข้าใช้ล่าสุด</th>
-                          <th className="py-2.5 px-3 sm:px-4 text-right">จัดการ</th>
+                        <tr className="border-b border-slate-200 dark:border-slate-700 bg-[#E3E3E3] dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                          <th className="py-2 px-3 sm:px-4">รหัสผู้ใช้</th>
+                          <th className="py-2 px-3 sm:px-4">ชื่อแสดงผล</th>
+                          <th className="py-2 px-3 sm:px-4">ชื่อเข้าสู่ระบบ (Username)</th>
+                          <th className="py-2 px-3 sm:px-4 text-center">ระดับสิทธิ์ (Role)</th>
+                          <th className="py-2 px-3 sm:px-4 text-center">สถานะ</th>
+                          <th className="py-2 px-3 sm:px-4">เข้าใช้ล่าสุด</th>
+                          <th className="py-2 px-3 sm:px-4 text-right">จัดการ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
@@ -399,14 +400,14 @@ export default function OwnerPermissionsPage() {
                                 }`}
                               >
                                 {/* 1. User UUID */}
-                                <td className="py-2.5 px-3 sm:px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                                <td className="py-1.5 px-3 sm:px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                                   <span title={member.userId || '-'}>
                                     {member.userId ? `${member.userId.slice(0, 8)}...${member.userId.slice(-6)}` : '-'}
                                   </span>
                                 </td>
 
                                 {/* 2. Full Name */}
-                                <td className="py-2.5 px-3 sm:px-4 font-bold text-slate-900 dark:text-slate-100">
+                                <td className="py-1.5 px-3 sm:px-4 font-bold text-slate-900 dark:text-slate-100">
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-[10px] font-bold">
                                       {member.profile?.fullName?.[0] || 'U'}
@@ -421,12 +422,12 @@ export default function OwnerPermissionsPage() {
                                 </td>
 
                                 {/* 3. Username / Email */}
-                                <td className="py-2.5 px-3 sm:px-4 font-mono text-slate-600 dark:text-slate-300 text-[11px]">
+                                <td className="py-1.5 px-3 sm:px-4 font-mono text-slate-600 dark:text-slate-300 text-[11px]">
                                   {member.profile?.username || member.profile?.email || '-'}
                                 </td>
 
                                 {/* 4. Role Selector */}
-                                <td className="py-2.5 px-3 sm:px-4 text-center">
+                                <td className="py-1.5 px-3 sm:px-4 text-center">
                                   <select
                                     value={member.role}
                                     disabled={isSelf || member.role === 'OWNER' || actionLoading === member.id}
@@ -439,7 +440,7 @@ export default function OwnerPermissionsPage() {
                                 </td>
 
                                 {/* 5. Status Badge */}
-                                <td className="py-2.5 px-3 sm:px-4 text-center">
+                                <td className="py-1.5 px-3 sm:px-4 text-center">
                                   {member.status === 'ACTIVE' ? (
                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-extrabold">
                                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
@@ -454,12 +455,12 @@ export default function OwnerPermissionsPage() {
                                 </td>
 
                                 {/* 6. Last Active */}
-                                <td className="py-2.5 px-3 sm:px-4 text-slate-500 dark:text-slate-400 text-[11px] font-mono">
+                                <td className="py-1.5 px-3 sm:px-4 text-slate-500 dark:text-slate-400 text-[11px] font-mono">
                                   {formatDateTime(member.profile?.createdAt)}
                                 </td>
 
                                 {/* 7. Action Buttons */}
-                                <td className="py-2.5 px-3 sm:px-4 text-right">
+                                <td className="py-1.5 px-3 sm:px-4 text-right">
                                   <div className="flex items-center justify-end gap-1.5">
                                     {/* Approve Button */}
                                     {member.status !== 'ACTIVE' && (
@@ -528,7 +529,7 @@ export default function OwnerPermissionsPage() {
             )}
 
             {/* ================= TAB 2: AUDIT REPORT ================= */}
-            {activeTab === 'AUDIT_REPORT' && (
+            {(activeTab === 'AUDIT_REPORT' || (activeTab as string) === 'AUDIT_LOGS') && (
               <div className="space-y-2">
                 {/* Section Header */}
                 <div className="border-b border-slate-200 dark:border-slate-700 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -690,13 +691,13 @@ export default function OwnerPermissionsPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
-                          <th className="py-2.5 px-3 sm:px-4 w-14 text-center">ลำดับ</th>
-                          <th className="py-2.5 px-3 sm:px-4 text-center">การกระทำ</th>
-                          <th className="py-2.5 px-3 sm:px-4">หมวดหมู่</th>
-                          <th className="py-2.5 px-3 sm:px-4">รายละเอียด</th>
-                          <th className="py-2.5 px-3 sm:px-4">วันที่และเวลา</th>
-                          <th className="py-2.5 px-3 sm:px-4 text-right">ผู้ทำรายการ</th>
+                        <tr className="border-b border-slate-200 dark:border-slate-700 bg-[#E3E3E3] dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                          <th className="py-2 px-3 sm:px-4 w-14 text-center">ลำดับ</th>
+                          <th className="py-2 px-3 sm:px-4 text-center">การกระทำ</th>
+                          <th className="py-2 px-3 sm:px-4">หมวดหมู่</th>
+                          <th className="py-2 px-3 sm:px-4">รายละเอียด</th>
+                          <th className="py-2 px-3 sm:px-4">วันที่และเวลา</th>
+                          <th className="py-2 px-3 sm:px-4 text-right">ผู้ทำรายการ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
@@ -719,12 +720,12 @@ export default function OwnerPermissionsPage() {
                           logs.map((log, idx) => (
                             <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
                               {/* No. */}
-                              <td className="py-2.5 px-3 sm:px-4 text-center text-slate-400 dark:text-slate-500 font-mono">
+                              <td className="py-1.5 px-3 sm:px-4 text-center text-slate-400 dark:text-slate-500 font-mono">
                                 {idx + 1}
                               </td>
 
                               {/* Action badge */}
-                              <td className="py-2.5 px-3 sm:px-4 text-center">
+                              <td className="py-1.5 px-3 sm:px-4 text-center">
                                 <span
                                   className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
                                     log.action.includes('ลบ') || log.action.includes('ยกเลิก')
@@ -739,22 +740,22 @@ export default function OwnerPermissionsPage() {
                               </td>
 
                               {/* Category */}
-                              <td className="py-2.5 px-3 sm:px-4 font-mono text-emerald-700 dark:text-emerald-400 font-bold text-[11px]">
+                              <td className="py-1.5 px-3 sm:px-4 font-mono text-emerald-700 dark:text-emerald-400 font-bold text-[11px]">
                                 {categoryNames[auditSubTab] || log.category}
                               </td>
 
                               {/* Details */}
-                              <td className="py-2.5 px-3 sm:px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={log.details}>
+                              <td className="py-1.5 px-3 sm:px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={log.details}>
                                 {log.details || '-'}
                               </td>
 
                               {/* Timestamp */}
-                              <td className="py-2.5 px-3 sm:px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
+                              <td className="py-1.5 px-3 sm:px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
                                 {formatDateTime(log.createdAt)}
                               </td>
 
                               {/* Actor */}
-                              <td className="py-2.5 px-3 sm:px-4 text-right">
+                              <td className="py-1.5 px-3 sm:px-4 text-right">
                                 <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
                                   {log.actorName || '-'}
                                 </span>
@@ -770,7 +771,6 @@ export default function OwnerPermissionsPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Delete User Modal Confirmation */}
       {deleteConfirmMember && (

@@ -432,89 +432,89 @@ export default function CustomersPage() {
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
         {/* Sub-tabs Navigation Bar (ปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
         <div className="p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 items-center">
+          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl grid grid-cols-7 items-center w-full min-w-0">
             <button
               onClick={() => setActive360Tab('GENERAL')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'GENERAL'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ข้อมูลทั่วไป & หน้าบัตร</span>
+              <span className="truncate min-w-0">ข้อมูลทั่วไป & หน้าบัตร</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('RENTAL_HISTORY')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'RENTAL_HISTORY'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <History className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ประวัติการเช่า</span>
+              <span className="truncate min-w-0">ประวัติการเช่า</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('PAYMENT_HISTORY')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'PAYMENT_HISTORY'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <CreditCard className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">ประวัติการชำระเงิน</span>
+              <span className="truncate min-w-0">ประวัติการชำระเงิน</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('OUTSTANDING_ITEMS')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'OUTSTANDING_ITEMS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Package className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">สินค้าค้างคืน</span>
+              <span className="truncate min-w-0">สินค้าค้างคืน</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('DOCUMENTS')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'DOCUMENTS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <FileText className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">เอกสารส่วนตัว</span>
+              <span className="truncate min-w-0">เอกสารส่วนตัว</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('ANALYTICS')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'ANALYTICS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">สถิติการใช้งาน</span>
+              <span className="truncate min-w-0">สถิติการใช้งาน</span>
             </button>
 
             <button
               onClick={() => setActive360Tab('NOTES_TAGS')}
-              className={`w-full h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
                 active360Tab === 'NOTES_TAGS'
                   ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Tag className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">หมายเหตุ</span>
+              <span className="truncate min-w-0">หมายเหตุ</span>
             </button>
           </div>
         </div>
@@ -529,7 +529,7 @@ export default function CustomersPage() {
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* TAB 1: ข้อมูลทั่วไป & หน้าบัตร */}
             {active360Tab === 'GENERAL' && (
-              <div className="flex-1 min-h-0 text-xs p-3 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
+              <div className="flex-1 min-h-0 text-xs p-2 flex flex-col justify-between gap-2 overflow-hidden">
             {/* ข้อมูลพื้นฐานผู้เช่า - ส่วนหัวและปุ่มจัดการ */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2">
@@ -1403,7 +1403,7 @@ export default function CustomersPage() {
 
             {/* TAB 5: เอกสารส่วนตัวลูกค้า */}
             {active360Tab === 'DOCUMENTS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 p-2">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">เอกสารส่วนตัวลูกค้า</h4>
@@ -1535,7 +1535,7 @@ export default function CustomersPage() {
 
             {/* TAB 6: สถิติการใช้งาน */}
             {active360Tab === 'ANALYTICS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 p-2">
                 <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">สถิติและพฤติกรรมการเช่าจริง</h4>
                 
                 {/* 3 Main Stat Cards */}
@@ -1591,7 +1591,7 @@ export default function CustomersPage() {
 
             {/* TAB 7: หมายเหตุ */}
             {active360Tab === 'NOTES_TAGS' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 p-3 sm:p-3.5">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 p-2">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
                   <div>
                     <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">หมายเหตุภายในเกี่ยวกับลูกค้า</h4>
