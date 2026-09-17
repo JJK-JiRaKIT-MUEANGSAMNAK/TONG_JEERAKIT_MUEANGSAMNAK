@@ -19,6 +19,7 @@ import {
   formatNumber,
 } from '@/lib/report-data'
 import { ReportDonutChart, ReportBarChart } from './ReportCharts'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
 
 export function StockReportView({ data }: { data: StockReportData }) {
   return (
@@ -214,89 +215,88 @@ export function StockReportView({ data }: { data: StockReportData }) {
       {/* ─── 3. TOPIC 15: ประวัติชำรุด / สูญหาย & TOPIC 16: สินค้าทำเงิน ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* รายการชำรุด / สูญหาย (Topic 15) */}
-        <div className="p-2 rounded-xl border border-rose-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between mb-2 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                บันทึกสินค้าชำรุดและสูญหาย
-              </h3>
+        <DataTableFrame
+          className="p-2 rounded-xl border border-rose-500/20 bg-white dark:bg-slate-900 shadow-xs"
+          header={
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  บันทึกสินค้าชำรุดและสูญหาย
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400 font-bold">
+                ความเสียหายรวม ฿{formatNumber(data.totalDamagedCost + data.totalLostCost)}
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400 font-bold">
-              ความเสียหายรวม ฿{formatNumber(data.totalDamagedCost + data.totalLostCost)}
-            </span>
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-              <table className="w-full text-left border-collapse text-[11px]">
-                <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 font-bold">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">รหัส</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">ชื่อสินค้า</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะ</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">จำนวน</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ค่าเสียหาย/ซ่อม</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {data.damagedItems.length === 0 && data.lostItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
-                        ไม่มีสินค้าชำรุดหรือสูญหายในระบบ
+          }
+        >
+          <table className="w-full text-left border-collapse text-[11px]">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap">รหัส</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap">ชื่อสินค้า</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะ</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">จำนวน</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ค่าเสียหาย/ซ่อม</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {data.damagedItems.length === 0 && data.lostItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
+                    ไม่มีสินค้าชำรุดหรือสูญหายในระบบ
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  {data.damagedItems.map((d) => (
+                    <tr key={`dam-${d.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {d.code}
+                      </td>
+                      <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
+                        {d.name}
+                      </td>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                          ชำรุด
+                        </span>
+                      </td>
+                      <td className="py-1 px-1.5 text-center font-mono font-bold text-rose-600">
+                        {d.quantity} {d.unit}
+                      </td>
+                      <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
+                        ฿{formatNumber(d.estimatedFee)}
                       </td>
                     </tr>
-                  ) : (
-                    <>
-                      {data.damagedItems.map((d) => (
-                        <tr key={`dam-${d.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                          <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                            {d.code}
-                          </td>
-                          <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
-                            {d.name}
-                          </td>
-                          <td className="py-1 px-1.5 text-center">
-                            <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                              ชำรุด
-                            </span>
-                          </td>
-                          <td className="py-1 px-1.5 text-center font-mono font-bold text-rose-600">
-                            {d.quantity} {d.unit}
-                          </td>
-                          <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
-                            ฿{formatNumber(d.estimatedFee)}
-                          </td>
-                        </tr>
-                      ))}
-                      {data.lostItems.map((l) => (
-                        <tr key={`lost-${l.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                          <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                            {l.code}
-                          </td>
-                          <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
-                            {l.name}
-                          </td>
-                          <td className="py-1 px-1.5 text-center">
-                            <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                              สูญหาย
-                            </span>
-                          </td>
-                          <td className="py-1 px-1.5 text-center font-mono font-bold text-amber-600">
-                            {l.quantity} {l.unit}
-                          </td>
-                          <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
-                            ฿{formatNumber(l.estimatedLoss)}
-                          </td>
-                        </tr>
-                      ))}
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                  ))}
+                  {data.lostItems.map((l) => (
+                    <tr key={`lost-${l.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {l.code}
+                      </td>
+                      <td className="py-1 px-1.5 truncate max-w-[130px] text-slate-700 dark:text-slate-300">
+                        {l.name}
+                      </td>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          สูญหาย
+                        </span>
+                      </td>
+                      <td className="py-1 px-1.5 text-center font-mono font-bold text-amber-600">
+                        {l.quantity} {l.unit}
+                      </td>
+                      <td className="py-1 px-1.5 text-right font-mono text-slate-700 dark:text-slate-300">
+                        ฿{formatNumber(l.estimatedLoss)}
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              )}
+            </tbody>
+          </table>
+        </DataTableFrame>
 
         {/* สินค้าทำเงินสูงสุด (Top / Bottom Products) */}
         <div className="rounded-xl border border-emerald-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between overflow-hidden">
@@ -350,94 +350,94 @@ export function StockReportView({ data }: { data: StockReportData }) {
       </div>
 
       {/* ─── 4. DETAILED PRODUCT INVENTORY TABLE ───────────────────────────── */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-        <div className="p-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Package className="w-3.5 h-3.5 text-slate-500" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              ตารางรายละเอียดสินค้าและสต็อกทั้งหมด ({data.productsTable.length} รายการ)
-            </h3>
+      <DataTableFrame
+        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
+        bodyClassName="w-full"
+        header={
+          <div className="p-2 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                ตารางรายละเอียดสินค้าและสต็อกทั้งหมด ({data.productsTable.length} รายการ)
+              </h3>
+            </div>
+            <span className="text-[10px] text-slate-400">ข้อมูลสถานะตามจริง</span>
           </div>
-          <span className="text-[10px] text-slate-400">ข้อมูลสถานะตามจริง</span>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px] w-full">
-            <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">รหัส</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อสินค้า</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">ทั้งหมด</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-emerald-600">
-                    พร้อมใช้
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-blue-600">
-                    กำลังเช่า
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-rose-600">
-                    ชำรุด
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-amber-600">
-                    สูญหาย
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ค่าเช่า/วัน</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
-                    รายได้สะสม
-                  </th>
+        }
+      >
+        <table className="w-full text-left border-collapse text-[11px]">
+          <thead className="text-slate-600 dark:text-slate-300">
+            <tr className="border-b border-slate-200 dark:border-slate-700">
+              <th className="py-2 px-2 font-bold whitespace-nowrap">รหัส</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อสินค้า</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">ทั้งหมด</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-emerald-600">
+                พร้อมใช้
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-blue-600">
+                กำลังเช่า
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-rose-600">
+                ชำรุด
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center text-amber-600">
+                สูญหาย
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ค่าเช่า/วัน</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+                รายได้สะสม
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {data.productsTable.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="py-8 text-center text-xs text-slate-400">
+                  ยังไม่มีข้อมูลสินค้าและสต็อก
+                </td>
+              </tr>
+            ) : (
+              data.productsTable.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {p.code}
+                  </td>
+                  <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 max-w-[180px] truncate">
+                    {p.name}
+                  </td>
+                  <td className="py-1 px-2 text-slate-500 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded-md text-[9.5px] bg-slate-100 dark:bg-slate-800">
+                      {p.category}
+                    </span>
+                  </td>
+                  <td className="py-1 px-2 text-center font-mono font-bold whitespace-nowrap">
+                    {p.totalQuantity}
+                  </td>
+                  <td className="py-1 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    {p.availableQuantity}
+                  </td>
+                  <td className="py-1 px-2 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                    {p.rentedQuantity}
+                  </td>
+                  <td className="py-1 px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                    {p.damagedQuantity}
+                  </td>
+                  <td className="py-1 px-2 text-center font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                    {p.lostQuantity}
+                  </td>
+                  <td className="py-1 px-2 text-right font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    ฿{formatNumber(p.rentPrice)}
+                  </td>
+                  <td className="py-1 px-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    ฿{formatCurrency(p.revenue)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.productsTable.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="py-8 text-center text-xs text-slate-400">
-                      ยังไม่มีข้อมูลสินค้าและสต็อก
-                    </td>
-                  </tr>
-                ) : (
-                  data.productsTable.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {p.code}
-                      </td>
-                      <td className="py-1 px-2 font-bold text-slate-800 dark:text-slate-200 max-w-[180px] truncate">
-                        {p.name}
-                      </td>
-                      <td className="py-1 px-2 text-slate-500 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] bg-slate-100 dark:bg-slate-800">
-                          {p.category}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 text-center font-mono font-bold whitespace-nowrap">
-                        {p.totalQuantity}
-                      </td>
-                      <td className="py-1 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {p.availableQuantity}
-                      </td>
-                      <td className="py-1 px-2 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                        {p.rentedQuantity}
-                      </td>
-                      <td className="py-1 px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                        {p.damagedQuantity}
-                      </td>
-                      <td className="py-1 px-2 text-center font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                        {p.lostQuantity}
-                      </td>
-                      <td className="py-1 px-2 text-right font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        ฿{formatNumber(p.rentPrice)}
-                      </td>
-                      <td className="py-1 px-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        ฿{formatCurrency(p.revenue)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </DataTableFrame>
     </div>
   )
 }

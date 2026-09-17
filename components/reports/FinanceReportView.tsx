@@ -20,6 +20,7 @@ import {
   formatThaiDate,
 } from '@/lib/report-data'
 import { ReportAreaTrendChart, ReportDonutChart } from './ReportCharts'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
 
 export function FinanceReportView({ data }: { data: FinanceReportData }) {
   const isNetPositive = data.netIncome >= 0
@@ -280,77 +281,76 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
       {/* ─── 3. DETAILS: ลูกหนี้ค้าง & การจัดการเงินมัดจำ (Topics 7 & 8) ────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* ลูกหนี้ค้างชำระ (Topic 7) */}
-        <div className="p-2 rounded-xl border border-amber-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between mb-2 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                รายการลูกหนี้ค้างชำระ ({data.debtorCount} รายการ)
-              </h3>
+        <DataTableFrame
+          className="p-2 rounded-xl border border-amber-500/20 bg-white dark:bg-slate-900 shadow-xs"
+          header={
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  รายการลูกหนี้ค้างชำระ ({data.debtorCount} รายการ)
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold font-mono text-amber-600 dark:text-amber-400">
+                รวม ฿{formatCurrency(data.totalOutstanding)}
+              </span>
             </div>
-            <span className="text-[11px] font-bold font-mono text-amber-600 dark:text-amber-400">
-              รวม ฿{formatCurrency(data.totalOutstanding)}
-            </span>
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-              <table className="w-full text-left border-collapse text-[11px]">
-                <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 font-bold">
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่บิล</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right text-amber-600">ยอดค้าง</th>
-                    <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะ</th>
+          }
+        >
+          <table className="w-full text-left border-collapse text-[11px]">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่บิล</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ยอดรวม</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right text-amber-600">ยอดค้าง</th>
+                <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {data.debtorBills.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
+                    ไม่มีลูกหนี้ค้างชำระ ยอดเงินสมบูรณ์ครบถ้วน
+                  </td>
+                </tr>
+              ) : (
+                data.debtorBills.map((b) => (
+                  <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200">
+                      {b.billNo}
+                    </td>
+                    <td className="py-1 px-1.5 max-w-[120px] truncate text-slate-700 dark:text-slate-300">
+                      <div>{b.customerName}</div>
+                      {b.customerPhone && (
+                        <div className="text-[9.5px] text-slate-400 font-mono">
+                          {b.customerPhone}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-1 px-1.5 font-mono text-right text-slate-600 dark:text-slate-400">
+                      ฿{formatNumber(b.grandTotal)}
+                    </td>
+                    <td className="py-1 px-1.5 font-mono font-bold text-right text-amber-600 dark:text-amber-400">
+                      ฿{formatCurrency(b.outstandingAmount)}
+                    </td>
+                    <td className="py-1 px-1.5 text-center">
+                      {b.daysOverdue > 0 ? (
+                        <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                          เกิน {b.daysOverdue} วัน
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          รอชำระ
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {data.debtorBills.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
-                        ไม่มีลูกหนี้ค้างชำระ ยอดเงินสมบูรณ์ครบถ้วน
-                      </td>
-                    </tr>
-                  ) : (
-                    data.debtorBills.map((b) => (
-                      <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                        <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200">
-                          {b.billNo}
-                        </td>
-                        <td className="py-1 px-1.5 max-w-[120px] truncate text-slate-700 dark:text-slate-300">
-                          <div>{b.customerName}</div>
-                          {b.customerPhone && (
-                            <div className="text-[9.5px] text-slate-400 font-mono">
-                              {b.customerPhone}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-1 px-1.5 font-mono text-right text-slate-600 dark:text-slate-400">
-                          ฿{formatNumber(b.grandTotal)}
-                        </td>
-                        <td className="py-1 px-1.5 font-mono font-bold text-right text-amber-600 dark:text-amber-400">
-                          ฿{formatCurrency(b.outstandingAmount)}
-                        </td>
-                        <td className="py-1 px-1.5 text-center">
-                          {b.daysOverdue > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                              เกิน {b.daysOverdue} วัน
-                            </span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                              รอชำระ
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </DataTableFrame>
 
         {/* รายงานเงินมัดจำ (Topic 8) */}
         <div className="p-2 rounded-xl border border-purple-500/20 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
@@ -413,85 +413,84 @@ export function FinanceReportView({ data }: { data: FinanceReportData }) {
       </div>
 
       {/* ─── 4. TRANSACTIONS DETAIL TABLE ─────────────────────────────────── */}
-      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-2 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Receipt className="w-3.5 h-3.5 text-slate-500" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              ตารางรายละเอียดธุรกรรมการเงิน ({data.transactions.length} รายการ)
-            </h3>
+      <DataTableFrame
+        className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
+        header={
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                ตารางรายละเอียดธุรกรรมการเงิน ({data.transactions.length} รายการ)
+              </h3>
+            </div>
+            <span className="text-[10px] text-slate-400">เรียงตามวันที่ล่าสุด</span>
           </div>
-          <span className="text-[10px] text-slate-400">เรียงตามวันที่ล่าสุด</span>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-            <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่ / เวลา</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง / บิล</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">รายละเอียด / ลูกค้า</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ช่องทาง</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
-                    รายรับ
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-rose-600">
-                    รายจ่าย
-                  </th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดสะสม</th>
+        }
+      >
+        <table className="w-full text-left border-collapse text-[11px]">
+          <thead className="text-slate-600 dark:text-slate-300">
+            <tr className="border-b border-slate-200 dark:border-slate-700">
+              <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่ / เวลา</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">เลขอ้างอิง / บิล</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">หมวดหมู่</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">รายละเอียด / ลูกค้า</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ช่องทาง</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-emerald-600">
+                รายรับ
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right text-rose-600">
+                รายจ่าย
+              </th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดสะสม</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {data.transactions.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
+                  ยังไม่มีข้อมูลธุรกรรมในช่วงเวลานี้
+                </td>
+              </tr>
+            ) : (
+              data.transactions.map((t) => (
+                <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-1 px-2 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {formatThaiDate(t.dateTime)}
+                  </td>
+                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {t.billNo || t.refNo}
+                  </td>
+                  <td className="py-1 px-2 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {t.category}
+                    </span>
+                  </td>
+                  <td className="py-1 px-2 max-w-[200px] truncate text-slate-700 dark:text-slate-300">
+                    <div>{t.description}</div>
+                    {t.customerName && (
+                      <div className="text-[9.5px] text-slate-400">{t.customerName}</div>
+                    )}
+                  </td>
+                  <td className="py-1 px-2 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                      {t.channel || 'โอนเงิน'}
+                    </span>
+                  </td>
+                  <td className="py-1 px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    {t.incomeAmount > 0 ? `+฿${formatCurrency(t.incomeAmount)}` : '-'}
+                  </td>
+                  <td className="py-1 px-2 font-mono font-bold text-right text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                    {t.expenseAmount > 0 ? `-฿${formatCurrency(t.expenseAmount)}` : '-'}
+                  </td>
+                  <td className="py-1 px-2 font-mono text-right text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    ฿{formatCurrency(t.runningBalance)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
-                      ยังไม่มีข้อมูลธุรกรรมในช่วงเวลานี้
-                    </td>
-                  </tr>
-                ) : (
-                  data.transactions.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-2 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {formatThaiDate(t.dateTime)}
-                      </td>
-                      <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {t.billNo || t.refNo}
-                      </td>
-                      <td className="py-1 px-2 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {t.category}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 max-w-[200px] truncate text-slate-700 dark:text-slate-300">
-                        <div>{t.description}</div>
-                        {t.customerName && (
-                          <div className="text-[9.5px] text-slate-400">{t.customerName}</div>
-                        )}
-                      </td>
-                      <td className="py-1 px-2 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
-                          {t.channel || 'โอนเงิน'}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 font-mono font-bold text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {t.incomeAmount > 0 ? `+฿${formatCurrency(t.incomeAmount)}` : '-'}
-                      </td>
-                      <td className="py-1 px-2 font-mono font-bold text-right text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                        {t.expenseAmount > 0 ? `-฿${formatCurrency(t.expenseAmount)}` : '-'}
-                      </td>
-                      <td className="py-1 px-2 font-mono text-right text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        ฿{formatCurrency(t.runningBalance)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </DataTableFrame>
     </div>
   )
 }

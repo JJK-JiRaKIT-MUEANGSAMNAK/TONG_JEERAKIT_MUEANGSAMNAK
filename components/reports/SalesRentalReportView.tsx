@@ -19,6 +19,7 @@ import {
   formatThaiDate,
 } from '@/lib/report-data'
 import { ReportBarChart, ReportFunnel } from './ReportCharts'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
 
 export function SalesRentalReportView({ data }: { data: SalesRentalReportData }) {
   return (
@@ -250,182 +251,180 @@ export function SalesRentalReportView({ data }: { data: SalesRentalReportData })
       </div>
 
       {/* ─── 4. TOPIC 11: ประวัติและงานเช่าปัจจุบัน (Active Rentals) ───────── */}
-      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-2 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-blue-500" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              งานเช่าปัจจุบันที่กำลังดำเนินการ ({data.activeRentals.length} งาน)
-            </h3>
+      <DataTableFrame
+        className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
+        header={
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-blue-500" />
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                งานเช่าปัจจุบันที่กำลังดำเนินการ ({data.activeRentals.length} งาน)
+              </h3>
+            </div>
+            <span className="text-[10px] text-slate-400">
+              {data.overdueRentalsCount > 0 ? (
+                <span className="text-rose-500 font-bold">
+                  ⚠️ มีงานเกินกำหนด {data.overdueRentalsCount} งาน
+                </span>
+              ) : (
+                'ทุกสัญญาอยู่ในกำหนด'
+              )}
+            </span>
           </div>
-          <span className="text-[10px] text-slate-400">
-            {data.overdueRentalsCount > 0 ? (
-              <span className="text-rose-500 font-bold">
-                ⚠️ มีงานเกินกำหนด {data.overdueRentalsCount} งาน
-              </span>
+        }
+      >
+        <table className="w-full text-left border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่บิล</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap">วันที่เริ่ม</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap">กำหนดคืน</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">รายการ</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">มัดจำ</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ยอดรวม</th>
+              <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะกำหนด</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {data.activeRentals.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
+                  ขณะนี้ไม่มีสินค้าที่อยู่ระหว่างเช่านอกร้าน
+                </td>
+              </tr>
             ) : (
-              'ทุกสัญญาอยู่ในกำหนด'
-            )}
-          </span>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-            <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 font-bold">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">เลขที่บิล</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">วันที่เริ่ม</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap">กำหนดคืน</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">รายการ</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">มัดจำ</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-                  <th className="py-2 px-1.5 font-bold whitespace-nowrap text-center">สถานะกำหนด</th>
+              data.activeRentals.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {r.billNo}
+                  </td>
+                  <td className="py-1 px-1.5 max-w-[130px] truncate text-slate-700 dark:text-slate-300">
+                    <div>{r.customerName}</div>
+                    {r.customerPhone && (
+                      <div className="text-[9.5px] text-slate-400 font-mono">
+                        {r.customerPhone}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-1 px-1.5 font-mono text-slate-500 whitespace-nowrap">
+                    {formatThaiDate(r.rentalStartDate)}
+                  </td>
+                  <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {formatThaiDate(r.scheduledReturnDate)}
+                  </td>
+                  <td className="py-1 px-1.5 text-center font-mono">
+                    {r.itemsCount} ชิ้น
+                  </td>
+                  <td className="py-1 px-1.5 font-mono text-right text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                    ฿{formatNumber(r.depositAmount)}
+                  </td>
+                  <td className="py-1 px-1.5 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    ฿{formatCurrency(r.grandTotal)}
+                  </td>
+                  <td className="py-1 px-1.5 text-center whitespace-nowrap">
+                    {r.isOverdue ? (
+                      <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        เกินกำหนด {r.daysOverdue} วัน
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        กำลังเช่า
+                      </span>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.activeRentals.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-xs text-slate-400">
-                      ขณะนี้ไม่มีสินค้าที่อยู่ระหว่างเช่านอกร้าน
-                    </td>
-                  </tr>
-                ) : (
-                  data.activeRentals.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {r.billNo}
-                      </td>
-                      <td className="py-1 px-1.5 max-w-[130px] truncate text-slate-700 dark:text-slate-300">
-                        <div>{r.customerName}</div>
-                        {r.customerPhone && (
-                          <div className="text-[9.5px] text-slate-400 font-mono">
-                            {r.customerPhone}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-1 px-1.5 font-mono text-slate-500 whitespace-nowrap">
-                        {formatThaiDate(r.rentalStartDate)}
-                      </td>
-                      <td className="py-1 px-1.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {formatThaiDate(r.scheduledReturnDate)}
-                      </td>
-                      <td className="py-1 px-1.5 text-center font-mono">
-                        {r.itemsCount} ชิ้น
-                      </td>
-                      <td className="py-1 px-1.5 font-mono text-right text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                        ฿{formatNumber(r.depositAmount)}
-                      </td>
-                      <td className="py-1 px-1.5 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        ฿{formatCurrency(r.grandTotal)}
-                      </td>
-                      <td className="py-1 px-1.5 text-center whitespace-nowrap">
-                        {r.isOverdue ? (
-                          <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                            เกินกำหนด {r.daysOverdue} วัน
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                            กำลังเช่า
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </DataTableFrame>
 
       {/* ─── 5. DETAILED DOCUMENTS TABLE ─────────────────────────────────── */}
-      <div className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-2 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-slate-500" />
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              ตารางรายละเอียดบิลและใบเสนอราคา ({data.detailedRecords.length} ฉบับ)
-            </h3>
+      <DataTableFrame
+        className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
+        header={
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                ตารางรายละเอียดบิลและใบเสนอราคา ({data.detailedRecords.length} ฉบับ)
+              </h3>
+            </div>
+            <span className="text-[10px] text-slate-400">เรียงตามวันที่ล่าสุด</span>
           </div>
-          <span className="text-[10px] text-slate-400">เรียงตามวันที่ล่าสุด</span>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-            <table className="w-full text-left border-collapse text-[11px]">
-              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">รายการสินค้า</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดรวม</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+        }
+      >
+        <table className="w-full text-left border-collapse text-[11px]">
+          <thead className="text-slate-600 dark:text-slate-300">
+            <tr className="border-b border-slate-200 dark:border-slate-700">
+              <th className="py-2 px-2 font-bold whitespace-nowrap">วันที่</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">รายการสินค้า</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">ยอดรวม</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-center">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {data.detailedRecords.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-xs text-slate-400">
+                  ยังไม่มีข้อมูลเอกสารในช่วงเวลานี้
+                </td>
+              </tr>
+            ) : (
+              data.detailedRecords.map((doc) => (
+                <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
+                    {formatThaiDate(doc.date)}
+                  </td>
+                  <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {doc.docNo}
+                  </td>
+                  <td className="py-1 px-2 whitespace-nowrap">
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
+                        doc.type === 'BILL'
+                          ? doc.subType === 'SALE'
+                            ? 'bg-emerald-500/10 text-emerald-600'
+                            : 'bg-blue-500/10 text-blue-600'
+                          : 'bg-purple-500/10 text-purple-600'
+                      }`}
+                    >
+                      {doc.type === 'BILL'
+                        ? doc.subType === 'SALE'
+                          ? 'บิลขาย'
+                          : 'บิลเช่า'
+                        : 'ใบเสนอราคา'}
+                    </span>
+                  </td>
+                  <td className="py-1 px-2 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                    <div>{doc.customerName}</div>
+                    {doc.customerPhone && (
+                      <div className="text-[9px] text-slate-400 font-mono">
+                        {doc.customerPhone}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-1 px-2 max-w-[220px] truncate text-slate-600 dark:text-slate-400">
+                    {doc.itemsSummary}
+                  </td>
+                  <td className="py-1 px-2 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    ฿{formatCurrency(doc.amount)}
+                  </td>
+                  <td className="py-1 px-2 text-center whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      {doc.status}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {data.detailedRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-xs text-slate-400">
-                      ยังไม่มีข้อมูลเอกสารในช่วงเวลานี้
-                    </td>
-                  </tr>
-                ) : (
-                  data.detailedRecords.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-1 px-2 font-mono text-slate-500 whitespace-nowrap">
-                        {formatThaiDate(doc.date)}
-                      </td>
-                      <td className="py-1 px-2 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {doc.docNo}
-                      </td>
-                      <td className="py-1 px-2 whitespace-nowrap">
-                        <span
-                          className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold ${
-                            doc.type === 'BILL'
-                              ? doc.subType === 'SALE'
-                                ? 'bg-emerald-500/10 text-emerald-600'
-                                : 'bg-blue-500/10 text-blue-600'
-                              : 'bg-purple-500/10 text-purple-600'
-                          }`}
-                        >
-                          {doc.type === 'BILL'
-                            ? doc.subType === 'SALE'
-                              ? 'บิลขาย'
-                              : 'บิลเช่า'
-                            : 'ใบเสนอราคา'}
-                        </span>
-                      </td>
-                      <td className="py-1 px-2 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                        <div>{doc.customerName}</div>
-                        {doc.customerPhone && (
-                          <div className="text-[9px] text-slate-400 font-mono">
-                            {doc.customerPhone}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-1 px-2 max-w-[220px] truncate text-slate-600 dark:text-slate-400">
-                        {doc.itemsSummary}
-                      </td>
-                      <td className="py-1 px-2 font-mono font-bold text-right text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        ฿{formatCurrency(doc.amount)}
-                      </td>
-                      <td className="py-1 px-2 text-center whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                          {doc.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </DataTableFrame>
     </div>
   )
 }

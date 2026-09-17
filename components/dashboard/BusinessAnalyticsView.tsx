@@ -18,6 +18,7 @@ import {
   DoubleLineAreaTrendChart,
   DonutChart,
 } from './DashboardCharts'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
 
 interface ViewProps {
   metrics: DashboardMetrics
@@ -230,75 +231,74 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
       {/* 3. ROW 3: 4) ลูกค้าหลัก + 5) สัดส่วนช่องทางรับเงิน */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
         {/* 4. ลูกค้าหลัก (Top Customers) */}
-        <div className="lg:col-span-7 p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col min-h-0 overflow-hidden">
-          <div className="mb-1.5 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-1.5">
-              <span className="w-1 h-3.5 bg-blue-500 rounded-full" />
-              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
-                ลูกค้าหลัก (Top Customers)
-              </h3>
+        <DataTableFrame
+          className="lg:col-span-7 p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs"
+          header={
+            <div className="mb-1.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1 h-3.5 bg-blue-500 rounded-full" />
+                <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                  ลูกค้าหลัก (Top Customers)
+                </h3>
+              </div>
+              <Link
+                href="/customers"
+                className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+              >
+                ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-            <Link
-              href="/customers"
-              className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
-            >
-              ดูทั้งหมด <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800 font-bold">
-                  <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                    <th className="py-2 px-1.5 text-center w-6 font-bold whitespace-nowrap">#</th>
-                    <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
-                    <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทลูกค้า</th>
-                    <th className="py-2 px-2 text-center font-bold whitespace-nowrap">จำนวนการใช้บริการ</th>
-                    <th className="py-2 px-2 text-right font-bold whitespace-nowrap">รายได้ (บาท)</th>
-                    <th className="py-2 px-2 text-right font-bold whitespace-nowrap">สัดส่วน</th>
+          }
+        >
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                <th className="py-2 px-1.5 text-center w-6 font-bold whitespace-nowrap">#</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap">ชื่อลูกค้า</th>
+                <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภทลูกค้า</th>
+                <th className="py-2 px-2 text-center font-bold whitespace-nowrap">จำนวนการใช้บริการ</th>
+                <th className="py-2 px-2 text-right font-bold whitespace-nowrap">รายได้ (บาท)</th>
+                <th className="py-2 px-2 text-right font-bold whitespace-nowrap">สัดส่วน</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {metrics.topCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs text-slate-400">
+                    ยังไม่มีข้อมูลลูกค้า
+                  </td>
+                </tr>
+              ) : (
+                metrics.topCustomers.map((cust, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                    <td className="py-1.5 px-1.5 text-center">
+                      <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 font-bold text-[9.5px] text-slate-600 dark:text-slate-300 inline-flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                    </td>
+                    <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">
+                      {cust.name}
+                    </td>
+                    <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      <span className="px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-slate-100 dark:bg-slate-700">
+                        {cust.customerType}
+                      </span>
+                    </td>
+                    <td className="py-1.5 px-2 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {cust.billsCount} ครั้ง
+                    </td>
+                    <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                      {cust.totalSpent.toLocaleString()}
+                    </td>
+                    <td className="py-1.5 px-2 text-right font-mono text-[10.5px] text-slate-400 whitespace-nowrap">
+                      {cust.percentage}%
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {metrics.topCustomers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-xs text-slate-400">
-                        ยังไม่มีข้อมูลลูกค้า
-                      </td>
-                    </tr>
-                  ) : (
-                    metrics.topCustomers.map((cust, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                        <td className="py-1.5 px-1.5 text-center">
-                          <span className="w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-700 font-bold text-[9.5px] text-slate-600 dark:text-slate-300 inline-flex items-center justify-center">
-                            {idx + 1}
-                          </span>
-                        </td>
-                        <td className="py-1.5 px-2 font-bold text-slate-800 dark:text-slate-200 truncate max-w-xs">
-                          {cust.name}
-                        </td>
-                        <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-slate-100 dark:bg-slate-700">
-                            {cust.customerType}
-                          </span>
-                        </td>
-                        <td className="py-1.5 px-2 text-center font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                          {cust.billsCount} ครั้ง
-                        </td>
-                        <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                          {cust.totalSpent.toLocaleString()}
-                        </td>
-                        <td className="py-1.5 px-2 text-right font-mono text-[10.5px] text-slate-400 whitespace-nowrap">
-                          {cust.percentage}%
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </DataTableFrame>
 
         {/* 5. สัดส่วนช่องทางรับเงิน (Payment Channels) */}
         <div className="lg:col-span-5 p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">

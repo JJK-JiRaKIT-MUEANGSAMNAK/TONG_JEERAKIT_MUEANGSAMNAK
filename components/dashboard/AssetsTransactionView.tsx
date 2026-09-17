@@ -23,6 +23,7 @@ import {
   DonutChart,
   VerticalBarChart,
 } from './DashboardCharts'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
 
 interface ViewProps {
   metrics: DashboardMetrics
@@ -394,88 +395,87 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
       </div>
 
       {/* 4. BOTTOM ROW: งาน / รายการสำคัญวันนี้ (TABLE) */}
-      <div className="p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <Truck className="w-3.5 h-3.5 text-blue-500" />
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
-              งาน / รายการสำคัญวันนี้
-            </h3>
+      <DataTableFrame
+        className="p-2 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs"
+        header={
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <Truck className="w-3.5 h-3.5 text-blue-500" />
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">
+                งาน / รายการสำคัญวันนี้
+              </h3>
+            </div>
+            <Link
+              href="/bills"
+              className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              ดูทั้งหมด <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
-          <Link
-            href="/bills"
-            className="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-          >
-            ดูทั้งหมด <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="overflow-y-auto overflow-x-auto min-h-[320px] max-h-[380px]">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 z-20 bg-[#E3E3E3] dark:bg-slate-800">
-                <tr className="border-b border-slate-200 dark:border-slate-700 text-[10.5px] font-bold text-slate-600 dark:text-slate-300">
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">เวลา</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">รายการ</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap text-right">จำนวน</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">สถานะ</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
-                  <th className="py-2 px-2 font-bold whitespace-nowrap">หมายเหตุ</th>
+        }
+      >
+        <table className="w-full text-left text-xs">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-700 text-[10.5px] font-bold text-slate-600 dark:text-slate-300">
+              <th className="py-2 px-2 font-bold whitespace-nowrap">เวลา</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ประเภท</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">เลขที่เอกสาร</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ลูกค้า</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">รายการ</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap text-right">จำนวน</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">สถานะ</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">ผู้รับผิดชอบ</th>
+              <th className="py-2 px-2 font-bold whitespace-nowrap">หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {metrics.todayKeyTasks.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-xs text-slate-400">
+                  ไม่มีงานสำคัญค้างในวันนี้
+                </td>
+              </tr>
+            ) : (
+              metrics.todayKeyTasks.map((t) => (
+                <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                  <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {t.time}
+                  </td>
+                  <td className="py-1.5 px-2 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${t.typeBadgeColor}`}>
+                      {t.typeLabel}
+                    </span>
+                  </td>
+                  <td className="py-1.5 px-2 font-mono font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                    {t.billNo}
+                  </td>
+                  <td className="py-1.5 px-2 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {t.customerName}
+                  </td>
+                  <td className="py-1.5 px-2 text-slate-600 dark:text-slate-300 truncate max-w-xs">
+                    {t.itemsSummary}
+                  </td>
+                  <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    {t.quantity}
+                  </td>
+                  <td className="py-1.5 px-2 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold">
+                      <span className={`w-1.5 h-1.5 rounded-full ${t.statusColor.replace('text-', 'bg-')}`} />
+                      <span className={t.statusColor}>{t.status}</span>
+                    </span>
+                  </td>
+                  <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {t.assignee}
+                  </td>
+                  <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
+                    {t.remark}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {metrics.todayKeyTasks.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-xs text-slate-400">
-                      ไม่มีงานสำคัญค้างในวันนี้
-                    </td>
-                  </tr>
-                ) : (
-                  metrics.todayKeyTasks.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-1.5 px-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {t.time}
-                      </td>
-                      <td className="py-1.5 px-2 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${t.typeBadgeColor}`}>
-                          {t.typeLabel}
-                        </span>
-                      </td>
-                      <td className="py-1.5 px-2 font-mono font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                        {t.billNo}
-                      </td>
-                      <td className="py-1.5 px-2 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {t.customerName}
-                      </td>
-                      <td className="py-1.5 px-2 text-slate-600 dark:text-slate-300 truncate max-w-xs">
-                        {t.itemsSummary}
-                      </td>
-                      <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {t.quantity}
-                      </td>
-                      <td className="py-1.5 px-2 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold">
-                          <span className={`w-1.5 h-1.5 rounded-full ${t.statusColor.replace('text-', 'bg-')}`} />
-                          <span className={t.statusColor}>{t.status}</span>
-                        </span>
-                      </td>
-                      <td className="py-1.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {t.assignee}
-                      </td>
-                      <td className="py-1.5 px-2 text-slate-400 text-[10.5px] truncate max-w-xs">
-                        {t.remark}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </DataTableFrame>
     </div>
   )
 }
