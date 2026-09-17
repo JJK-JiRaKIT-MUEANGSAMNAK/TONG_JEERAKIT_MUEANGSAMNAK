@@ -47,7 +47,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 1. รายรับ */}
         <div className="p-2 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">1. รายรับ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">รายรับ</span>
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
@@ -68,7 +68,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 2. รายจ่าย / เงินคืน */}
         <div className="p-2 bg-rose-50/60 dark:bg-rose-950/30 rounded-2xl border border-rose-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. รายจ่าย / เงินคืน</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">รายจ่าย / เงินคืน</span>
             <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <TrendingDown className="w-3.5 h-3.5" />
             </div>
@@ -87,7 +87,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 3. รายรับสุทธิ */}
         <div className="p-2 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">3. รายรับสุทธิ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">รายรับสุทธิ</span>
             <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <DollarSign className="w-3.5 h-3.5" />
             </div>
@@ -106,7 +106,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 4. ลูกหนี้ค้างชำระ */}
         <div className="p-2 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl border border-amber-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">4. ลูกหนี้ค้างชำระ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">ลูกหนี้ค้างชำระ</span>
             <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
@@ -124,7 +124,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 5. เงินมัดจำ */}
         <div className="p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-500/20 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">5. เงินมัดจำ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">เงินมัดจำ</span>
             <div className="flex items-center gap-1">
               {onRefresh && (
                 <button
@@ -158,7 +158,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 6. ยอดขายสินค้า */}
         <div className="p-2 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">6. ยอดขายสินค้า</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">ยอดขายสินค้า</span>
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <ShoppingCart className="w-3.5 h-3.5" />
             </div>
@@ -177,7 +177,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 7. รายได้จากการเช่า */}
         <div className="p-2 bg-teal-50/60 dark:bg-teal-950/30 rounded-2xl border border-teal-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">7. รายได้จากการเช่า</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">รายได้จากการเช่า</span>
             <div className="w-6 h-6 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
               <Key className="w-3.5 h-3.5" />
             </div>
@@ -196,7 +196,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 8. บิลที่กำลังดำเนินการ */}
         <div className="p-2 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">8. บิลที่กำลังดำเนินการ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">บิลที่กำลังดำเนินการ</span>
             <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <FileText className="w-3.5 h-3.5" />
             </div>
@@ -215,7 +215,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 9. งานเช่าปัจจุบัน */}
         <div className="p-2 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-2xl border border-indigo-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">9. งานเช่าปัจจุบัน</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">งานเช่าปัจจุบัน</span>
             <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Package className="w-3.5 h-3.5" />
             </div>
@@ -234,7 +234,7 @@ export function AssetsTransactionView({ metrics, onRefresh }: ViewProps) {
         {/* 10. งานส่ง / รับคืนวันนี้ */}
         <div className="p-2 bg-cyan-50/60 dark:bg-cyan-950/30 rounded-2xl border border-cyan-500/20 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">10. งานส่ง / รับคืนวันนี้</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">งานส่ง / รับคืนวันนี้</span>
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Truck className="w-3.5 h-3.5" />
             </div>

@@ -34,7 +34,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         {/* 1. การเติบโตของธุรกิจ */}
         <div className="p-2 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">1. การเติบโตของธุรกิจ</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">การเติบโตของธุรกิจ</span>
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
@@ -52,7 +52,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         {/* 2. แนวโน้มรายวัน / รายเดือน */}
         <div className="p-2 bg-rose-50/60 dark:bg-rose-950/30 rounded-2xl border border-rose-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">2. แนวโน้มรายวัน / รายเดือน</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">แนวโน้มรายวัน / รายเดือน</span>
             <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <BarChart3 className="w-3.5 h-3.5" />
             </div>
@@ -73,7 +73,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         {/* 3. สินค้าทำเงินสูงสุด */}
         <div className="p-2 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl border border-amber-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">3. สินค้าทำเงินสูงสุด</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">สินค้าทำเงินสูงสุด</span>
             <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Star className="w-3.5 h-3.5" />
             </div>
@@ -93,7 +93,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         {/* 4. ลูกค้าหลัก */}
         <div className="p-2 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">4. ลูกค้าหลัก</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">ลูกค้าหลัก</span>
             <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Users className="w-3.5 h-3.5" />
             </div>
@@ -114,7 +114,7 @@ export function BusinessAnalyticsView({ metrics, onRefresh }: ViewProps) {
         {/* 5. ช่องทางรับเงิน */}
         <div className="p-2 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-500/20 shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">5. ช่องทางรับเงิน</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">ช่องทางรับเงิน</span>
             <div className="flex items-center gap-1">
               {onRefresh && (
                 <button

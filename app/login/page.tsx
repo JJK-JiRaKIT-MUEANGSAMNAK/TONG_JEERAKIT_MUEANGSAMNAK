@@ -43,7 +43,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#E3E3E3] text-slate-100 flex items-center justify-center p-4 overflow-y-auto z-50">
+    <div className="fixed inset-0 bg-[#E3E3E3] dark:bg-slate-950 text-slate-100 flex items-center justify-center p-4 overflow-y-auto z-50">
       <div className="w-full max-w-md bg-slate-900/85 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
         <div className="text-center mb-6">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white mx-auto shadow-lg shadow-blue-500/25 mb-3 overflow-hidden">
@@ -150,7 +150,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="fixed inset-0 bg-[#E3E3E3] flex items-center justify-center text-slate-700 text-xs font-semibold">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="fixed inset-0 bg-[#E3E3E3] dark:bg-slate-950 flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs font-semibold">กำลังโหลด...</div>}>
       <LoginForm />
     </Suspense>
   )

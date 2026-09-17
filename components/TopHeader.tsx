@@ -92,10 +92,10 @@ function TopHeaderContent() {
   if (isAuthRoute) return null
 
   return (
-    <header className="hidden xl:flex items-center justify-between px-6 py-3 bg-[#E3E3E3] border-b border-slate-300 shadow-sm shrink-0">
+    <header className="hidden xl:flex items-center justify-between px-6 py-3 bg-[#E3E3E3] dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 shadow-sm shrink-0">
       {/* Left: Dynamic Menu / Page Title */}
       <div className="flex items-center min-w-0">
-        <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">
+        <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate">
           {pageName}
         </h1>
       </div>
