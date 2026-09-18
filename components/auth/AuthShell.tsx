@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
+import { PinLockScreen } from '@/components/auth/PinLockScreen'
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -16,6 +17,21 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { session, loading, user } = useAuth()
+  const [isPinUnlocked, setIsPinUnlocked] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    if (user?.id) {
+      const unlocked = sessionStorage.getItem(`rental_pos_unlocked_${user.id}`) === 'true'
+      setIsPinUnlocked(unlocked)
+    } else {
+      setIsPinUnlocked(false)
+    }
+  }, [user?.id])
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname?.startsWith(route + '/')
@@ -45,9 +61,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   // Protected route: show loading indicator while checking session
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
+      <div className="fixed inset-0 bg-slate-100 dark:bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
         <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-        <span className="text-xs text-slate-400 font-medium tracking-wide">
+        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium tracking-wide">
           กำลังตรวจสอบสิทธิ์เข้าใช้งาน...
         </span>
       </div>
@@ -57,12 +73,26 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   // Protected route: if unauthenticated, show redirecting state (do not render protected content)
   if (!session) {
     return (
-      <div className="fixed inset-0 bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
+      <div className="fixed inset-0 bg-slate-100 dark:bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
         <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-        <span className="text-xs text-slate-400 font-medium tracking-wide">
+        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium tracking-wide">
           กำลังพาคุณไปหน้าเข้าสู่ระบบ...
         </span>
       </div>
+    )
+  }
+
+  // Protected route: authenticated user must pass PIN lock screen first
+  if (session && user && !isPinUnlocked && isClient) {
+    return (
+      <PinLockScreen
+        onUnlockSuccess={() => {
+          if (user?.id) {
+            sessionStorage.setItem(`rental_pos_unlocked_${user.id}`, 'true')
+          }
+          setIsPinUnlocked(true)
+        }}
+      />
     )
   }
 

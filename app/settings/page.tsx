@@ -298,15 +298,44 @@ export default function SettingsPage() {
   const mfaFactors: any[] = []
 
   const lock = () => {
-    showToast('ล็อกหน้าจอ', 'หน้าจอถูกล็อกแล้ว', 'INFO')
+    if (typeof window !== 'undefined') {
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('rental_pos_unlocked_')) {
+          sessionStorage.removeItem(key)
+        }
+      })
+      window.location.reload()
+    }
   }
 
   const logout = async (_scope?: string) => {
-    showToast('ออกจากระบบ', 'ออกจากระบบเรียบร้อยแล้ว', 'INFO')
+    if (typeof window !== 'undefined') {
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('rental_pos_unlocked_')) {
+          sessionStorage.removeItem(key)
+        }
+      })
+      window.location.href = '/login'
+    }
   }
 
-  const changePin = async (_oldPin: string, _newPin: string) => {}
-  const resetPinWithPassword = async (_pwd: string, _newPin: string) => {}
+  const changePin = async (oldPin: string, newPin: string) => {
+    if (typeof window !== 'undefined') {
+      const userKey = `rental_pos_pin_${user?.id || 'default'}`
+      const saved = localStorage.getItem(userKey)
+      if (saved && saved !== oldPin) {
+        throw new Error('PIN เดิมไม่ถูกต้อง')
+      }
+      localStorage.setItem(userKey, newPin)
+    }
+  }
+
+  const resetPinWithPassword = async (_pwd: string, newPin: string) => {
+    if (typeof window !== 'undefined') {
+      const userKey = `rental_pos_pin_${user?.id || 'default'}`
+      localStorage.setItem(userKey, newPin)
+    }
+  }
   const changePassword = async (_pwd: string) => {}
   const enrollMfaTotp = async () => ({ factorId: '', secret: '', qrCode: '', uri: '' })
   const verifyMfaEnrollment = async (_factorId: string, _code: string) => {}

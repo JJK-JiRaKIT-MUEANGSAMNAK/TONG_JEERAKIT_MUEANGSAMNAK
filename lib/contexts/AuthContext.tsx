@@ -35,11 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = useCallback(async (authUser: User, currentSession: Session | null) => {
     try {
-      const { data: profile } = await supabase
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .maybeSingle()
+
+      const timeoutPromise = new Promise<{ data: null }>((resolve) =>
+        setTimeout(() => resolve({ data: null }), 3000)
+      )
+
+      const result = await Promise.race([profilePromise, timeoutPromise])
+      const profile = result?.data ?? null
 
       const currentUser = buildCurrentUser(authUser, profile)
       setUser(currentUser)
@@ -82,8 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
 
-    // Initial session load
+    // Initial session load with safety timer
     const initAuth = async () => {
+      const safetyTimer = setTimeout(() => {
+        if (isMounted) setLoading(false)
+      }, 4000)
+
       try {
         const { data } = await supabase.auth.getSession()
         if (!isMounted) return
@@ -109,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(null)
         }
       } finally {
+        clearTimeout(safetyTimer)
         if (isMounted) {
           setLoading(false)
         }

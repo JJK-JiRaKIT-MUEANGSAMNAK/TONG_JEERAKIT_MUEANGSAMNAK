@@ -81,39 +81,39 @@ export function ProductGrid({
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 max-w-full space-y-2 overflow-hidden">
-      {/* Header controls: Mode Switcher + Search & Category Dropdown */}
-      <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 min-w-0 max-w-full">
-        {/* Mode Toggle: [ เช่า ] [ ขาย ] */}
-        <div className="flex items-center h-9 p-1 gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+      {/* Header controls: Mode Switcher -> Search -> Category Dropdown */}
+      <div className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 min-w-0 max-w-full flex-nowrap">
+        {/* Mode Toggle: [ เช่าสินค้า ] [ ขายสินค้า ] */}
+        <div className="flex items-center h-9 p-0.5 sm:p-1 gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 w-auto">
           <button
             type="button"
             onClick={() => handleSetMode('RENT')}
-            className={`h-7 px-3.5 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`h-7 w-auto px-2 sm:px-3 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
               posMode === 'RENT'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             <span>เช่าสินค้า</span>
           </button>
           <button
             type="button"
             onClick={() => handleSetMode('SALE')}
-            className={`h-7 px-3.5 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`h-7 w-auto px-2 sm:px-3 py-0 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
               posMode === 'SALE'
                 ? 'bg-violet-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <ShoppingCart className="w-3.5 h-3.5" />
+            <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
             <span>ขายสินค้า</span>
           </button>
         </div>
 
         {/* Search */}
-        <div className="relative flex-1 min-w-[140px] max-w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="relative flex-1 min-w-0 max-w-full">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 shrink-0" />
           <input
             type="text"
             placeholder={posMode === 'RENT' ? 'ค้นหาสินค้าสำหรับเช่า...' : 'ค้นหาสินค้าสำหรับขาย...'}
@@ -124,12 +124,13 @@ export function ProductGrid({
         </div>
 
         {/* Category Dropdown */}
-        <div className="w-full sm:w-44 min-w-0 max-w-full sm:shrink-0 flex-1 sm:flex-initial">
+        <div className="w-28 sm:w-36 md:w-40 lg:w-44 shrink-0 min-w-0">
           <CustomSelect
             value={selectedCategory}
             onChange={(val) => setSelectedCategory(String(val))}
             options={categoryOptions}
             placeholder="ทุกหมวดหมู่"
+            buttonClassName="h-9 px-2 sm:px-2.5 py-0 text-xs rounded-xl"
           />
         </div>
       </div>

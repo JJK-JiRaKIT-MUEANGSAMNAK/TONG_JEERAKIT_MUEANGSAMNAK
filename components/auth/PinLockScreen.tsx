@@ -3,22 +3,71 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Lock, Delete, LogOut, KeyRound, AlertCircle, ShieldAlert, Eye, EyeOff, X } from 'lucide-react'
 import { ModalPortal } from '@/components/common/ModalPortal'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { loginWithUsername } from '@/app/actions/auth'
+import { AuthLayout } from '@/components/auth/AuthLayout'
 
-const getPinLockoutDuration = (_level: number) => 0
-const getStoredLockoutState = () => ({ failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 })
-const saveStoredLockoutState = (_state: any) => {}
-const clearStoredLockoutState = () => {}
+const LOCKOUT_KEY = 'rental_pos_pin_lockout'
+
+const getPinLockoutDuration = (level: number) => {
+  if (level === 0) return 30
+  if (level === 1) return 60
+  return 300
+}
+
+const getStoredLockoutState = (): { failedAttempts: number; lockoutLevel: number; lockUntil: number } => {
+  if (typeof window === 'undefined') return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
+  try {
+    const raw = sessionStorage.getItem(LOCKOUT_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
+}
+
+const saveStoredLockoutState = (state: { failedAttempts: number; lockoutLevel: number; lockUntil: number }) => {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify(state))
+  } catch {}
+}
+
+const clearStoredLockoutState = () => {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.removeItem(LOCKOUT_KEY)
+  } catch {}
+}
 
 interface PinLockScreenProps {
   onUnlockSuccess?: () => void
 }
 
 export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
-  const user = null as any
+  const { user, signOut: logout } = useAuth()
   const branding = null as any
-  const logout = () => {}
-  const unlockWithPin = async (_p: string) => true
-  const resetPinWithPassword = async (_pwd: string, _np: string) => true
+
+  const unlockWithPin = async (enteredPin: string): Promise<boolean> => {
+    if (typeof window === 'undefined') return true
+    const userKey = `rental_pos_pin_${user?.id || 'default'}`
+    const savedPin = localStorage.getItem(userKey)
+    if (!savedPin) {
+      localStorage.setItem(userKey, enteredPin)
+      return true
+    }
+    return enteredPin === savedPin
+  }
+
+  const resetPinWithPassword = async (pwd: string, np: string): Promise<boolean> => {
+    if (!user?.username) return false
+    const res = await loginWithUsername({ username: user.username, password: pwd })
+    if (res.success) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`rental_pos_pin_${user.id}`, np)
+      }
+      return true
+    }
+    return false
+  }
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -226,60 +275,41 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
   const activeBg = !bgLoadError && branding?.authBackgroundImageUrl ? branding.authBackgroundImageUrl : null
 
   return (
-    <div className="fixed inset-0 w-screen h-[100dvh] min-h-[100dvh] z-50 bg-[#07111f] flex flex-col items-center justify-between p-4 sm:p-6 select-none animate-in fade-in duration-300 overflow-hidden">
-      {/* Background Image with Dark Overlay */}
-      {activeBg && (
+    <>
+      <AuthLayout>
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
-          style={{ backgroundImage: `url(${activeBg})` }}
+          className={`w-full max-w-sm flex flex-col items-center justify-between py-2 transition-all duration-200 ${
+            showForgotPinModal ? 'pointer-events-none select-none opacity-40 filter blur-xs' : ''
+          }`}
+          aria-hidden={showForgotPinModal ? true : undefined}
         >
-          <div className="absolute inset-0 bg-[#07111f]/85 backdrop-blur-xs" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={activeBg}
-            alt=""
-            className="hidden"
-            onError={() => setBgLoadError(true)}
-          />
-        </div>
-      )}
+          {/* Top Header info */}
+          <div className="w-full flex items-center justify-between pb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xs font-bold">
+                <Lock className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">หน้าจอล็อก (App Lock)</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">กรุณากรอก PIN 6 หลักเพื่อปลดล็อก</span>
+              </div>
+            </div>
 
-      {/* Main App Lock Screen Content Wrapper (Dimmed and non-interactive when modal is open) */}
-      <div
-        className={`w-full h-full flex flex-col items-center justify-between relative z-10 transition-all duration-200 ${
-          showForgotPinModal ? 'pointer-events-none select-none opacity-40 filter blur-xs' : ''
-        }`}
-        aria-hidden={showForgotPinModal ? true : undefined}
-      >
-        {/* Top Header info */}
-        <div className="w-full max-w-sm flex items-center justify-between pt-4 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 text-xs font-bold">
-              <Lock className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-slate-200 block">หน้าจอล็อก (App Lock)</span>
-              <span className="text-[10px] text-slate-400">กรุณากรอก PIN 6 หลักเพื่อปลดล็อก</span>
-            </div>
+            <button
+              onClick={handleLogout}
+              tabIndex={showForgotPinModal ? -1 : 0}
+              disabled={showForgotPinModal}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-red-50 dark:hover:bg-red-950/60 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              title="ออกจากระบบ"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>ออกจากระบบ</span>
+            </button>
           </div>
 
-          <button
-            onClick={handleLogout}
-            tabIndex={showForgotPinModal ? -1 : 0}
-            disabled={showForgotPinModal}
-            className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-red-950/60 text-slate-400 hover:text-red-400 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-            title="ออกจากระบบ"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>ออกจากระบบ</span>
-          </button>
-        </div>
-
-        {/* Center PIN Area */}
-        <div className="flex flex-col items-center justify-center max-w-xs w-full my-auto space-y-6">
           {/* User Identity Display */}
-          <div className="text-center space-y-1.5">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-xl font-black shadow-xl shadow-blue-500/20 mx-auto overflow-hidden">
+          <div className="text-center space-y-1 mb-2 shrink-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-blue-400/30 flex items-center justify-center text-white text-xl font-black shadow-xl shadow-blue-500/20 mx-auto overflow-hidden">
               {user?.avatarUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={user.avatarUrl} alt={user.fullName || 'User Avatar'} className="w-full h-full object-cover" />
@@ -287,14 +317,14 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                 user?.firstName?.[0] || 'ผ'
               )}
             </div>
-            <h2 className="text-lg font-black text-white">{user?.fullName || 'ผู้จัดการ เจ้าของกิจการ'}</h2>
-            <p className="text-xs text-slate-400">@{user?.username || 'owner'}</p>
+            <h2 className="text-[26px] font-bold text-slate-900 dark:text-white tracking-tight">{user?.fullName || 'ผู้จัดการ เจ้าของกิจการ'}</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">@{user?.username || 'owner'}</p>
           </div>
 
           {/* 6 PIN Display / Dots (with Visibility Toggle) */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center mb-2">
             <div
-              className={`flex items-center justify-center gap-3 py-2 ${
+              className={`flex items-center justify-center gap-2.5 sm:gap-3 py-1 ${
                 isShaking ? 'animate-shake' : ''
               }`}
             >
@@ -304,15 +334,15 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                 return (
                   <div
                     key={index}
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
                       isFilled
-                        ? 'bg-blue-500/20 border-2 border-blue-500 text-white font-mono font-black text-sm shadow-md shadow-blue-500/30'
-                        : 'bg-slate-800/80 border-2 border-slate-700 text-transparent'
+                        ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600 dark:text-white font-mono font-black text-sm shadow-md shadow-blue-500/30'
+                        : 'bg-slate-100 dark:bg-slate-800/80 border-2 border-slate-300 dark:border-slate-700 text-transparent'
                     }`}
                   >
                     {isFilled ? (showPin ? char : '•') : ''}
                   </div>
-                );
+                )
               })}
             </div>
             <button
@@ -320,7 +350,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               tabIndex={showForgotPinModal ? -1 : 0}
               disabled={showForgotPinModal}
               onClick={() => setShowPin(!showPin)}
-              className="absolute -right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1.5 focus:outline-none transition-colors cursor-pointer disabled:opacity-50"
+              className="absolute -right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 focus:outline-none transition-colors cursor-pointer disabled:opacity-50"
               aria-label={showPin ? "ซ่อน PIN" : "แสดง PIN"}
             >
               {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -328,24 +358,24 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
           </div>
 
           {/* Error / Lockout Message */}
-          <div className="min-h-[28px] text-center">
+          <div className="min-h-[26px] text-center mb-2">
             {lockoutSeconds > 0 ? (
-              <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-bold bg-amber-950/40 border border-amber-900 px-3 py-1 rounded-xl">
+              <div className="flex items-center justify-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-900 px-3 py-1 rounded-xl">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>ระงับการใส่ PIN ชั่วคราว: {lockoutSeconds} วินาที</span>
               </div>
             ) : errorMsg ? (
-              <div className="flex items-center justify-center gap-1.5 text-xs text-rose-400 font-bold bg-rose-950/40 border border-rose-900 px-3 py-1 rounded-xl animate-in fade-in">
+              <div className="flex items-center justify-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 px-3 py-1 rounded-xl animate-in fade-in">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             ) : (
-              <p className="text-[11px] text-slate-500">ใส่รหัส PIN 6 หลักเพื่อเข้าใช้งาน</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">ใส่รหัส PIN 6 หลักเพื่อเข้าใช้งาน</p>
             )}
           </div>
 
           {/* Numeric Keypad (1-9, 0) */}
-          <div className="grid grid-cols-3 gap-3.5 w-full max-w-[280px]">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 w-full max-w-[280px]">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <button
                 key={num}
@@ -354,7 +384,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                 disabled={lockoutSeconds > 0 || isSubmitting || showForgotPinModal}
                 onClick={() => handleDigitPress(num.toString())}
                 aria-label={`ตัวเลข ${num}`}
-                className="aspect-square w-16 h-16 rounded-full bg-slate-800/80 hover:bg-slate-700 active:bg-blue-600 border border-slate-700/80 text-white font-black text-2xl flex items-center justify-center mx-auto transition-all shadow-md active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none"
+                className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-blue-600 active:text-white border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white font-black text-xl sm:text-2xl flex items-center justify-center mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none"
               >
                 {num}
               </button>
@@ -366,7 +396,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               tabIndex={showForgotPinModal ? -1 : 0}
               disabled={lockoutSeconds > 0 || isSubmitting || pin.length === 0 || showForgotPinModal}
               onClick={handleClear}
-              className="aspect-square w-16 h-16 rounded-full text-slate-400 hover:text-slate-200 active:bg-slate-800 text-xs font-bold flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
+              className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 active:bg-slate-200 dark:active:bg-slate-800 text-xs font-bold flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
             >
               ล้าง
             </button>
@@ -377,7 +407,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               disabled={lockoutSeconds > 0 || isSubmitting || showForgotPinModal}
               onClick={() => handleDigitPress('0')}
               aria-label="ตัวเลข 0"
-              className="aspect-square w-16 h-16 rounded-full bg-slate-800/80 hover:bg-slate-700 active:bg-blue-600 border border-slate-700/80 text-white font-black text-2xl flex items-center justify-center mx-auto transition-all shadow-md active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none"
+              className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-blue-600 active:text-white border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white font-black text-xl sm:text-2xl flex items-center justify-center mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none"
             >
               0
             </button>
@@ -388,9 +418,9 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               disabled={lockoutSeconds > 0 || isSubmitting || pin.length === 0 || showForgotPinModal}
               onClick={handleDelete}
               aria-label="ลบตัวเลข"
-              className="aspect-square w-16 h-16 rounded-full text-slate-400 hover:text-slate-200 active:bg-slate-800 flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
+              className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 active:bg-slate-200 dark:active:bg-slate-800 flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
             >
-              <Delete className="w-6 h-6" />
+              <Delete className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
@@ -400,20 +430,20 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
             tabIndex={showForgotPinModal ? -1 : 0}
             disabled={showForgotPinModal}
             onClick={() => setShowForgotPinModal(true)}
-            className="text-xs text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer pt-2 flex items-center gap-1.5 disabled:opacity-50"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-bold underline cursor-pointer pt-2 sm:pt-3 flex items-center gap-1.5 disabled:opacity-50"
           >
             <KeyRound className="w-3.5 h-3.5" />
             <span>ลืมรหัส PIN? ปลดล็อกด้วยรหัสผ่าน</span>
           </button>
-        </div>
 
-        {/* Footer info */}
-        <div className="text-center pb-2 shrink-0">
-          <p className="text-[10px] text-slate-500">
-            Rental POS &bull; เซสชันบัญชีผู้ใช้ปลอดภัย &bull; ป้องกันการเข้าถึงโดยไม่ได้รับอนุญาต
-          </p>
+          {/* Footer info */}
+          <div className="text-center pt-2 sm:pt-3 pb-1 shrink-0">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Rental POS &bull; เซสชันบัญชีผู้ใช้ปลอดภัย &bull; ป้องกันการเข้าถึงโดยไม่ได้รับอนุญาต
+            </p>
+          </div>
         </div>
-      </div>
+      </AuthLayout>
 
       {/* Forgot PIN Re-auth Modal Portaled on Top Layer */}
       {showForgotPinModal && (
@@ -428,17 +458,17 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                 setForgotPinError(null)
               }
             }}
-            className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+            className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
           >
             <div
               onClick={(e) => e.stopPropagation()}
               style={{ width: 'min(560px, calc(100vw - 32px))' }}
-              className="w-full max-w-[560px] max-h-[calc(100dvh-32px)] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/90 flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150 my-auto"
+              className="w-full max-w-[560px] max-h-[calc(100dvh-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-3xl shadow-2xl shadow-black/30 dark:shadow-black/90 flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150 my-auto text-slate-900 dark:text-slate-100"
             >
               {/* Modal Header */}
-              <div className="shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/90">
-                <h3 id="forgot-pin-modal-title" className="text-base sm:text-lg font-black text-white flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <div className="shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90">
+                <h3 id="forgot-pin-modal-title" className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 dark:text-blue-400">
                     <KeyRound className="w-4 h-4" />
                   </div>
                   <span>ยืนยันตัวตนเพื่อตั้ง PIN ใหม่</span>
@@ -450,7 +480,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                     setShowForgotPinModal(false)
                     setForgotPinError(null)
                   }}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
                   aria-label="ปิดหน้าต่าง"
                 >
                   <X className="w-5 h-5" />
@@ -460,7 +490,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               {/* Modal Body & Form */}
               <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4">
                 {forgotPinError && (
-                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center gap-2.5 text-rose-400 text-xs font-semibold animate-in fade-in">
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center gap-2.5 text-rose-500 dark:text-rose-400 text-xs font-semibold animate-in fade-in">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{forgotPinError}</span>
                   </div>
@@ -469,7 +499,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                 <form id="reset-pin-form" onSubmit={handleResetPinSubmit} className="space-y-4 text-xs">
                   {/* Account Password Field */}
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1.5">
+                    <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">
                       รหัสผ่าน Rental POS ของคุณ (@{user?.username || 'user'})
                     </label>
                     <div className="relative">
@@ -480,13 +510,13 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                         placeholder="กรอกรหัสผ่านเพื่อยืนยันสิทธิ์"
                         autoFocus
                         disabled={isResettingPin}
-                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                       />
                       <button
                         type="button"
                         tabIndex={-1}
                         onClick={() => setShowModalPassword(!showModalPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
                         aria-label={showModalPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
                       >
                         {showModalPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -497,7 +527,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                   {/* New PIN & Confirm PIN Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-slate-300 font-bold mb-1.5">PIN 6 หลักใหม่</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">PIN 6 หลักใหม่</label>
                       <div className="relative">
                         <input
                           type={showModalNewPin ? "text" : "password"}
@@ -506,13 +536,13 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                           onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ''))}
                           placeholder={showModalNewPin ? "000000" : "••••••"}
                           disabled={isResettingPin}
-                          className="w-full pl-3.5 pr-8 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white text-center font-mono tracking-widest text-sm sm:text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                          className="w-full pl-3.5 pr-8 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-white text-center font-mono tracking-widest text-sm sm:text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                         />
                         <button
                           type="button"
                           tabIndex={-1}
                           onClick={() => setShowModalNewPin(!showModalNewPin)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
                           aria-label={showModalNewPin ? "ซ่อน PIN" : "แสดง PIN"}
                         >
                           {showModalNewPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -521,7 +551,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                     </div>
 
                     <div>
-                      <label className="block text-slate-300 font-bold mb-1.5">ยืนยัน PIN ใหม่</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">ยืนยัน PIN ใหม่</label>
                       <div className="relative">
                         <input
                           type={showModalConfirmPin ? "text" : "password"}
@@ -530,13 +560,13 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                           onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ''))}
                           placeholder={showModalConfirmPin ? "000000" : "••••••"}
                           disabled={isResettingPin}
-                          className="w-full pl-3.5 pr-8 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white text-center font-mono tracking-widest text-sm sm:text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                          className="w-full pl-3.5 pr-8 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-white text-center font-mono tracking-widest text-sm sm:text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                         />
                         <button
                           type="button"
                           tabIndex={-1}
                           onClick={() => setShowModalConfirmPin(!showModalConfirmPin)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 focus:outline-none transition-colors cursor-pointer"
                           aria-label={showModalConfirmPin ? "ซ่อน PIN" : "แสดง PIN"}
                         >
                           {showModalConfirmPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -548,7 +578,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
               </div>
 
               {/* Modal Footer */}
-              <div className="shrink-0 px-5 sm:px-6 py-3.5 bg-slate-950/60 border-t border-slate-800 flex items-center justify-end gap-2.5">
+              <div className="shrink-0 px-5 sm:px-6 py-3.5 bg-slate-100 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   disabled={isResettingPin}
@@ -556,7 +586,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
                     setShowForgotPinModal(false)
                     setForgotPinError(null)
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
                   ยกเลิก
                 </button>
@@ -573,6 +603,6 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
           </div>
         </ModalPortal>
       )}
-    </div>
+    </>
   )
 }

@@ -92,29 +92,25 @@ function TopHeaderContent() {
   if (isAuthRoute) return null
 
   return (
-    <header className="hidden xl:flex items-center justify-between px-6 py-3 bg-[#E3E3E3] dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 shadow-sm shrink-0">
+    <header className="hidden xl:flex items-center justify-between px-6 py-3 bg-[#E3E3E3] dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 shadow-sm shrink-0 relative min-h-[56px]">
       {/* Left: Dynamic Menu / Page Title */}
-      <div className="flex items-center min-w-0">
+      <div className="flex items-center min-w-0 z-10">
         <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate">
           {pageName}
         </h1>
       </div>
 
-      {/* Right: Date/Time Badge (Positioned where store owner text was) + Theme Switcher */}
-      <div className="flex items-center gap-4 shrink-0">
-        {/* Date & Time Badge */}
-        <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs text-slate-300 font-semibold shadow-xs">
-          <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
+      {/* Right: Actions (Date & Time + Notification Bell & Quick Action Launcher) */}
+      <div className="flex items-center gap-3 shrink-0 z-10">
+        <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 font-semibold shadow-xs">
+          <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{currentDateStr || 'กำลังโหลด...'}</span>
-          <span className="text-slate-600">|</span>
-          <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-          <span className="font-mono text-slate-100 font-bold">{currentTimeStr}</span>
+          <span className="text-slate-300 dark:text-slate-600">|</span>
+          <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+          <span className="font-mono text-slate-900 dark:text-slate-100 font-bold">{currentTimeStr}</span>
         </div>
 
-        {/* Notification Bell */}
         <NotificationBell />
-
-        {/* Quick Action Launcher */}
         <QuickActionLauncher />
       </div>
     </header>

@@ -22,6 +22,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  Clock,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
 import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
@@ -63,31 +64,67 @@ const PAGE_NAME_MAP: Record<string, string> = {
   '/owner-permissions': 'จัดการสิทธิ์ & รายงาน',
 }
 
-function getPageName(pathname: string, searchParams?: { get: (k: string) => string | null } | null): string {
+function getPageMeta(pathname: string, searchParams?: { get: (k: string) => string | null } | null): {
+  name: string
+  icon: React.ComponentType<{ className?: string }>
+  colorClass: string
+  dotClass: string
+} {
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     const view = searchParams?.get('view')
-    if (view === 'assets') return 'ธุรกรรมสินทรัพย์'
-    if (view === 'stock') return 'บริหารงานสต็อก'
-    if (view === 'business') return 'วิเคราะห์ธุรกิจ'
-    return 'แดชบอร์ด'
+    if (view === 'assets') return { name: 'ธุรกรรมสินทรัพย์', icon: LayoutDashboard, colorClass: 'text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
+    if (view === 'stock') return { name: 'บริหารงานสต็อก', icon: Package, colorClass: 'text-amber-700 dark:text-amber-400', dotClass: 'bg-amber-500' }
+    if (view === 'business') return { name: 'วิเคราะห์ธุรกิจ', icon: BarChart3, colorClass: 'text-indigo-700 dark:text-indigo-400', dotClass: 'bg-indigo-500' }
+    return { name: 'แดชบอร์ด', icon: LayoutDashboard, colorClass: 'text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
   }
 
   if (pathname === '/reports' || pathname.startsWith('/reports/')) {
     const view = searchParams?.get('view')
-    if (view === 'finance') return 'การเงิน'
-    if (view === 'sales-rental') return 'ขาย เช่า และเอกสาร'
-    if (view === 'operations') return 'งานปฏิบัติการ'
-    if (view === 'stock') return 'สต็อกและสินค้า'
-    if (view === 'business') return 'วิเคราะห์ธุรกิจ'
-    return 'รายงานสรุป'
+    if (view === 'finance') return { name: 'การเงิน', icon: Wallet, colorClass: 'text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
+    if (view === 'sales-rental') return { name: 'ขาย เช่า และเอกสาร', icon: Receipt, colorClass: 'text-blue-700 dark:text-blue-400', dotClass: 'bg-blue-500' }
+    if (view === 'operations') return { name: 'งานปฏิบัติการ', icon: FileCheck2, colorClass: 'text-sky-700 dark:text-sky-400', dotClass: 'bg-sky-500' }
+    if (view === 'stock') return { name: 'สต็อกและสินค้า', icon: Package, colorClass: 'text-amber-700 dark:text-amber-400', dotClass: 'bg-amber-500' }
+    if (view === 'business') return { name: 'วิเคราะห์ธุรกิจ', icon: BarChart3, colorClass: 'text-indigo-700 dark:text-indigo-400', dotClass: 'bg-indigo-500' }
+    return { name: 'รายงานสรุป', icon: BarChart3, colorClass: 'text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
+  }
+
+  if (pathname === '/finance' || pathname.startsWith('/finance/')) {
+    return { name: 'การเงิน', icon: Wallet, colorClass: 'text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
+  }
+  if (pathname === '/pos' || pathname.startsWith('/pos/')) {
+    return { name: 'หน้าร้าน POS', icon: ShoppingBag, colorClass: 'text-blue-700 dark:text-blue-400', dotClass: 'bg-blue-500' }
+  }
+  if (pathname === '/bills' || pathname.startsWith('/bills/')) {
+    return { name: 'จัดการบิลเช่า', icon: Receipt, colorClass: 'text-indigo-700 dark:text-indigo-400', dotClass: 'bg-indigo-500' }
+  }
+  if (pathname === '/documents' || pathname.startsWith('/documents/')) {
+    return { name: 'จัดการเอกสาร', icon: FileCheck2, colorClass: 'text-sky-700 dark:text-sky-400', dotClass: 'bg-sky-500' }
+  }
+  if (pathname === '/appointments' || pathname.startsWith('/appointments/')) {
+    return { name: 'ปฏิทินนัดหมาย', icon: Calendar, colorClass: 'text-teal-700 dark:text-teal-400', dotClass: 'bg-teal-500' }
+  }
+  if (pathname === '/customers' || pathname.startsWith('/customers/')) {
+    return { name: 'ข้อมูลลูกค้า', icon: Users, colorClass: 'text-purple-700 dark:text-purple-400', dotClass: 'bg-purple-500' }
+  }
+  if (pathname === '/products' || pathname.startsWith('/products/')) {
+    return { name: 'สินค้า / สต็อก', icon: Package, colorClass: 'text-amber-700 dark:text-amber-400', dotClass: 'bg-amber-500' }
+  }
+  if (pathname === '/quotations' || pathname.startsWith('/quotations/')) {
+    return { name: 'ใบเสนอราคา', icon: FileText, colorClass: 'text-violet-700 dark:text-violet-400', dotClass: 'bg-violet-500' }
+  }
+  if (pathname === '/settings' || pathname.startsWith('/settings/')) {
+    return { name: 'ตั้งค่าระบบ', icon: Settings, colorClass: 'text-slate-700 dark:text-slate-300', dotClass: 'bg-slate-500' }
+  }
+  if (pathname === '/owner-permissions' || pathname.startsWith('/owner-permissions/')) {
+    return { name: 'จัดการสิทธิ์ & รายงาน', icon: ShieldCheck, colorClass: 'text-amber-700 dark:text-amber-400', dotClass: 'bg-amber-500' }
   }
 
   for (const [prefix, name] of Object.entries(PAGE_NAME_MAP)) {
     if (pathname === prefix || pathname.startsWith(prefix + '/')) {
-      return name
+      return { name, icon: Store, colorClass: 'text-slate-700 dark:text-slate-300', dotClass: 'bg-emerald-500' }
     }
   }
-  return 'ระบบ'
+  return { name: 'ระบบ', icon: Store, colorClass: 'text-slate-700 dark:text-slate-300', dotClass: 'bg-emerald-500' }
 }
 
 function SidebarContent() {
@@ -101,8 +138,37 @@ function SidebarContent() {
   const { user, signOut } = useAuth()
 
   const logoUrl = ''
-  const systemDisplayName = 'JJK_JeeRaKiT'
-  const pageName = getPageName(pathname || '', searchParams)
+  const { name: pageName, icon: PageIcon, colorClass, dotClass } = getPageMeta(pathname || '', searchParams)
+  const [currentDateStr, setCurrentDateStr] = useState('')
+  const [currentTimeStr, setCurrentTimeStr] = useState('')
+
+  // Live Date & Time
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date()
+      const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
+      const monthNames = [
+        'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+        'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+      ]
+
+      const dayName = dayNames[now.getDay()]
+      const dateNum = now.getDate()
+      const monthName = monthNames[now.getMonth()]
+      const yearBE = now.getFullYear() + 543
+
+      setCurrentDateStr(`วัน${dayName}ที่ ${dateNum} ${monthName} ${yearBE}`)
+
+      const hours = String(now.getHours()).padStart(2, '0')
+      const minutes = String(now.getMinutes()).padStart(2, '0')
+      const seconds = String(now.getSeconds()).padStart(2, '0')
+      setCurrentTimeStr(`${hours}:${minutes}:${seconds} น.`)
+    }
+
+    updateDateTime()
+    const timer = setInterval(updateDateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Keep dashboard expanded if user navigates to /dashboard
   useEffect(() => {
@@ -135,40 +201,35 @@ function SidebarContent() {
   return (
     <>
       {/* Mobile & Tablet Header Bar (Visible on screens < xl) */}
-      <header className="xl:hidden sticky top-0 z-30 bg-[#E3E3E3] dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-300 dark:border-slate-800 shadow-md shrink-0 relative flex items-center justify-between min-h-[56px]">
+      <header className="xl:hidden sticky top-0 z-30 bg-[#E3E3E3] dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-300 dark:border-slate-800 shadow-sm shrink-0 relative flex items-center justify-between min-h-[56px] gap-2">
         {/* Left: Hamburger menu toggle button + Current menu name */}
-        <div className="flex items-center gap-2 z-10 shrink-0 max-w-[40%] min-w-0">
+        <div className="flex items-center gap-2 z-10 shrink-0 min-w-0">
           <button
             onClick={() => setIsMobileOpen((prev) => !prev)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0"
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 cursor-pointer shadow-xs"
             aria-label="เปิด/ปิด เมนู"
           >
-            {isMobileOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
+            {isMobileOpen ? <X className="w-5 h-5 text-emerald-500" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate" title={pageName}>
-            {pageName}
-          </span>
-        </div>
-
-        {/* Center: True Center Logo + System Name */}
-        <div className="absolute inset-x-16 sm:inset-x-24 inset-y-0 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-2 max-w-full min-w-0 pointer-events-auto">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xs shadow-sm overflow-hidden shrink-0">
-              {logoUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <Store className="w-4 h-4" />
-              )}
-            </div>
-            <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate tracking-tight">
-              {systemDisplayName}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 shadow-xs min-w-0">
+            <PageIcon className={`w-4 h-4 shrink-0 ${colorClass}`} />
+            <span className={`font-bold text-xs sm:text-sm truncate ${colorClass}`} title={pageName}>
+              {pageName}
             </span>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
           </div>
         </div>
 
-        {/* Right: Actions (Notification Bell & Quick Action Launcher) */}
+        {/* Right: Actions (Date & Time Bar + Notification Bell & Quick Action Launcher) */}
         <div className="flex items-center gap-2 z-10 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 font-semibold shadow-xs">
+            <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 hidden sm:block" />
+            <span className="hidden md:inline">{currentDateStr || 'กำลังโหลด...'}</span>
+            <span className="text-slate-300 dark:text-slate-600 hidden md:inline">|</span>
+            <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span className="font-mono text-slate-900 dark:text-slate-100 font-bold shrink-0">{currentTimeStr}</span>
+          </div>
+
           <NotificationBell />
           <QuickActionLauncher />
         </div>
@@ -185,7 +246,7 @@ function SidebarContent() {
 
       {/* Sidebar Drawer Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#E3E3E3] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col h-dvh max-h-dvh xl:h-full shrink-0 border-r border-slate-300 dark:border-slate-800 select-none shadow-2xl transition-transform duration-300 ease-in-out xl:static xl:w-64 xl:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#E3E3E3] dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col h-dvh max-h-dvh xl:h-full shrink-0 border-r border-slate-300 dark:border-slate-800 select-none shadow-2xl transition-transform duration-300 ease-in-out xl:static xl:w-64 xl:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { ShieldCheck, Delete, LogOut, AlertCircle, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { AuthLayout } from '@/components/auth/AuthLayout'
 
 const validatePin = (_p: string) => ({ isValid: true, error: null as string | null })
 
@@ -121,90 +122,72 @@ export function InitialPinSetupScreen() {
   const currentVal = step === 'create' ? pin : confirmPin
 
   return (
-    <div className="fixed inset-0 w-screen h-[100dvh] min-h-[100dvh] z-50 bg-[#07111f] flex flex-col items-center justify-between p-4 sm:p-6 select-none animate-in fade-in duration-300 overflow-hidden">
-      {/* Background Image with Dark Overlay */}
-      {activeBg && (
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
-          style={{ backgroundImage: `url(${activeBg})` }}
-        >
-          <div className="absolute inset-0 bg-[#07111f]/85 backdrop-blur-xs" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={activeBg}
-            alt="background-preloader"
-            className="hidden"
-            onError={() => setBgLoadError(true)}
-          />
-        </div>
-      )}
+    <AuthLayout>
+      <div className="w-full max-w-sm flex flex-col items-center justify-between py-2">
+        {/* Header Info */}
+        <div className="w-full flex items-center justify-between pb-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xs font-bold">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">Rental POS Security</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">ตั้งค่าความปลอดภัยครั้งแรก</span>
+            </div>
+          </div>
 
-      {/* Header Info */}
-      <div className="w-full max-w-sm flex items-center justify-between z-10 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-black text-white">Rental POS Security</div>
-            <div className="text-[10px] text-slate-400">ตั้งค่าความปลอดภัยครั้งแรก</div>
-          </div>
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-300 dark:border-slate-700/80 hover:border-rose-300 dark:hover:border-rose-700/50 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>ออกจากระบบ</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => logout()}
-          className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-rose-950/40 border border-slate-700/80 hover:border-rose-700/50 text-slate-300 hover:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>ออกจากระบบ</span>
-        </button>
-      </div>
-
-      {/* PIN Card */}
-      <div className="w-full max-w-sm flex flex-col items-center justify-center z-10 my-auto py-2 shrink-0">
         {/* Step Indicator */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${step === 'create' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+        <div className="flex items-center gap-2 mb-3 shrink-0">
+          <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${step === 'create' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
             1. ตั้งรหัส PIN
           </div>
-          <ArrowRight className="w-3 h-3 text-slate-600" />
-          <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${step === 'confirm' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+          <ArrowRight className="w-3 h-3 text-slate-400" />
+          <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${step === 'confirm' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
             2. ยืนยัน PIN
           </div>
         </div>
 
         {/* User Info */}
-        <div className="text-center mb-4">
-          <h2 className="text-lg font-black text-white tracking-tight">
+        <div className="text-center mb-3 shrink-0">
+          <h2 className="text-[26px] font-bold text-slate-900 dark:text-white tracking-tight">
             {step === 'create' ? 'ตั้งรหัส PIN 6 หลัก' : 'ยืนยันรหัส PIN 6 หลัก'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {step === 'create'
-              ? `สวัสดีคุณ ${user?.fullName || user?.username} กรุณาตั้ง PIN สำหรับล็อกหน้าจอ`
+              ? `สวัสดีคุณ ${user?.fullName || user?.username || 'ผู้ใช้งาน'} กรุณาตั้ง PIN สำหรับล็อกหน้าจอ`
               : 'กรุณากรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
           </p>
         </div>
 
         {/* Error message */}
         {errorMsg && (
-          <div className="mb-4 p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2 text-rose-400 text-xs font-semibold animate-in fade-in">
+          <div className="mb-3 p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-semibold animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* PIN Indicators Dots */}
-        <div className={`flex items-center justify-center gap-3 my-3 relative ${isShaking ? 'animate-bounce' : ''}`}>
+        <div className={`flex items-center justify-center gap-2.5 sm:gap-3 my-2 relative ${isShaking ? 'animate-bounce' : ''}`}>
           {Array.from({ length: 6 }).map((_, idx) => {
             const isFilled = idx < currentVal.length
             return (
               <div
                 key={idx}
-                className={`w-10 h-12 rounded-xl border flex items-center justify-center transition-all duration-200 font-mono font-black text-base ${
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl border flex items-center justify-center transition-all duration-200 font-mono font-black text-sm sm:text-base ${
                   isFilled
-                    ? 'border-blue-400/80 bg-blue-500/20 text-white shadow-lg shadow-blue-500/20 scale-105'
-                    : 'border-slate-800/80 bg-slate-900/60 text-transparent'
+                    ? 'border-blue-500 bg-blue-500/20 text-blue-600 dark:text-white shadow-md shadow-blue-500/20 scale-105'
+                    : 'border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/60 text-transparent'
                 }`}
               >
                 {isFilled ? (showPin ? currentVal[idx] : '•') : ''}
@@ -215,7 +198,7 @@ export function InitialPinSetupScreen() {
           <button
             type="button"
             onClick={() => setShowPin(!showPin)}
-            className="absolute -right-9 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer"
+            className="absolute -right-8 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
             aria-label={showPin ? "ซ่อน PIN" : "แสดง PIN"}
           >
             {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -230,21 +213,21 @@ export function InitialPinSetupScreen() {
               setConfirmPin('')
               setErrorMsg(null)
             }}
-            className="text-[11px] text-blue-400 hover:text-blue-300 font-medium my-1 underline cursor-pointer"
+            className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium my-1 underline cursor-pointer"
           >
             ย้อนกลับไปแก้ไข PIN
           </button>
         )}
 
         {/* Numeric Keypad */}
-        <div className="grid grid-cols-3 gap-2.5 w-full max-w-[280px] mt-4">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 w-full max-w-[280px] mt-2">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
             <button
               key={num}
               type="button"
               disabled={isSubmitting}
               onClick={() => handleKeyPress(num)}
-              className="h-13 rounded-2xl bg-slate-900/80 hover:bg-blue-600/25 active:bg-blue-600/40 border border-slate-800/80 hover:border-blue-500/40 text-white font-black text-lg flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+              className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-blue-600 active:text-white border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white font-black text-xl sm:text-2xl flex items-center justify-center mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-40 cursor-pointer select-none"
             >
               {num}
             </button>
@@ -254,7 +237,7 @@ export function InitialPinSetupScreen() {
             type="button"
             disabled={isSubmitting}
             onClick={handleClear}
-            className="h-13 rounded-2xl bg-slate-900/40 hover:bg-slate-800/80 border border-slate-800/50 text-slate-400 hover:text-slate-200 text-xs font-bold flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
+            className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 active:bg-slate-200 dark:active:bg-slate-800 text-xs font-bold flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
           >
             ล้าง
           </button>
@@ -263,7 +246,7 @@ export function InitialPinSetupScreen() {
             type="button"
             disabled={isSubmitting}
             onClick={() => handleKeyPress('0')}
-            className="h-13 rounded-2xl bg-slate-900/80 hover:bg-blue-600/25 active:bg-blue-600/40 border border-slate-800/80 hover:border-blue-500/40 text-white font-black text-lg flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+            className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-blue-600 active:text-white border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white font-black text-xl sm:text-2xl flex items-center justify-center mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-40 cursor-pointer select-none"
           >
             0
           </button>
@@ -272,23 +255,23 @@ export function InitialPinSetupScreen() {
             type="button"
             disabled={isSubmitting}
             onClick={handleDelete}
-            className="h-13 rounded-2xl bg-slate-900/40 hover:bg-rose-950/40 border border-slate-800/50 hover:border-rose-700/50 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+            className="aspect-square w-14 h-14 sm:w-16 sm:h-16 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 active:bg-slate-200 dark:active:bg-slate-800 flex items-center justify-center mx-auto transition-colors disabled:opacity-0 cursor-pointer select-none"
             aria-label="ลบตัวเลข"
           >
-            <Delete className="w-5 h-5" />
+            <Delete className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Security rules info */}
-        <div className="mt-5 text-center text-[10px] text-slate-500 max-w-xs space-y-1">
-          <p>* PIN 6 หลักต้องไม่ใช่เลขซ้ำกันทั้งหมด หรือเลขเรียงติดกัน (เช่น 123456, 111111)</p>
+        <div className="mt-3 text-center text-[10px] text-slate-500 dark:text-slate-400 max-w-xs space-y-0.5">
+          <p>* PIN 6 หลักต้องไม่ใช่เลขซ้ำกันทั้งหมด หรือเลขเรียงติดกัน</p>
           <p>* รหัส PIN จะถูกเข้ารหัสแบบปลอดภัยด้วย Bcrypt ฝั่งเซิร์ฟเวอร์</p>
         </div>
-      </div>
 
-      <div className="text-[10px] text-slate-600 z-10 text-center shrink-0">
-        Rental POS &copy; {new Date().getFullYear()} - First Login Security Provisioning
+        <div className="text-[10px] text-slate-400 dark:text-slate-500 text-center pt-2 shrink-0">
+          Rental POS &copy; {new Date().getFullYear()} - First Login Security Provisioning
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
