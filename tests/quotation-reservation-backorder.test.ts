@@ -7,6 +7,9 @@ import {
   applyStockCountAdjustment,
 } from '../lib/product-storage'
 import {
+  loadBills,
+} from '../lib/bill-storage'
+import {
   loadQuotations,
   saveQuotations,
   addQuotation,
@@ -275,7 +278,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 3. Confirm RENT -> Reserved increases, Rented does NOT increase
-  it('3. Confirm RENT -> Reserved increases, Rented does NOT increase (Confirm ≠ Dispatch)', () => {
+  it('3. Confirm RENT Quotation (0 reservations) -> Bill Creation reserves stock (Confirm ≠ Dispatch)', () => {
     const quote: Quotation = {
       id: 'qt-2026-003',
       quotationNo: 'QT-20260912-0003',
@@ -308,18 +311,51 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     }
     addQuotation(quote)
 
+    // Invariant 13 & 14: Confirm Quotation -> Status ACCEPTED, 0 reservations, 0 backorders
     const confirmRes = confirmQuotationWorkflow(quote.id, actor)
     expect(confirmRes.quotation.status).toBe('ACCEPTED')
-    expect(confirmRes.reservations.length).toBe(1)
-    expect(confirmRes.reservations[0].quantity).toBe(4)
-    expect(confirmRes.reservations[0].status).toBe('ACTIVE')
+    expect(confirmRes.reservations.length).toBe(0)
+    expect(confirmRes.backorders.length).toBe(0)
 
-    const prod = loadProducts().find((p) => p.id === testProductRent.id)!
-    // Invariant: rentedQuantity must NOT increase before dispatch!
+    let prod = loadProducts().find((p) => p.id === testProductRent.id)!
     expect(prod.rentedQuantity).toBe(0)
-    // reservedQuantity must be 4
+    expect(prod.reservedQuantity || 0).toBe(0)
+
+    // Invariant 15 & 16: Convert quotation to Bill -> complete data transferred, reservations created
+    const bill: FullBill = buildFullBill({
+      id: 'bill-from-qt-003',
+      billNo: 'BILL-20260912-0003',
+      quotationId: quote.id,
+      quotationNo: quote.quotationNo,
+      customerName: quote.customerName,
+      customerPhone: '0812345678',
+      rentalStartDate: quote.rentalStartDate,
+      scheduledReturnDate: quote.rentalEndDate,
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
+      items: [
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-3',
+          productId: testProductRent.id,
+          productCode: testProductRent.code,
+          productName: testProductRent.name,
+          quantity: 4,
+          rentalStartDate: quote.rentalStartDate,
+          scheduledReturnDate: quote.rentalEndDate,
+        }),
+      ],
+    })
+
+    const billResult = createBillWorkflow({ bill, actor })
+    expect(billResult.bill.rentalStatus).toBe('CONFIRMED')
+    expect(billResult.reservations?.length).toBe(1)
+    expect(billResult.reservations?.[0].quantity).toBe(4)
+
+    prod = loadProducts().find((p) => p.id === testProductRent.id)!
+    expect(prod.rentedQuantity).toBe(0)
     expect(prod.reservedQuantity).toBe(4)
-    // dated availability for this range is 10 - 4 = 6
+
+    // Dated availability for this range is 10 - 4 = 6
     const avail = getProductAvailability(testProductRent.id, '2026-09-20', '2026-09-25')
     expect(avail.availableForRange).toBe(6)
   })
@@ -461,151 +497,111 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   it('7. RENT non-overlapping dates -> both orders can reserve full physical stock', () => {
     // Total physical stock is 10
     // Order 1: 10 units for 2026-10-01 to 2026-10-05
-    const q1: Quotation = {
-      id: 'qt-overlap-1',
-      quotationNo: 'QT-OCT-01',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-1',
+    const b1: FullBill = buildFullBill({
+      id: 'bill-overlap-1',
+      billNo: 'BILL-OCT-01',
       customerName: 'ลูกค้ารอบที่ 1',
       rentalStartDate: '2026-10-01',
-      rentalEndDate: '2026-10-05',
+      scheduledReturnDate: '2026-10-05',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-oct-1',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 10,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 2500,
-        },
+          rentalStartDate: '2026-10-01',
+          scheduledReturnDate: '2026-10-05',
+        }),
       ],
-      subtotal: 2500,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 2500,
-      status: 'WAITING',
-    }
-    addQuotation(q1)
-    const res1 = confirmQuotationWorkflow(q1.id, actor)
-    expect(res1.reservations.length).toBe(1)
-    expect(res1.reservations[0].quantity).toBe(10)
-    expect(res1.backorders.length).toBe(0)
+    })
+    const res1 = createBillWorkflow({ bill: b1, actor })
+    expect(res1.reservations?.length).toBe(1)
+    expect(res1.reservations?.[0].quantity).toBe(10)
+    expect(res1.backorders?.length || 0).toBe(0)
 
     // Order 2: 10 units for 2026-10-10 to 2026-10-15 (Non-overlapping with Order 1!)
-    const q2: Quotation = {
-      id: 'qt-overlap-2',
-      quotationNo: 'QT-OCT-02',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-2',
+    const b2: FullBill = buildFullBill({
+      id: 'bill-overlap-2',
+      billNo: 'BILL-OCT-02',
       customerName: 'ลูกค้ารอบที่ 2',
       rentalStartDate: '2026-10-10',
-      rentalEndDate: '2026-10-15',
+      scheduledReturnDate: '2026-10-15',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-oct-2',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 10,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 2500,
-        },
+          rentalStartDate: '2026-10-10',
+          scheduledReturnDate: '2026-10-15',
+        }),
       ],
-      subtotal: 2500,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 2500,
-      status: 'WAITING',
-    }
-    addQuotation(q2)
-    const res2 = confirmQuotationWorkflow(q2.id, actor)
+    })
+    const res2 = createBillWorkflow({ bill: b2, actor })
     // Non-overlapping date range allows reserving full physical stock for both!
-    expect(res2.reservations.length).toBe(1)
-    expect(res2.reservations[0].quantity).toBe(10)
-    expect(res2.backorders.length).toBe(0)
+    expect(res2.reservations?.length).toBe(1)
+    expect(res2.reservations?.[0].quantity).toBe(10)
+    expect(res2.backorders?.length || 0).toBe(0)
   })
 
   // 8. RENT overlapping dates with insufficient stock -> Backorder
   it('8. RENT overlapping dates with insufficient stock -> splits into Reservation and Backorder', () => {
     // Total stock = 10
     // Order 1: 8 units from 2026-10-01 to 2026-10-06
-    const q1: Quotation = {
-      id: 'qt-overlap-a',
-      quotationNo: 'QT-OCT-A',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-a',
+    const b1: FullBill = buildFullBill({
+      id: 'bill-overlap-a',
+      billNo: 'BILL-OCT-A',
       customerName: 'ลูกค้ารายแรก',
       rentalStartDate: '2026-10-01',
-      rentalEndDate: '2026-10-06',
+      scheduledReturnDate: '2026-10-06',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-oct-a',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 8,
-          unitPrice: 50,
-          usageCountOrDays: 6,
-          lineTotal: 2400,
-        },
+          rentalStartDate: '2026-10-01',
+          scheduledReturnDate: '2026-10-06',
+        }),
       ],
-      subtotal: 2400,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 2400,
-      status: 'WAITING',
-    }
-    addQuotation(q1)
-    confirmQuotationWorkflow(q1.id, actor)
+    })
+    createBillWorkflow({ bill: b1, actor })
 
     // Order 2: 5 units from 2026-10-03 to 2026-10-08 (Overlaps Order 1!)
     // Overlapping available is 10 - 8 = 2
-    const q2: Quotation = {
-      id: 'qt-overlap-b',
-      quotationNo: 'QT-OCT-B',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-b',
+    const b2: FullBill = buildFullBill({
+      id: 'bill-overlap-b',
+      billNo: 'BILL-OCT-B',
       customerName: 'ลูกค้ารายที่สอง',
       rentalStartDate: '2026-10-03',
-      rentalEndDate: '2026-10-08',
+      scheduledReturnDate: '2026-10-08',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-oct-b',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 5,
-          unitPrice: 50,
-          usageCountOrDays: 6,
-          lineTotal: 1500,
-        },
+          rentalStartDate: '2026-10-03',
+          scheduledReturnDate: '2026-10-08',
+        }),
       ],
-      subtotal: 1500,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 1500,
-      status: 'WAITING',
-    }
-    addQuotation(q2)
-    const res2 = confirmQuotationWorkflow(q2.id, actor)
+    })
+    const res2 = createBillWorkflow({ bill: b2, actor })
 
     // Available for range was 2 -> Reserved 2, Backorder 3
-    expect(res2.reservations.length).toBe(1)
-    expect(res2.reservations[0].quantity).toBe(2)
-    expect(res2.backorders.length).toBe(1)
-    expect(res2.backorders[0].requestedQty).toBe(5)
-    expect(res2.backorders[0].outstandingQty).toBe(3)
+    expect(res2.reservations?.length).toBe(1)
+    expect(res2.reservations?.[0].quantity).toBe(2)
+    expect(res2.backorders?.length).toBe(1)
+    expect(res2.backorders?.[0].requestedQty).toBe(5)
+    expect(res2.backorders?.[0].outstandingQty).toBe(3)
   })
 
   // 9. Request 8 have 5 -> Reserve 5, Backorder 3, Stock not negative
@@ -619,39 +615,29 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
       },
     ])
 
-    const quote: Quotation = {
-      id: 'qt-split-009',
-      quotationNo: 'QT-SPLIT-009',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-split',
+    const b: FullBill = buildFullBill({
+      id: 'bill-split-009',
+      billNo: 'BILL-SPLIT-009',
       customerName: 'ลูกค้าสั่งเกินสต็อก',
       rentalStartDate: '2026-09-15',
-      rentalEndDate: '2026-09-20',
+      scheduledReturnDate: '2026-09-20',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-split-9',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 8,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 2000,
-        },
+          rentalStartDate: '2026-09-15',
+          scheduledReturnDate: '2026-09-20',
+        }),
       ],
-      subtotal: 2000,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 2000,
-      status: 'WAITING',
-    }
-    addQuotation(quote)
+    })
 
-    const result = confirmQuotationWorkflow(quote.id, actor)
-    expect(result.reservations[0].quantity).toBe(5)
-    expect(result.backorders[0].outstandingQty).toBe(3)
+    const result = createBillWorkflow({ bill: b, actor })
+    expect(result.reservations?.[0].quantity).toBe(5)
+    expect(result.backorders?.[0].outstandingQty).toBe(3)
 
     // Check invariants
     const avail = getProductAvailability(testProductRent.id, '2026-09-15', '2026-09-20')
@@ -670,38 +656,29 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
       },
     ])
 
-    const quote: Quotation = {
-      id: 'qt-bo-10',
-      quotationNo: 'QT-BO-010',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-wait',
+    const b: FullBill = buildFullBill({
+      id: 'bill-bo-10',
+      billNo: 'BILL-BO-010',
       customerName: 'คุณสมชาย รอของ',
       rentalStartDate: '2026-09-15',
-      rentalEndDate: '2026-09-20',
+      scheduledReturnDate: '2026-09-20',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-bo-10',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 3,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 750,
-        },
+          rentalStartDate: '2026-09-15',
+          scheduledReturnDate: '2026-09-20',
+        }),
       ],
-      subtotal: 750,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 750,
-      status: 'WAITING',
-    }
-    addQuotation(quote)
-    const confRes = confirmQuotationWorkflow(quote.id, actor)
-    const boId = confRes.backorders[0].id
-    expect(confRes.backorders[0].outstandingQty).toBe(3)
+    })
+
+    const confRes = createBillWorkflow({ bill: b, actor })
+    const boId = confRes.backorders?.[0].id!
+    expect(confRes.backorders?.[0].outstandingQty).toBe(3)
 
     // Stock increase: new physical stock arrives (count adjustment adds 5 units)
     applyStockCountAdjustment(
@@ -727,60 +704,59 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
 
   // 11. User confirms Fulfill -> Backorder decreases, Reservation increases
   it('11. User explicitly confirms Fulfill -> Backorder decreases, Reservation increases, notification ACTIONED', () => {
-    // Given backorder with status READY from previous test setup
-    const quote: Quotation = {
-      id: 'qt-bo-11',
-      quotationNo: 'QT-BO-011',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-wait-11',
+    saveProducts([
+      {
+        ...testProductRent,
+        totalQuantity: 0,
+        availableQuantity: 0,
+      },
+    ])
+
+    const b: FullBill = buildFullBill({
+      id: 'bill-bo-11',
+      billNo: 'BILL-BO-011',
       customerName: 'คุณสมชาย รอของ',
       rentalStartDate: '2026-09-15',
-      rentalEndDate: '2026-09-20',
+      scheduledReturnDate: '2026-09-20',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-bo-11',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 3,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 750,
-        },
+          rentalStartDate: '2026-09-15',
+          scheduledReturnDate: '2026-09-20',
+        }),
       ],
-      subtotal: 750,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 750,
-      status: 'WAITING',
-    }
-    // With 0 stock available
-    saveProducts([{ ...testProductRent, totalQuantity: 0, availableQuantity: 0 }])
-    addQuotation(quote)
-    const confRes = confirmQuotationWorkflow(quote.id, actor)
-    const boId = confRes.backorders[0].id
+    })
+
+    const confRes = createBillWorkflow({ bill: b, actor })
+    const boId = confRes.backorders?.[0].id!
 
     // Restock 5
     applyStockCountAdjustment(testProductRent.id, { normalQty: 5 }, 'เติมสต็อก', actor)
 
-    // User confirms allocation of 3 units
+    const notifs = loadNotifications()
+    const notifId = notifs[0].id
+
+    // User explicitly confirms fulfillment
     const fulfillRes = fulfillBackorderWorkflow({
       backorderId: boId,
-      allocateQty: 3,
+      notificationId: notifId,
+      allocatedQty: 3,
       actor,
     })
 
-    expect(fulfillRes.backorder.status).toBe('FULFILLED')
-    expect(fulfillRes.backorder.outstandingQty).toBe(0)
-    expect(fulfillRes.reservation.quantity).toBe(3)
-    expect(fulfillRes.reservation.status).toBe('ACTIVE')
+    expect(fulfillRes.fulfilledBackorder!.outstandingQty).toBe(0)
+    expect(fulfillRes.fulfilledBackorder!.status).toBe('FULFILLED')
+    expect(fulfillRes.newReservation!.quantity).toBe(3)
+    expect(fulfillRes.newReservation!.status).toBe('ACTIVE')
 
     // Notification marked ACTIONED
-    const notifs = loadNotifications()
-    const matchingNotif = notifs.find((n) => n.data.backorderId === boId)
-    expect(matchingNotif?.status).toBe('ACTIONED')
+    const updatedNotifs = loadNotifications()
+    expect(updatedNotifs.find((n) => n.id === notifId)?.status).toBe('ACTIONED')
 
     // Product reserved stock is synchronized
     const prod = loadProducts().find((p) => p.id === testProductRent.id)!
@@ -789,50 +765,42 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
 
   // 12. Cancel before Dispatch -> Reservation released
   it('12. Cancel before Dispatch -> Reservation released, history preserved', () => {
-    const quote: Quotation = {
-      id: 'qt-cancel-12',
-      quotationNo: 'QT-CANCEL-012',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-12',
+    const bill: FullBill = buildFullBill({
+      id: 'bill-cancel-12',
+      billNo: 'BILL-CANCEL-012',
       customerName: 'นายเปลี่ยนใจ ไม่เอา',
       rentalStartDate: '2026-09-20',
-      rentalEndDate: '2026-09-25',
+      scheduledReturnDate: '2026-09-25',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-cancel-12',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 4,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 1000,
-        },
+          rentalStartDate: '2026-09-20',
+          scheduledReturnDate: '2026-09-25',
+        }),
       ],
-      subtotal: 1000,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 1000,
-      status: 'WAITING',
-    }
-    addQuotation(quote)
-    confirmQuotationWorkflow(quote.id, actor)
+    })
 
-    // Cancel quotation
-    const cancelRes = cancelQuotationWorkflow(quote.id, 'ลูกค้าแจ้งยกเลิกงานก่อสร้าง', actor)
-    expect(cancelRes.quotation.status).toBe('CANCELLED')
-    expect(cancelRes.releasedReservations[0].status).toBe('RELEASED')
-    expect(cancelRes.releasedReservations[0].releaseReason).toBe('ลูกค้าแจ้งยกเลิกงานก่อสร้าง')
+    createBillWorkflow({ bill, actor })
+    let prod = loadProducts().find((p) => p.id === testProductRent.id)!
+    expect(prod.reservedQuantity).toBe(4)
 
-    // Quotation still present in history (NOT deleted)
-    const reloaded = getQuotationById(quote.id)
-    expect(reloaded).not.toBeNull()
-    expect(reloaded?.status).toBe('CANCELLED')
+    // Cancel bill before dispatch
+    const cancelRes = cancelOrVoidBillWorkflow({
+      billId: bill.id,
+      reason: 'ลูกค้าแจ้งยกเลิกงานก่อสร้าง',
+      actor,
+    })
+    expect(cancelRes.bill.rentalStatus).toBe('CANCELLED')
+    expect(cancelRes.releasedReservations![0].status).toBe('RELEASED')
+    expect(cancelRes.releasedReservations![0].releaseReason).toBe('ลูกค้าแจ้งยกเลิกงานก่อสร้าง')
 
     // Reserved stock back to 0
-    const prod = loadProducts().find((p) => p.id === testProductRent.id)!
+    prod = loadProducts().find((p) => p.id === testProductRent.id)!
     expect(prod.reservedQuantity).toBe(0)
   })
 
@@ -958,51 +926,42 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     expect((countAudit?.after as any)?.damagedQuantity).toBe(1)
   })
 
-  // 16. Refresh -> Quotation, Reservation, Backorder, Notification, Stock consistent
-  it('16. Reload simulation: Quotation, Reservation, Backorder, Notification, Stock are consistent', () => {
-    // Create quotation that gets confirmed with a backorder
+  // 16. Refresh -> Bill, Reservation, Backorder, Notification, Stock consistent
+  it('16. Reload simulation: Bill, Reservation, Backorder, Notification, Stock are consistent', () => {
+    // Available = 3
     saveProducts([{ ...testProductRent, totalQuantity: 3, availableQuantity: 3 }])
 
-    const quote: Quotation = {
-      id: 'qt-rel-16',
-      quotationNo: 'QT-REL-016',
-      quotationDate: '2026-09-12',
-      expiryDate: '2026-09-27',
-      customerId: 'cust-16',
+    const bill: FullBill = buildFullBill({
+      id: 'bill-rel-16',
+      billNo: 'BILL-REL-016',
       customerName: 'บริษัท ทดสอบ สตอเรจ',
       rentalStartDate: '2026-09-20',
-      rentalEndDate: '2026-09-25',
+      scheduledReturnDate: '2026-09-25',
+      dispatchStatus: 'PENDING',
+      rentalStatus: 'CONFIRMED',
       items: [
-        {
+        buildFullBillItem({
+          rentalBillItemId: 'rbi-rel-16',
           productId: testProductRent.id,
           productName: testProductRent.name,
-          rentalType: 'NORMAL',
           quantity: 5,
-          unitPrice: 50,
-          usageCountOrDays: 5,
-          lineTotal: 1250,
-        },
+          rentalStartDate: '2026-09-20',
+          scheduledReturnDate: '2026-09-25',
+        }),
       ],
-      subtotal: 1250,
-      discountAmount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      taxAmount: 0,
-      grandTotal: 1250,
-      status: 'WAITING',
-    }
-    addQuotation(quote)
-    confirmQuotationWorkflow(quote.id, actor)
+    })
+
+    createBillWorkflow({ bill, actor })
 
     // Reload from storage
-    const reloadedQuotes = loadQuotations()
+    const reloadedBills = loadBills()
     const reloadedResvs = loadReservations()
     const reloadedBos = loadBackorders()
     const reloadedProds = loadProducts()
 
-    expect(reloadedQuotes.find((q) => q.id === 'qt-rel-16')?.status).toBe('ACCEPTED')
-    expect(reloadedResvs.some((r) => r.sourceId === 'qt-rel-16' && r.quantity === 3)).toBe(true)
-    expect(reloadedBos.some((b) => b.sourceId === 'qt-rel-16' && b.outstandingQty === 2)).toBe(true)
+    expect(reloadedBills.find((b) => b.id === 'bill-rel-16')?.rentalStatus).toBe('CONFIRMED')
+    expect(reloadedResvs.some((r) => r.sourceId === 'bill-rel-16' && r.quantity === 3)).toBe(true)
+    expect(reloadedBos.some((b) => b.sourceId === 'bill-rel-16' && b.outstandingQty === 2)).toBe(true)
     const prod = reloadedProds.find((p) => p.id === testProductRent.id)!
     expect(prod.reservedQuantity).toBe(3)
   })

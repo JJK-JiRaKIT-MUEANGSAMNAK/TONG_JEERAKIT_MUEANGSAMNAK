@@ -52,6 +52,7 @@ export function fullBillToRentalBill(full: FullBill): RentalBill {
     shippingFee: full.shippingFee ?? 0,
     depositAmount: full.heldDepositAmount ?? full.paidDepositAmount ?? 0,
     taxAmount: full.taxAmount ?? 0,
+    billAmount: full.billAmount ?? full.grandTotal,
     grandTotal: full.grandTotal,
     paidAmount: full.paidAmount,
     outstandingAmount: full.outstandingAmount,
@@ -60,6 +61,8 @@ export function fullBillToRentalBill(full: FullBill): RentalBill {
     remark: full.remark,
     quotationId: full.quotationId,
     reservationId: full.reservationId,
+    originalBillId: full.originalBillId,
+    parentBillId: full.parentBillId,
     closedAt: full.closedAt,
     cancelledAt: full.cancelledAt,
     cancelReason: full.cancelReason,
@@ -105,13 +108,7 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
     }
   })
 
-  let rentalStatus: FullBill['rentalStatus'] = 'RENTING'
-  if (rental.rentalStatus === 'DRAFT') rentalStatus = 'DRAFT'
-  else if (rental.rentalStatus === 'CLOSED') rentalStatus = 'CLOSED'
-  else if (rental.rentalStatus === 'CANCELLED') rentalStatus = 'CANCELLED'
-  else if (rental.rentalStatus === 'VOID') rentalStatus = 'VOID'
-  else if (rental.rentalStatus === 'RETURNED') rentalStatus = 'RETURNED'
-  else if (rental.rentalStatus === 'PARTIAL_RETURNED') rentalStatus = 'PARTIAL_RETURNED'
+  const rentalStatus: RentalStatus = rental.rentalStatus || 'CONFIRMED'
 
   let paymentStatus: FullBill['paymentStatus'] = 'UNPAID'
   if (rental.paymentStatus === 'PAID') paymentStatus = 'PAID'
@@ -137,6 +134,7 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
     discountAmount: rental.discountAmount,
     shippingFee: rental.shippingFee,
     taxAmount: rental.taxAmount,
+    billAmount: rental.billAmount ?? rental.grandTotal,
     grandTotal: rental.grandTotal,
     paidAmount: rental.paidAmount,
     outstandingAmount: rental.outstandingAmount,
@@ -148,6 +146,8 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
     items,
     quotationId: rental.quotationId,
     reservationId: rental.reservationId,
+    originalBillId: rental.originalBillId,
+    parentBillId: rental.parentBillId,
     closedAt: rental.closedAt,
     cancelledAt: rental.cancelledAt,
     cancelReason: rental.cancelReason,

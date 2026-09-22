@@ -6,7 +6,7 @@ export type CustomerStatus = 'ACTIVE' | 'INACTIVE'
 export type AppointmentType = 'DELIVERY' | 'RETURN' | 'PAYMENT' | 'CONTRACT' | 'QUOTATION' | 'INSPECTION' | 'GENERAL'
 export type AppointmentStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED'
 export type QuotationStatus = 'DRAFT' | 'SENT' | 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED' | 'CANCELLED'
-export type RentalStatus = 'DRAFT' | 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED' | 'VOID'
+export type RentalStatus = 'DRAFT' | 'CONFIRMED' | 'RENTING' | 'EXTENDED' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED' | 'VOID'
 export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | 'REFUNDED'
 export type PaymentMethod = 'CASH' | 'TRANSFER' | 'QR' | 'CHEQUE' | 'OTHER'
 export type DepositStatus = 'HELD' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
@@ -143,6 +143,8 @@ export interface Product {
   defaultDamageFee: number
   defaultLossFee: number
   defaultLostFee?: number
+  defaultRepairFee?: number
+  defaultReplacementFee?: number
   totalQuantity: number
   availableQuantity: number
   rentedQuantity: number
@@ -366,6 +368,7 @@ export interface RentalBill {
   depositApplied?: number
   depositRefunded?: number
   taxAmount: number
+  billAmount?: number
   grandTotal: number
   paidAmount: number
   outstandingAmount: number
@@ -382,6 +385,8 @@ export interface RentalBill {
   documentTitle?: string
   quotationId?: string
   reservationId?: string
+  originalBillId?: string
+  parentBillId?: string
   closedAt?: string
   cancelledAt?: string
   cancelReason?: string

@@ -113,8 +113,10 @@ export interface BillCalculationResult {
   vatAmount: number
   shippingFee: number
   revenueTotal: number
+  billAmount: number
   depositAmount: number
   grandTotal: number
+  totalPayableWithDeposit: number
   precision: number
   roundingMode: RoundingMode
 }
@@ -204,8 +206,10 @@ export function calculateBillTotals(options: CalculateTotalsOptions): BillCalcul
     depositAmount = roundMoney((subtotal * cfg.financePayment.defaultDepositPercent) / 100, { precision, mode: roundingMode })
   }
 
-  // 8. Grand Total = Revenue Total + Deposit
-  const grandTotal = roundMoney(revenueTotal + depositAmount, { precision, mode: roundingMode })
+  // 8. Bill Amount & Grand Total (Strictly excludes Security Deposit per MASTER v2.3.0)
+  const billAmount = revenueTotal
+  const grandTotal = billAmount
+  const totalPayableWithDeposit = roundMoney(billAmount + depositAmount, { precision, mode: roundingMode })
 
   return {
     subtotal,
@@ -219,11 +223,155 @@ export function calculateBillTotals(options: CalculateTotalsOptions): BillCalcul
     vatAmount,
     shippingFee,
     revenueTotal,
+    billAmount,
     depositAmount,
     grandTotal,
+    totalPayableWithDeposit,
     precision,
     roundingMode,
   }
+}
+
+export interface FinancialCoreParams {
+  billAmount: number
+  netPaid: number
+  revenueRecognized?: number
+  securityDeposit?: {
+    required?: number
+    received?: number
+    refunded?: number
+    applied?: number
+  }
+}
+
+export interface FinancialCoreResult {
+  billAmount: number
+  netPaid: number
+  billOutstanding: number
+  revenueRecognized: number
+  earnedOutstanding: number
+  advanceDeferred: number
+  overpayment: number
+  refundDue: number
+  securityDeposit: {
+    required: number
+    received: number
+    refunded: number
+    applied: number
+    held: number
+  }
+}
+
+/**
+ * Calculates unified financial metrics strictly adhering to MASTER v2.3.0 Section 9:
+ * - Bill Outstanding = max(Bill Amount - Net Paid, 0)
+ * - Earned Outstanding = max(Revenue Recognized - Net Paid, 0)
+ * - Advance / Deferred = min(max(Net Paid - Revenue Recognized, 0), max(Bill Amount - Revenue Recognized, 0))
+ * - Overpayment = max(Net Paid - Bill Amount, 0)
+ * - Refund Due = Overpayment (or when revised bill is lower than net paid)
+ * - Security Deposit: strictly separated from Net Paid and Revenue Recognized
+ */
+export function calculateFinancialCore(params: FinancialCoreParams): FinancialCoreResult {
+  const billAmount = Math.max(0, Number(params.billAmount) || 0)
+  const netPaid = Math.max(0, Number(params.netPaid) || 0)
+  const revenueRecognized = Math.max(0, Number(params.revenueRecognized) || 0)
+
+  const billOutstanding = Math.max(0, billAmount - netPaid)
+  const earnedOutstanding = Math.max(0, revenueRecognized - netPaid)
+  const unearnedService = Math.max(0, billAmount - revenueRecognized)
+  const advanceDeferred = Math.min(Math.max(0, netPaid - revenueRecognized), unearnedService)
+  const overpayment = Math.max(0, netPaid - billAmount)
+  const refundDue = overpayment
+
+  const dep = params.securityDeposit || {}
+  const depRequired = Math.max(0, Number(dep.required) || 0)
+  const depReceived = Math.max(0, Number(dep.received) || 0)
+  const depRefunded = Math.max(0, Number(dep.refunded) || 0)
+  const depApplied = Math.max(0, Number(dep.applied) || 0)
+  const depHeld = Math.max(0, depReceived - depRefunded - depApplied)
+
+  return {
+    billAmount,
+    netPaid,
+    billOutstanding,
+    revenueRecognized,
+    earnedOutstanding,
+    advanceDeferred,
+    overpayment,
+    refundDue,
+    securityDeposit: {
+      required: depRequired,
+      received: depReceived,
+      refunded: depRefunded,
+      applied: depApplied,
+      held: depHeld,
+    },
+  }
+}
+
+export interface CalculateRevenueRecognizedOptions {
+  dispatchStatus?: 'PENDING' | 'DISPATCHED' | string
+  items: Array<{
+    rentalType?: RentalType | string
+    quantity: number
+    unitPrice: number
+    lineTotal?: number
+    dailyStartDate?: string | Date | null
+    dailyEndDate?: string | Date | null
+    billableDays?: number
+    usageCount?: number
+    actualReturnDate?: string | Date | null
+    isDelivered?: boolean
+  }>
+  referenceDate?: string | Date // defaults to today
+}
+
+/**
+ * Calculates Revenue Recognized according to MASTER v2.3.0 Section 9.6:
+ * - Before Actual Handover / Dispatch: Revenue Recognized = 0 ALWAYS!
+ * - When Dispatched / Delivered:
+ *   - Sale items: Recognized in full once delivered
+ *   - Daily rental: price * qty * actual elapsed service days
+ *   - Round rental: price * qty * actual rounds
+ */
+export function calculateRevenueRecognized(options: CalculateRevenueRecognizedOptions): number {
+  if (options.dispatchStatus !== 'DISPATCHED') {
+    return 0
+  }
+
+  const now = options.referenceDate ? new Date(options.referenceDate) : new Date()
+  let recognized = 0
+
+  for (const item of options.items) {
+    const qty = Number(item.quantity) || 0
+    const price = Number(item.unitPrice) || 0
+    if (item.rentalType === 'SALE') {
+      recognized += qty * price
+      continue
+    }
+
+    if (item.rentalType === 'DAILY') {
+      const start = item.dailyStartDate ? new Date(item.dailyStartDate) : now
+      const effectiveEnd = item.actualReturnDate ? new Date(item.actualReturnDate) : now
+      const schedEnd = item.dailyEndDate ? new Date(item.dailyEndDate) : effectiveEnd
+      const cutOff = new Date(Math.min(effectiveEnd.getTime(), schedEnd.getTime(), now.getTime()))
+
+      let days = 0
+      if (!isNaN(start.getTime()) && !isNaN(cutOff.getTime())) {
+        const diffMs = cutOff.getTime() - start.getTime()
+        days = Math.max(1, Math.min(item.billableDays || 9999, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1))
+      } else {
+        days = Math.max(1, item.billableDays || 1)
+      }
+      recognized += qty * price * days
+    } else {
+      // Round-based
+      const rounds = Math.max(1, item.usageCount || 1)
+      recognized += qty * price * rounds
+    }
+  }
+
+  return roundMoney(recognized)
 }
 
 /**

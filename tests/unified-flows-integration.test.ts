@@ -258,16 +258,14 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
     }
     addQuotation(quotation)
 
-    // Confirm quotation -> creates reservation under quotation
+    // Confirm quotation -> does NOT reserve stock (MASTER v2.3.0 Section 7.3)
     const confirmRes = confirmQuotationWorkflow(
       quotation.id,
       { userId: 'staff-1', displayName: 'พนักงาน A' }
     )
     expect(confirmRes.quotation.status).toBe('ACCEPTED')
     const reservationsBefore = loadReservations()
-    expect(reservationsBefore.length).toBe(1)
-    expect(reservationsBefore[0].sourceType).toBe('QUOTATION')
-    expect(reservationsBefore[0].quantity).toBe(2)
+    expect(reservationsBefore.length).toBe(0)
 
     // Create Bill converting from Quotation
     const billItems = [
@@ -507,7 +505,7 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
     })
 
     expect(confirmRes.bill.id).toBe('draft-to-confirm') // Same ID!
-    expect(confirmRes.bill.rentalStatus).toBe('RENTING')
+    expect(confirmRes.bill.rentalStatus).toBe('CONFIRMED')
     expect(confirmRes.bill.paymentStatus).toBe('PAID')
     expect(confirmRes.reservations?.length).toBe(1)
     expect(confirmRes.reservations?.[0].quantity).toBe(2)
@@ -516,7 +514,7 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
     const allBills = loadBills()
     expect(allBills.length).toBe(1)
     expect(allBills[0].id).toBe('draft-to-confirm')
-    expect(allBills[0].rentalStatus).toBe('RENTING')
+    expect(allBills[0].rentalStatus).toBe('CONFIRMED')
 
     // Confirming again throws error
     expect(() =>

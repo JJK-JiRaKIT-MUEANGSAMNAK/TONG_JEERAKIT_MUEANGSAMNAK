@@ -95,7 +95,7 @@ export interface GeneratedDocument {
   description: string
 }
 
-import type { BillRevisionRecord } from '@/lib/types/rental-pos'
+import type { BillRevisionRecord, RentalStatus } from '@/lib/types/rental-pos'
 
 export interface FullBillItem {
   rentalBillItemId: string
@@ -118,7 +118,7 @@ export interface FullBillItem {
   rentalType?: 'NORMAL' | 'DAILY' | 'SALE'
   usageCount?: number
   lineTotal?: number
-  status: 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST' | 'COMPLETED'
+  status: 'PENDING' | 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST' | 'COMPLETED'
 }
 
 export interface FullBillDeposit {
@@ -158,12 +158,14 @@ export interface FullBill {
   discountAmount?: number
   shippingFee?: number
   taxAmount?: number
+  billAmount?: number
   grandTotal: number
   paidAmount: number
   outstandingAmount: number
-  rentalStatus: 'DRAFT' | 'RENTING' | 'PARTIAL_RETURNED' | 'RETURNED' | 'CLOSED' | 'CANCELLED' | 'VOID'
+  rentalStatus: RentalStatus
   paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | 'REFUNDED'
   dispatchStatus?: 'PENDING' | 'DISPATCHED'
+  refundDue?: number
   refundDueAmount?: number
   revisions?: BillRevisionRecord[]
   items: FullBillItem[]
@@ -172,6 +174,8 @@ export interface FullBill {
   quotationId?: string
   quotationNo?: string
   reservationId?: string
+  originalBillId?: string
+  parentBillId?: string
   closedAt?: string
   cancelledAt?: string
   cancelReason?: string

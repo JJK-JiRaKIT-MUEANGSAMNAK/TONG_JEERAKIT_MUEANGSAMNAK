@@ -28,6 +28,7 @@ import { BusinessSettings } from '@/lib/types/rental-pos'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { generateCorrelationId } from '@/lib/audit-storage'
 import { processReturnWorkflow, processSplitPaymentWorkflow, fetchLatestPaymentBatch } from '@/lib/bill-workflow-service'
+import { loadProducts } from '@/lib/product-storage'
 
 interface ConfirmRentalReturnItemPayload {
   rental_bill_item_id: string
@@ -92,7 +93,12 @@ function computeReturnCalculation(
   const persistedPaid = billSummary?.paidAmount || 0
   const persistedOutstanding = billSummary?.outstandingAmount || 0
   const grandTotalCharge = persistedGrand + damageTotal
-  const netAmount = Math.max(0, grandTotalCharge - persistedPaid - (deductDeposit ? heldDeposit : 0))
+
+  // Outstanding fee after deducting paid amounts
+  const unreservedDue = grandTotalCharge - persistedPaid
+  // If deducting from deposit, apply held deposit against the due amount
+  const netAmount = deductDeposit ? unreservedDue - heldDeposit : unreservedDue
+  const netRefundAmount = netAmount < 0 ? Math.abs(netAmount) : 0
 
   return {
     actualRentalDays: 0,
@@ -115,8 +121,8 @@ function computeReturnCalculation(
     netAmount,
     deductFromDeposit: deductDeposit,
     actualCollectedAmount: collected,
-    netRefundAmount: 0,
-    remainingDebtAmount: Math.max(0, netAmount - collected),
+    netRefundAmount,
+    remainingDebtAmount: netAmount > 0 ? Math.max(0, netAmount - collected) : 0,
   }
 }
 
@@ -270,6 +276,15 @@ export function BillActionView({
           const itemActual =
             item.actualReturnDate || activeBill.actualReturnDate || todayStr
 
+          const allProds = typeof window !== 'undefined' ? loadProducts() : []
+          const prod = allProds.find((p) => p.id === item.productId)
+          const repairFee = item.defaultRepairFee !== undefined && item.defaultRepairFee > 0
+            ? item.defaultRepairFee
+            : Number(prod?.defaultDamageFee ?? prod?.defaultRepairFee ?? 0)
+          const replacementFee = item.defaultReplacementFee !== undefined && item.defaultReplacementFee > 0
+            ? item.defaultReplacementFee
+            : Number(prod?.defaultLossFee ?? prod?.defaultReplacementFee ?? 0)
+
           return {
             rentalBillItemId: item.rentalBillItemId,
             productId: item.productId,
@@ -284,8 +299,8 @@ export function BillActionView({
             dailyRate: item.dailyRate,
             rentalType: item.rentalType === 'DAILY' ? 'DAILY' : 'NORMAL',
             usageCount: item.usageCount || 1,
-            repairFeePerUnit: item.defaultRepairFee || 150,
-            replacementFeePerUnit: item.defaultReplacementFee || 1000,
+            repairFeePerUnit: repairFee,
+            replacementFeePerUnit: replacementFee,
             totalDamageFee: 0,
             note: '',
             selected: false,
@@ -685,12 +700,21 @@ export function BillActionView({
 
   const handleItemQtyChange = (
     rentalBillItemId: string,
-    field: 'normalQty' | 'damagedQty' | 'lostQty',
-    qty: number
+    field: 'normalQty' | 'damagedQty' | 'lostQty' | 'repairFeePerUnit' | 'replacementFeePerUnit',
+    val: number
   ) => {
     setInspectionItems((prev) =>
       prev.map((item) => {
         if (item.rentalBillItemId !== rentalBillItemId) return item
+
+        if (field === 'repairFeePerUnit' || field === 'replacementFeePerUnit') {
+          const updatedItem = {
+            ...item,
+            [field]: Math.max(0, val || 0),
+          }
+          updatedItem.totalDamageFee = getItemDamageFee(updatedItem)
+          return updatedItem
+        }
 
         const otherQty =
           field === 'normalQty'
@@ -700,7 +724,7 @@ export function BillActionView({
             : (item.normalQty || 0) + (item.damagedQty || 0)
 
         const maxAllowed = Math.max(0, item.outstandingQty - otherQty)
-        const parsedQty = Math.max(0, Math.min(maxAllowed, Math.floor(qty) || 0))
+        const parsedQty = Math.max(0, Math.min(maxAllowed, Math.floor(val) || 0))
 
         const updatedItem = {
           ...item,
@@ -842,6 +866,16 @@ export function BillActionView({
           replacementFeePerUnit: item.replacementFeePerUnit,
           note: item.note,
         })),
+        actualDamageCharges: returnedItems
+          .filter((item) => (item.damagedQty || 0) > 0 || (item.lostQty || 0) > 0)
+          .map((item) => ({
+            rentalBillItemId: item.rentalBillItemId,
+            productId: item.productId,
+            damageCharge: Number(item.repairFeePerUnit || 0),
+            lossCharge: Number(item.replacementFeePerUnit || 0),
+          })),
+        deductFromDeposit,
+        isConfirmed: true,
         collectedAmount: userCollectedAmount,
         paymentMethod: paymentChannel,
         actor: {
@@ -1232,6 +1266,34 @@ export function BillActionView({
                                     {item.productCode}
                                   </span>
                                 )}
+                                {item.damagedQty > 0 && (
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+                                    <span className="shrink-0 font-medium">ค่าซ่อม/ชิ้น: ฿</span>
+                                    <NumericInput
+                                      value={item.repairFeePerUnit === 0 ? '' : item.repairFeePerUnit}
+                                      onChange={(val) =>
+                                        handleItemQtyChange(item.rentalBillItemId, 'repairFeePerUnit', val === '' ? 0 : Number(val))
+                                      }
+                                      defaultValueOnBlur={0}
+                                      min={0}
+                                      className="w-16 h-5 text-right font-bold border rounded px-1 text-[10px] bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700"
+                                    />
+                                  </div>
+                                )}
+                                {item.lostQty > 0 && (
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 dark:text-red-400">
+                                    <span className="shrink-0 font-medium">ค่าของหาย/ชิ้น: ฿</span>
+                                    <NumericInput
+                                      value={item.replacementFeePerUnit === 0 ? '' : item.replacementFeePerUnit}
+                                      onChange={(val) =>
+                                        handleItemQtyChange(item.rentalBillItemId, 'replacementFeePerUnit', val === '' ? 0 : Number(val))
+                                      }
+                                      defaultValueOnBlur={0}
+                                      min={0}
+                                      className="w-16 h-5 text-right font-bold border rounded px-1 text-[10px] bg-white dark:bg-slate-900 border-red-300 dark:border-red-700"
+                                    />
+                                  </div>
+                                )}
                               </td>
                               <td className="py-1 px-1 text-center font-bold text-slate-700 dark:text-slate-300">
                                 {item.totalQtyInBill}
@@ -1455,6 +1517,22 @@ export function BillActionView({
                           </div>
                         </div>
                       </div>
+
+                      {/* Deposit Deduction Toggle */}
+                      {activeBill.heldDepositAmount > 0 && (
+                        <div className="shrink-0 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-2">
+                          <label htmlFor="deductDepositCheckbox" className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-200 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              id="deductDepositCheckbox"
+                              checked={deductFromDeposit}
+                              onChange={(e) => setDeductFromDeposit(e.target.checked)}
+                              className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                            />
+                            <span>หักยอดค่าเสียหายจากเงินมัดจำ (ถือไว้ ฿{activeBill.heldDepositAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })})</span>
+                          </label>
+                        </div>
+                      )}
 
                       {/* 3. Net Amount Banner */}
                       <div

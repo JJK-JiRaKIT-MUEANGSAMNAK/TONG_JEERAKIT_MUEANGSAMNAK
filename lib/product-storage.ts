@@ -219,6 +219,20 @@ export function rentProductStock(
     list = itemsOrProductId
   }
 
+  // Pre-validate all items to ensure atomicity & non-negative stock (MASTER v2.3.0 Section 8.1)
+  for (const item of list) {
+    const p = current.find((prod) => prod.id === item.productId)
+    if (!p) {
+      throw new Error(`ไม่พบข้อมูลสินค้า ID "${item.productId}" ในระบบ`)
+    }
+    const reqQty = Number(item.quantity) || 0
+    if (reqQty > 0 && (p.availableQuantity || 0) < reqQty) {
+      throw new Error(
+        `สต็อกสินค้า "${p.name}" (รหัส: ${p.code || p.id}) ไม่เพียงพอสำหรับการทำรายการ (ต้องการ ${reqQty}, มีพร้อมใช้ ${p.availableQuantity || 0})`
+      )
+    }
+  }
+
   const map = new Map(list.map((i) => [i.productId, i]))
   const next = current.map((p) => {
     const item = map.get(p.id)

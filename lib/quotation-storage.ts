@@ -261,79 +261,8 @@ export function confirmQuotationWorkflow(
   const reservations: ReservationRecord[] = []
   const backorders: BackorderRecord[] = []
 
-  for (const item of quote.items) {
-    const isSale = item.rentalType === 'SALE'
-    const avail = getProductAvailability(item.productId, quote.rentalStartDate, quote.rentalEndDate)
-    const availableForRange = avail.availableForRange
-
-    if (availableForRange >= item.quantity) {
-      // Full stock available -> create active reservation
-      const resv = createReservation({
-        sourceType: 'QUOTATION',
-        sourceId: quote.id,
-        sourceNo: quote.quotationNo,
-        customerId: quote.customerId,
-        customerName: quote.customerName,
-        productId: item.productId,
-        productCode: item.productId,
-        productName: item.productName,
-        itemType: isSale ? 'SALE' : 'RENT',
-        quantity: item.quantity,
-        startDate: quote.rentalStartDate,
-        endDate: quote.rentalEndDate,
-        correlationId: corrId,
-      })
-      reservations.push(resv)
-    } else {
-      // Partial or zero stock available -> split into reservation and backorder
-      const fulfillableQty = Math.max(0, availableForRange)
-      const shortageQty = item.quantity - fulfillableQty
-
-      if (fulfillableQty > 0) {
-        const resv = createReservation({
-          sourceType: 'QUOTATION',
-          sourceId: quote.id,
-          sourceNo: quote.quotationNo,
-          customerId: quote.customerId,
-          customerName: quote.customerName,
-          productId: item.productId,
-          productCode: item.productId,
-          productName: item.productName,
-          itemType: isSale ? 'SALE' : 'RENT',
-          quantity: fulfillableQty,
-          startDate: quote.rentalStartDate,
-          endDate: quote.rentalEndDate,
-          correlationId: corrId,
-        })
-        reservations.push(resv)
-      }
-
-      if (shortageQty > 0) {
-        const bo = createBackorder({
-          sourceType: 'QUOTATION',
-          sourceId: quote.id,
-          sourceNo: quote.quotationNo,
-          customerId: quote.customerId,
-          customerName: quote.customerName,
-          productId: item.productId,
-          productCode: item.productId,
-          productName: item.productName,
-          itemType: isSale ? 'SALE' : 'RENT',
-          requestedQty: item.quantity,
-          outstandingQty: shortageQty,
-          startDate: quote.rentalStartDate,
-          endDate: quote.rentalEndDate,
-          notes: `สร้างจากใบเสนอราคา ${quote.quotationNo} (ขอ ${item.quantity}, จองได้ ${fulfillableQty}, ค้าง ${shortageQty})`,
-          correlationId: corrId,
-        })
-        backorders.push(bo)
-      }
-    }
-
-    // Sync product reserved quantity field
-    syncProductReservedStock(item.productId)
-  }
-
+  // MASTER v2.3.0 Section 7.3: Quotations do NOT reserve stock and do NOT create backorders.
+  // Stock reservation begins ONLY when a Bill is created/confirmed.
   const updatedQuotation: Quotation = {
     ...quote,
     status: 'ACCEPTED',
@@ -353,8 +282,8 @@ export function confirmQuotationWorkflow(
     after: {
       quotationNo: updatedQuotation.quotationNo,
       status: updatedQuotation.status,
-      reservationsCount: reservations.length,
-      backordersCount: backorders.length,
+      reservationsCount: 0,
+      backordersCount: 0,
     },
     correlationId: corrId,
   })

@@ -11,11 +11,12 @@
  */
 
 import { FullBill, FullBillItem, ReturnInspectionItem } from '@/lib/types/rental-return'
-import { RentalBill, BillRevisionRecord } from '@/lib/types/rental-pos'
+import { RentalBill, BillRevisionRecord, RentalStatus } from '@/lib/types/rental-pos'
 import {
   loadBills,
   saveBills,
   updateBill,
+  addBill,
   dbBillToFullBill,
   canHardDeleteBill,
   deleteBill as deleteBillFromStorage,
@@ -115,11 +116,14 @@ export function createBillWorkflow(options: CreateBillOptions): {
     heldDepositAmount: Number(rawBill.heldDepositAmount || options.depositAmount || rawBill.paidDepositAmount || 0),
     paidDepositAmount: Number(rawBill.paidDepositAmount || options.depositAmount || 0),
     paidAmount: Number(rawBill.paidAmount || 0),
+    billAmount: Number(rawBill.billAmount || rawBill.grandTotal || 0),
     grandTotal: Number(rawBill.grandTotal || 0),
-    outstandingAmount: Number(rawBill.outstandingAmount || Math.max(0, (rawBill.grandTotal || 0) - (rawBill.paidAmount || 0))),
+    outstandingAmount: Number(rawBill.outstandingAmount !== undefined ? rawBill.outstandingAmount : Math.max(0, (rawBill.grandTotal || 0) - (rawBill.paidAmount || 0))),
     paymentStatus: rawBill.paymentStatus || 'UNPAID',
-    rentalStatus: rawBill.rentalStatus || 'RENTING',
-    dispatchStatus: rawBill.dispatchStatus || 'DISPATCHED',
+    rentalStatus: rawBill.dispatchStatus === 'DISPATCHED'
+      ? (rawBill.rentalStatus === 'CONFIRMED' ? 'RENTING' : (rawBill.rentalStatus || 'RENTING'))
+      : (rawBill.rentalStatus === 'RENTING' ? 'CONFIRMED' : (rawBill.rentalStatus || 'CONFIRMED')),
+    dispatchStatus: rawBill.dispatchStatus || 'PENDING',
     deposits: rawBill.deposits || [],
     items: rawBill.items || [],
   }
@@ -304,9 +308,15 @@ export function createBillWorkflow(options: CreateBillOptions): {
     }
   } else {
     // 2. DISPATCHED: Stock is physically handed over.
+    const rentStockItems = incomingBill.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      isSale: item.rentalType === 'SALE',
+    }))
+    rentProductStock(rentStockItems)
+
     incomingBill.items.forEach((item) => {
       const isSale = item.rentalType === 'SALE'
-      rentProductStock(item.productId, item.quantity, isSale)
       syncProductReservedStock(item.productId)
 
       recordAuditLog({
@@ -600,7 +610,10 @@ export function confirmDraftBillWorkflow(options: ConfirmDraftBillOptions): {
   }
 
   const hasRentalItems = targetBill.items.some((i) => i.rentalType !== 'SALE' && i.requiresReturn !== false)
-  const targetRentalStatus = hasRentalItems ? 'RENTING' : 'CLOSED'
+  const dispatchStatus = options.dispatchStatus || targetBill.dispatchStatus || 'PENDING'
+  const targetRentalStatus: RentalStatus = dispatchStatus === 'DISPATCHED'
+    ? (hasRentalItems ? 'RENTING' : 'CLOSED')
+    : 'CONFIRMED'
 
   const normalizedSplits = options.splitTenders
     ? options.splitTenders.map((t) => ({ channel: t.paymentMethod, amount: t.amount, referenceNo: t.referenceNo }))
@@ -615,7 +628,7 @@ export function confirmDraftBillWorkflow(options: ConfirmDraftBillOptions): {
   const billToConfirm: FullBill = {
     ...targetBill,
     rentalStatus: targetRentalStatus,
-    dispatchStatus: options.dispatchStatus || targetBill.dispatchStatus || 'PENDING',
+    dispatchStatus,
     paidAmount,
     heldDepositAmount: heldDeposit,
     paidDepositAmount: heldDeposit,
@@ -692,6 +705,21 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
     throw new Error(`Cannot dispatch cancelled or voided bill`)
   }
 
+  // Pre-validate stock availability across all items before mutating any state (Atomic validation)
+  const allProds = loadProducts()
+  for (const item of targetBill.items) {
+    const prod = allProds.find((p) => p.id === item.productId)
+    if (!prod) {
+      throw new Error(`ไม่พบข้อมูลสินค้า ID "${item.productId}" ในระบบ`)
+    }
+    const avail = prod.availableQuantity ?? 0
+    if (avail < item.quantity) {
+      throw new Error(
+        `สินค้า "${prod.name}" (รหัส: ${prod.code || prod.id}) สต็อกไม่เพียงพอสำหรับการส่งมอบ (ต้องการ ${item.quantity}, มีพร้อมใช้ ${avail})`
+      )
+    }
+  }
+
   // 1. Transition reservations to DISPATCHED
   const dispatchedReservations = [
     ...dispatchReservationsBySource('BILL', targetBill.id, correlationId),
@@ -720,10 +748,12 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
     })
   })
 
-  // 3. Update Bill dispatchStatus to DISPATCHED
+  // 3. Update Bill dispatchStatus to DISPATCHED & rentalStatus to RENTING (or CLOSED if only sale items)
+  const hasRentalItems = targetBill.items.some((i) => i.rentalType !== 'SALE' && i.requiresReturn !== false)
   const updatedBill: FullBill = {
     ...targetBill,
     dispatchStatus: 'DISPATCHED',
+    rentalStatus: hasRentalItems ? 'RENTING' : 'CLOSED',
   }
 
   updateBill(updatedBill)
@@ -734,8 +764,8 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
     action: 'BILL_DISPATCH',
     entityType: 'BILL',
     entityId: updatedBill.id,
-    before: { billNo: targetBill.billNo, dispatchStatus: targetBill.dispatchStatus },
-    after: { billNo: updatedBill.billNo, dispatchStatus: 'DISPATCHED' },
+    before: { billNo: targetBill.billNo, dispatchStatus: targetBill.dispatchStatus, rentalStatus: targetBill.rentalStatus },
+    after: { billNo: updatedBill.billNo, dispatchStatus: 'DISPATCHED', rentalStatus: updatedBill.rentalStatus },
     correlationId,
   })
 
@@ -903,11 +933,29 @@ export interface ReturnItemInput {
   note?: string
 }
 
+export interface ReturnDamageChargeInput {
+  rentalBillItemId: string
+  productId?: string
+  damageCharge?: number
+  lossCharge?: number
+  damagedQty?: number
+  repairFeePerUnit?: number
+  actualDamageCharge?: number
+  lostQty?: number
+  replacementFeePerUnit?: number
+  actualLossCharge?: number
+  reason?: string
+}
+
 export interface ProcessReturnOptions {
   billId: string
   returnNo?: string
   items?: ReturnItemInput[]
   returnItems?: ReturnItemInput[]
+  returnLines?: ReturnItemInput[]
+  actualDamageCharges?: ReturnDamageChargeInput[]
+  deductFromDeposit?: boolean
+  isConfirmed?: boolean
   actor: ActorInfo
   collectedAmount?: number
   paymentMethod?: string
@@ -918,6 +966,12 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
   bill: FullBill
   correlationId: string
   returnNo: string
+  totalDamageCharges: number
+  totalDamageFee: number
+  depositApplied: number
+  depositRefund: number
+  depositRefundDue: number
+  additionalAmountDue: number
 } {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
@@ -930,11 +984,18 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     throw new Error(`Bill ${options.billId} not found`)
   }
 
-  const returnItemsList = options.items || options.returnItems || []
+  const returnItemsList = options.items || options.returnItems || options.returnLines || []
   const inspectionMap = new Map(returnItemsList.map((it) => [it.rentalBillItemId, it]))
+  const allMasterProducts = loadProducts()
 
   // 1. Process Stock Return for each item
   for (const it of returnItemsList) {
+    const billItem = targetBill.items.find((bi) => bi.rentalBillItemId === it.rentalBillItemId)
+    const prodId = it.productId || billItem?.productId
+    if (!it.productId && prodId) {
+      it.productId = prodId
+    }
+
     const normal = Math.max(0, it.normalQty || 0)
     const damaged = Math.max(0, it.damagedQty || 0)
     const lost = Math.max(0, it.lostQty || 0)
@@ -976,7 +1037,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     }
   }
 
-  // 2. Update individual bill items
+  // 2. Update Bill Items Status and Quantities
   let totalRemainingOutstanding = 0
   const updatedItems: FullBillItem[] = targetBill.items.map((billItem) => {
     const insp = inspectionMap.get(billItem.rentalBillItemId)
@@ -1018,12 +1079,141 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
   const isFullyReturned = totalRemainingOutstanding === 0
   const nextRentalStatus = isFullyReturned ? 'RETURNED' : 'PARTIAL_RETURNED'
 
-  // 4. Handle any fee collected during return
+  // 4. Calculate Damage / Loss Fees (Eliminate 150/1000 fallback, use Master Product defaults or actual charges)
+  let totalDamageFee = 0
+  for (const it of returnItemsList) {
+    const chargeOverride = options.actualDamageCharges?.find(
+      (c) => c.rentalBillItemId === it.rentalBillItemId || (it.productId && c.productId === it.productId)
+    )
+    const masterProd = allMasterProducts.find((p) => p.id === it.productId)
+
+    let repairFee = 0
+    let lossFee = 0
+
+    if (chargeOverride) {
+      if (chargeOverride.actualDamageCharge !== undefined) {
+        totalDamageFee += Number(chargeOverride.actualDamageCharge || 0)
+      } else {
+        repairFee = Number(chargeOverride.damageCharge ?? chargeOverride.repairFeePerUnit ?? 0)
+        totalDamageFee += Math.max(0, it.damagedQty || 0) * repairFee
+      }
+
+      if (chargeOverride.actualLossCharge !== undefined) {
+        totalDamageFee += Number(chargeOverride.actualLossCharge || 0)
+      } else {
+        lossFee = Number(chargeOverride.lossCharge ?? chargeOverride.replacementFeePerUnit ?? 0)
+        totalDamageFee += Math.max(0, it.lostQty || 0) * lossFee
+      }
+    } else {
+      repairFee = it.repairFeePerUnit !== undefined && it.repairFeePerUnit > 0
+        ? it.repairFeePerUnit
+        : Number(masterProd?.defaultDamageFee ?? masterProd?.defaultRepairFee ?? 0)
+
+      lossFee = it.replacementFeePerUnit !== undefined && it.replacementFeePerUnit > 0
+        ? it.replacementFeePerUnit
+        : Number(masterProd?.defaultLossFee ?? masterProd?.defaultReplacementFee ?? 0)
+
+      const itemDamage = (Math.max(0, it.damagedQty || 0) * repairFee) + (Math.max(0, it.lostQty || 0) * lossFee)
+      totalDamageFee += itemDamage
+    }
+  }
+
+  // 5. Deposit Settlement
+  const heldDepositBefore = Number(targetBill.heldDepositAmount || 0)
+  let depositApplied = 0
+  let depositRefundDue = 0
+  let additionalAmountDue = 0
+  let heldDepositAfter = heldDepositBefore
+
+  let updatedDeposits = targetBill.deposits || []
+
+  if (options.deductFromDeposit && totalDamageFee > 0) {
+    if (heldDepositBefore >= totalDamageFee) {
+      // Case 10 & 11: Deposit >= damage
+      depositApplied = totalDamageFee
+      heldDepositAfter = heldDepositBefore - depositApplied
+      depositRefundDue = heldDepositAfter
+      additionalAmountDue = 0
+    } else {
+      // Case 12: Deposit < damage
+      depositApplied = heldDepositBefore
+      heldDepositAfter = 0
+      depositRefundDue = 0
+      additionalAmountDue = totalDamageFee - heldDepositBefore
+    }
+
+    if (depositApplied > 0) {
+      recordBillPayment({
+        billId: targetBill.id,
+        billNo: targetBill.billNo,
+        amount: depositApplied,
+        channel: 'หักจากเงินมัดจำ',
+        customerName: targetBill.customerName,
+        category: 'หักมัดจำชำระค่าเสียหาย',
+        isDeposit: false,
+        refNo: `TX-DEP-SETTLE-${returnNo}`,
+        description: `หักชำระค่าเสียหายจากเงินมัดจำ ใบคืน ${returnNo}`,
+        correlationId,
+      })
+    }
+
+    if (depositRefundDue > 0) {
+      recordExpense({
+        billId: targetBill.id,
+        billNo: targetBill.billNo,
+        amount: depositRefundDue,
+        channel: options.paymentMethod || 'โอนเงิน',
+        category: 'คืนเงินมัดจำ',
+        isDeposit: true,
+        refNo: `TX-DEP-REFUND-${returnNo}`,
+        description: `คืนเงินมัดจำส่วนที่เหลือ ใบคืน ${returnNo}`,
+        correlationId,
+      })
+      heldDepositAfter = 0
+    }
+
+    updatedDeposits = (targetBill.deposits || []).map((dep) => ({
+      ...dep,
+      heldAmount: heldDepositAfter,
+      appliedAmount: (dep.appliedAmount || 0) + depositApplied,
+      refundAmount: (dep.refundAmount || 0) + depositRefundDue,
+      status: (heldDepositAfter === 0 ? 'SETTLED' : dep.status) as any,
+    }))
+
+    recordAuditLog({
+      userId: actorUserId,
+      displayName: actorDisplayName,
+      action: 'DEPOSIT_SETTLEMENT',
+      entityType: 'FINANCE',
+      entityId: targetBill.id,
+      before: {
+        billNo: targetBill.billNo,
+        heldDeposit: heldDepositBefore,
+        outstandingAmount: targetBill.outstandingAmount,
+      },
+      after: {
+        billNo: targetBill.billNo,
+        totalDamageFee,
+        depositApplied,
+        depositRefundDue,
+        additionalAmountDue,
+        heldDepositAfter,
+        returnNo,
+      },
+      correlationId,
+    })
+  } else if (!options.deductFromDeposit && totalDamageFee > 0) {
+    additionalAmountDue = totalDamageFee
+  }
+
+  // 6. Handle any extra fee collected during return (cash / transfer / etc.)
+  let extraCollected = 0
   if (options.collectedAmount && options.collectedAmount > 0) {
+    extraCollected = options.collectedAmount
     const feeTx = recordBillPayment({
       billId: targetBill.id,
       billNo: targetBill.billNo,
-      amount: options.collectedAmount,
+      amount: extraCollected,
       channel: options.paymentMethod || 'เงินสด',
       customerName: targetBill.customerName,
       category: 'ค่าปรับ/ค่าชำรุด',
@@ -1042,17 +1232,30 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       before: null,
       after: {
         billNo: targetBill.billNo,
-        amount: options.collectedAmount,
+        amount: extraCollected,
         returnNo,
       },
       correlationId,
     })
   }
 
+  // 7. Calculate final financial figures on the bill
+  const newGrandTotal = (targetBill.grandTotal || 0) + totalDamageFee
+  const newPaidAmount = (targetBill.paidAmount || 0) + depositApplied + extraCollected
+  const newOutstanding = Math.max(0, (targetBill.outstandingAmount || 0) + additionalAmountDue - extraCollected)
+
   const updatedBill: FullBill = {
     ...targetBill,
     items: updatedItems,
     rentalStatus: nextRentalStatus,
+    grandTotal: newGrandTotal,
+    paidAmount: newPaidAmount,
+    outstandingAmount: newOutstanding,
+    heldDepositAmount: heldDepositAfter,
+    depositApplied: (targetBill.depositApplied || 0) + depositApplied,
+    refundDueAmount: (targetBill.refundDueAmount || 0) + depositRefundDue,
+    paymentStatus: newOutstanding > 0 ? (newPaidAmount > 0 ? 'PARTIAL' : 'UNPAID') : targetBill.paymentStatus,
+    deposits: updatedDeposits,
   }
 
   updateBill(updatedBill)
@@ -1073,11 +1276,25 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       returnNo,
       remainingOutstanding: totalRemainingOutstanding,
       isFullyReturned,
+      totalDamageFee,
+      depositApplied,
+      depositRefundDue,
+      additionalAmountDue,
     },
     correlationId,
   })
 
-  return { bill: updatedBill, correlationId, returnNo }
+  return {
+    bill: updatedBill,
+    correlationId,
+    returnNo,
+    totalDamageCharges: totalDamageFee,
+    totalDamageFee,
+    depositApplied,
+    depositRefund: depositRefundDue,
+    depositRefundDue,
+    additionalAmountDue,
+  }
 }
 
 // ─── 4. BILL REVISION WORKFLOW ───────────────────────────────────────────────
@@ -1108,7 +1325,11 @@ export interface ProcessBillRevisionOptions {
   headerReturnDate?: string
   discountAmount?: number
   shippingFee?: number
-  items: RevisedItemInput[]
+  items?: RevisedItemInput[]
+  newSubtotal?: number
+  newGrandTotal?: number
+  extensionDays?: number
+  extensionFee?: number
   actor: ActorInfo
   correlationId?: string
 }
@@ -1117,6 +1338,8 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
   bill: FullBill
   correlationId: string
   revisionRecord: BillRevisionRecord
+  originalBill?: FullBill
+  extensionBill?: FullBill
 } {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
@@ -1136,8 +1359,24 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
   // 1. Calculate Stock Deltas & apply stock adjustments
   const stockDeltas: Array<{ productId: string; productName: string; quantityDelta: number }> = []
 
+  const rawItems: RevisedItemInput[] = options.items || (originalBill.items ? originalBill.items.map((it) => ({
+    rentalBillItemId: it.rentalBillItemId,
+    productId: it.productId,
+    productName: it.productName,
+    rentalType: (it.rentalType as any) || 'NORMAL',
+    quantity: it.quantity,
+    returnedQty: it.returnedQty,
+    outstandingQty: it.outstandingQty,
+    unitPrice: it.dailyRate || 0,
+    unitName: it.unit,
+    dailyStartDate: it.rentalStartDate,
+    dailyEndDate: it.scheduledReturnDate,
+    usageCount: it.usageCount || 1,
+    action: 'UPDATE' as const,
+  })) : [])
+
   // Active revised items (filter out REMOVE)
-  const activeItems = options.items.filter((it) => it.action !== 'REMOVE')
+  const activeItems = rawItems.filter((it) => it.action !== 'REMOVE')
 
   // Map original quantities
   const originalItemQtyMap = new Map<string, number>()
@@ -1159,14 +1398,11 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
     const delta = newQty - oldQty // positive = more rented/sold; negative = fewer
 
     if (delta !== 0) {
-      const prodOption = activeItems.find((i) => i.productId === prodId) ||
-        originalBill.items.find((i) => i.productId === prodId)
-      const isSale = prodOption?.rentalType === 'SALE'
-
-      adjustProductStockDelta(prodId, delta, isSale)
+      adjustProductStockDelta(prodId, delta)
+      const p = loadProducts().find((prod) => prod.id === prodId)
       stockDeltas.push({
         productId: prodId,
-        productName: prodOption?.productName || prodId,
+        productName: p?.name || prodId,
         quantityDelta: delta,
       })
 
@@ -1185,23 +1421,31 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
   }
 
   // 2. Calculate Financial Recalculation
-  const calculatedSubtotal = activeItems.reduce((sum, item) => {
-    if (item.rentalType === 'DAILY') {
-      const d1 = new Date(item.dailyStartDate || options.headerRentalDate || '2026-01-01')
-      const d2 = new Date(item.dailyEndDate || options.headerReturnDate || '2026-01-01')
-      const days = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000))
-      return sum + item.quantity * item.unitPrice * days
-    }
-    if (item.rentalType === 'SALE') {
-      return sum + item.quantity * item.unitPrice
-    }
-    return sum + item.quantity * item.unitPrice * (item.usageCount || 1)
-  }, 0)
+  const calculatedSubtotal = options.newSubtotal !== undefined
+    ? options.newSubtotal
+    : options.extensionFee !== undefined
+      ? options.extensionFee
+      : activeItems.reduce((sum, item) => {
+          if (item.rentalType === 'DAILY') {
+            const d1 = new Date(item.dailyStartDate || options.headerRentalDate || '2026-01-01')
+            const d2 = new Date(item.dailyEndDate || options.headerReturnDate || '2026-01-01')
+            const days = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000))
+            return sum + item.quantity * item.unitPrice * days
+          }
+          if (item.rentalType === 'SALE') {
+            return sum + item.quantity * item.unitPrice
+          }
+          return sum + item.quantity * item.unitPrice * (item.usageCount || 1)
+        }, 0)
 
   const discount = options.discountAmount !== undefined ? options.discountAmount : (originalBill.discountAmount || 0)
   const shipping = options.shippingFee !== undefined ? options.shippingFee : (originalBill.shippingFee || 0)
-  const deposit = Number(originalBill.heldDepositAmount || 0)
-  const newGrandTotal = Math.max(0, calculatedSubtotal - discount + shipping) + deposit
+  // Grand total strictly EXCLUDES deposit!
+  const newGrandTotal = options.newGrandTotal !== undefined
+    ? options.newGrandTotal
+    : options.extensionFee !== undefined
+      ? options.extensionFee
+      : Math.max(0, calculatedSubtotal - discount + shipping)
 
   const oldGrandTotal = originalBill.grandTotal
   const oldPaidAmount = originalBill.paidAmount || 0
@@ -1268,10 +1512,116 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
     }
   })
 
-  // 4. Build Revision Record
+  // 4. Handle EXTENSION vs CORRECTION mode
+  const revNo = (originalBill.revisions?.length || 0) + 1
+
+  if (options.mode === 'EXTENSION') {
+    // Mode: EXTENSION -> Do NOT overwrite original bill!
+    // Original bill becomes EXTENDED. Create new linked extension bill.
+    const extBillNo = `${originalBill.billNo}-EXT${revNo}`
+    const extBillId = `bill-ext-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+
+    const extensionBill: FullBill = {
+      id: extBillId,
+      billNo: extBillNo,
+      billDate: new Date().toISOString().slice(0, 10),
+      customerId: originalBill.customerId,
+      customerName: originalBill.customerName,
+      customerPhone: originalBill.customerPhone,
+      customerAddress: originalBill.customerAddress,
+      siteName: originalBill.siteName,
+      originalBillId: originalBill.id,
+      parentBillId: originalBill.id,
+      rentalStartDate: options.headerRentalDate || originalBill.scheduledReturnDate,
+      scheduledReturnDate: options.headerReturnDate || originalBill.scheduledReturnDate,
+      rentalStatus: 'RENTING',
+      dispatchStatus: 'DISPATCHED',
+      subtotal: calculatedSubtotal,
+      discountAmount: discount,
+      shippingFee: shipping,
+      billAmount: newGrandTotal,
+      grandTotal: newGrandTotal,
+      paidAmount: 0,
+      outstandingAmount: newGrandTotal,
+      paymentStatus: 'UNPAID',
+      heldDepositAmount: 0,
+      paidDepositAmount: 0,
+      deposits: [],
+      items: finalBillItems,
+      remark: [originalBill.remark, `ต่อสัญญาจากบิล ${originalBill.billNo}: ${trimmedReason}`].filter(Boolean).join(' | '),
+    }
+
+    const revisionRecord: BillRevisionRecord = {
+      id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      revisionNo: revNo,
+      timestamp: new Date().toISOString(),
+      userId: actorUserId,
+      displayName: actorDisplayName,
+      reason: trimmedReason,
+      mode: 'EXTENSION',
+      before: {
+        grandTotal: originalBill.grandTotal,
+        subtotal: originalBill.subtotal,
+        paidAmount: originalBill.paidAmount,
+        outstandingAmount: originalBill.outstandingAmount,
+        items: originalBill.items,
+      },
+      after: {
+        grandTotal: originalBill.grandTotal,
+        subtotal: originalBill.subtotal,
+        paidAmount: originalBill.paidAmount,
+        outstandingAmount: originalBill.outstandingAmount,
+        items: originalBill.items,
+        extensionBillNo: extBillNo,
+        extensionBillId: extBillId,
+      } as any,
+      stockDeltas,
+      financialDelta: {
+        grandTotalDelta: 0,
+        outstandingDelta: 0,
+        refundDueDelta: 0,
+      },
+      correlationId,
+    }
+
+    const updatedOriginalBill: FullBill = {
+      ...originalBill,
+      rentalStatus: 'EXTENDED',
+      revisions: [...(originalBill.revisions || []), revisionRecord],
+    }
+
+    updateBill(updatedOriginalBill)
+    addBill(extensionBill)
+
+    recordAuditLog({
+      userId: actorUserId,
+      displayName: actorDisplayName,
+      action: 'BILL_EXTENSION',
+      entityType: 'BILL',
+      entityId: extensionBill.id,
+      before: { originalBillNo: originalBill.billNo, rentalStatus: originalBill.rentalStatus },
+      after: {
+        extensionBillNo: extBillNo,
+        originalBillNo: originalBill.billNo,
+        rentalStatus: 'RENTING',
+        originalStatusAfter: 'EXTENDED',
+      },
+      correlationId,
+    })
+
+    return {
+      bill: extensionBill,
+      originalBill: updatedOriginalBill,
+      correlationId,
+      revisionRecord,
+      extensionBill,
+    }
+  }
+
+  // Default: Mode CORRECTION / REVISION on existing bill
   const revisionRecord: BillRevisionRecord = {
     id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    revisionNo: (originalBill.revisions?.length || 0) + 1,
+    revisionNo: revNo,
     timestamp: new Date().toISOString(),
     userId: actorUserId,
     displayName: actorDisplayName,
@@ -1300,7 +1650,7 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
     correlationId,
   }
 
-  // 5. Update Bill with Revision History
+  // Update Bill with Revision History
   const updatedBill: FullBill = {
     ...originalBill,
     rentalStartDate: options.headerRentalDate || originalBill.rentalStartDate,
@@ -1308,8 +1658,10 @@ export function processBillRevisionWorkflow(options: ProcessBillRevisionOptions)
     subtotal: calculatedSubtotal,
     discountAmount: discount,
     shippingFee: shipping,
+    billAmount: newGrandTotal,
     grandTotal: newGrandTotal,
     outstandingAmount: newOutstanding,
+    refundDue: refundDue,
     refundDueAmount: refundDue,
     paymentStatus,
     items: finalBillItems,
@@ -1360,6 +1712,7 @@ export function cancelOrVoidBillWorkflow(options: CancelBillOptions): {
   bill: FullBill
   correlationId: string
   refundTransaction?: StatementTransaction
+  releasedReservations?: ReservationRecord[]
 } {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
@@ -1382,13 +1735,15 @@ export function cancelOrVoidBillWorkflow(options: CancelBillOptions): {
   // "ถ้าสินค้าถูกส่งหรือปล่อยเช่าแล้ว: ห้าม Cancel แล้วเพิ่ม Available กลับทันที"
   // "Void เพียงอย่างเดียวห้ามทำให้สินค้าที่อยู่กับลูกค้ากลับ Available"
   const isDispatched = targetBill.dispatchStatus === 'DISPATCHED'
+  let releasedReservations: ReservationRecord[] = []
 
   if (!isDispatched) {
     // Release active reservations and backorders
-    releaseReservationsBySource('BILL', targetBill.id, trimmedReason, correlationId)
-    if (targetBill.quotationId) {
-      releaseReservationsBySource('QUOTATION', targetBill.quotationId, trimmedReason, correlationId)
-    }
+    const billResvs = releaseReservationsBySource('BILL', targetBill.id, trimmedReason, correlationId)
+    const quoteResvs = targetBill.quotationId
+      ? releaseReservationsBySource('QUOTATION', targetBill.quotationId, trimmedReason, correlationId)
+      : []
+    releasedReservations = [...billResvs, ...quoteResvs]
     cancelBackordersBySource('BILL', targetBill.id, trimmedReason)
 
     targetBill.items.forEach((item) => {
@@ -1513,7 +1868,7 @@ export function cancelOrVoidBillWorkflow(options: CancelBillOptions): {
     correlationId,
   })
 
-  return { bill: updatedBill, correlationId, refundTransaction }
+  return { bill: updatedBill, correlationId, refundTransaction, releasedReservations }
 }
 
 // ─── 6. DEPOSIT REFUND WORKFLOW ──────────────────────────────────────────────
@@ -1729,7 +2084,9 @@ export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOption
 
 export interface FulfillBackorderWorkflowOptions {
   backorderId: string
-  allocateQty: number
+  allocateQty?: number
+  allocatedQty?: number
+  notificationId?: string
   actor: ActorInfo
   correlationId?: string
 }
@@ -1748,17 +2105,20 @@ export function fulfillBackorderWorkflow(options: FulfillBackorderWorkflowOption
   backorder: BackorderRecord
   reservation: ReservationRecord
   correlationId: string
+  fulfilledBackorder?: BackorderRecord
+  newReservation?: ReservationRecord
 } {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
   const actorDisplayName = options.actor.displayName || 'ระบบ'
+  const qtyToAllocate = Number(options.allocateQty ?? options.allocatedQty ?? 0)
 
-  if (options.allocateQty <= 0) {
+  if (qtyToAllocate <= 0) {
     throw new Error('Allocate quantity must be greater than 0')
   }
 
   // 1. Fulfill backorder
-  const { backorder: updatedBo } = fulfillBackorder(options.backorderId, options.allocateQty)
+  const { backorder: updatedBo } = fulfillBackorder(options.backorderId, qtyToAllocate)
 
   // 2. Create Active Reservation for allocated quantity
   const reservation = createReservation({
@@ -1771,7 +2131,7 @@ export function fulfillBackorderWorkflow(options: FulfillBackorderWorkflowOption
     productCode: updatedBo.productCode,
     productName: updatedBo.productName,
     itemType: updatedBo.itemType,
-    quantity: options.allocateQty,
+    quantity: qtyToAllocate,
     startDate: updatedBo.startDate || new Date().toISOString().slice(0, 10),
     endDate: updatedBo.endDate || new Date().toISOString().slice(0, 10),
     correlationId,
@@ -1792,7 +2152,7 @@ export function fulfillBackorderWorkflow(options: FulfillBackorderWorkflowOption
     before: { backorderNo: updatedBo.backorderNo, status: 'READY' },
     after: {
       backorderNo: updatedBo.backorderNo,
-      allocatedQty: options.allocateQty,
+      allocatedQty: qtyToAllocate,
       outstandingQty: updatedBo.outstandingQty,
       status: updatedBo.status,
       reservationId: reservation.id,
@@ -1800,7 +2160,13 @@ export function fulfillBackorderWorkflow(options: FulfillBackorderWorkflowOption
     correlationId,
   })
 
-  return { backorder: updatedBo, reservation, correlationId }
+  return {
+    backorder: updatedBo,
+    reservation,
+    correlationId,
+    fulfilledBackorder: updatedBo,
+    newReservation: reservation,
+  }
 }
 
 // ─── 9. RESERVATION EXPIRY WORKFLOW ──────────────────────────────────────────
