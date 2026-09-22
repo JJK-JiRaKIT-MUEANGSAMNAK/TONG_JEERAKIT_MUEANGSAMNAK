@@ -1,0 +1,279 @@
+name: Slack Project Alerts
+
+on:
+  issues:
+    types: [opened, reopened, closed, assigned, unassigned, labeled, unlabeled]
+  pull_request:
+    types: [opened, synchronize, ready_for_review, closed]
+  pull_request_review:
+    types: [submitted]
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  security-events: read
+  vulnerability-alerts: read
+
+jobs:
+  issue-alerts:
+    name: Issue Alerts
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare Slack Payload
+        env:
+          EVENT_PATH: ${{ github.event_path }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          node - << 'EOF'
+          const fs = require('fs');
+          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const action = event.action;
+          const issue = event.issue;
+          const actor = process.env.ACTOR;
+
+          let status = '';
+          if (action === 'opened') {
+            status = 'เปิดงานใหม่';
+          } else if (action === 'reopened') {
+            status = 'เปิดงานใหม่อีกครั้ง';
+          } else if (action === 'closed') {
+            status = 'ปิดงาน / งานเสร็จ';
+          } else if (action === 'assigned') {
+            const assignee = event.assignee ? event.assignee.login : '';
+            status = assignee ? `มอบหมายคนทำ (@${assignee})` : 'มอบหมายคนทำ';
+          } else if (action === 'unassigned') {
+            const assignee = event.assignee ? event.assignee.login : '';
+            status = assignee ? `ยกเลิกการมอบหมาย (@${assignee})` : 'ยกเลิกการมอบหมาย';
+          } else if (action === 'labeled') {
+            const label = event.label ? event.label.name : '';
+            status = label ? `เปลี่ยน Label (เพิ่ม: ${label})` : 'เปลี่ยน Label';
+          } else if (action === 'unlabeled') {
+            const label = event.label ? event.label.name : '';
+            status = label ? `เปลี่ยน Label (ลบ: ${label})` : 'เปลี่ยน Label';
+          } else {
+            status = `สถานะ: ${action}`;
+          }
+
+          const text = [
+            '*📋 แจ้งเตือนงาน (Issue) - TONG_JEERAKIT*',
+            `• *สถานะงาน:* ${status}`,
+            `• *ชื่องาน:* #${issue.number} ${issue.title}`,
+            `• *ผู้ดำเนินการ:* ${actor}`,
+            `• *ลิงก์:* ${issue.html_url}`
+          ].join('\n');
+
+          fs.writeFileSync('slack-payload.json', JSON.stringify({ text }));
+          EOF
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: slack-payload.json
+
+  pr-alerts:
+    name: Pull Request Alerts
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare Slack Payload
+        env:
+          EVENT_PATH: ${{ github.event_path }}
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          node - << 'EOF'
+          const fs = require('fs');
+          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const eventName = process.env.EVENT_NAME;
+          const action = event.action;
+          const pr = event.pull_request;
+          const actor = process.env.ACTOR;
+
+          let status = '';
+          if (eventName === 'pull_request') {
+            if (action === 'opened') {
+              status = 'เปิด PR ใหม่';
+            } else if (action === 'synchronize') {
+              status = 'มีการ Push แก้ PR เพิ่ม';
+            } else if (action === 'ready_for_review') {
+              status = 'พร้อมตรวจ (Ready for review)';
+            } else if (action === 'closed') {
+              status = pr.merged ? 'Merge สำเร็จ' : 'ปิดโดยไม่ได้ Merge';
+            } else {
+              status = `PR: ${action}`;
+            }
+          } else if (eventName === 'pull_request_review') {
+            const state = event.review ? event.review.state : '';
+            if (state === 'approved') {
+              status = 'มี Review (อนุมัติ / Approved)';
+            } else if (state === 'changes_requested') {
+              status = 'มี Review (ขอให้แก้ไข / Changes requested)';
+            } else if (state === 'commented') {
+              status = 'มี Review (มีความคิดเห็น / Commented)';
+            } else {
+              status = 'มี Review';
+            }
+          }
+
+          const branchInfo = `${pr.head.ref} → ${pr.base.ref}`;
+          const text = [
+            '*🔀 แจ้งเตือน Pull Request - TONG_JEERAKIT*',
+            `• *สถานะ:* ${status}`,
+            `• *ชื่อ PR:* #${pr.number} ${pr.title}`,
+            `• *ผู้ดำเนินการ:* ${actor}`,
+            `• *Branch:* ${branchInfo}`,
+            `• *ลิงก์:* ${pr.html_url}`
+          ].join('\n');
+
+          fs.writeFileSync('slack-payload.json', JSON.stringify({ text }));
+          EOF
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: slack-payload.json
+
+  security-summary:
+    name: Security Summary
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect Security Alerts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          node - << 'EOF'
+          const { execSync } = require('child_process');
+          const fs = require('fs');
+
+          const repo = process.env.REPO;
+          const serverUrl = process.env.SERVER_URL || 'https://github.com';
+          const securityUrl = `${serverUrl}/${repo}/security`;
+
+          function runGh(endpoint) {
+            try {
+              const out = execSync(`gh api --paginate "${endpoint}"`, {
+                stdio: ['ignore', 'pipe', 'pipe'],
+                encoding: 'utf8',
+                maxBuffer: 10 * 1024 * 1024
+              });
+              const trimmed = out.trim();
+              if (!trimmed) return { success: true, data: [] };
+              try {
+                return { success: true, data: JSON.parse(trimmed) };
+              } catch {
+                return { success: true, data: JSON.parse(trimmed.replace(/\]\s*\[/g, ',')) };
+              }
+            } catch (err) {
+              return { success: false, error: err.message, stderr: err.stderr ? err.stderr.toString() : '' };
+            }
+          }
+
+          let criticalCount = 0;
+          let highCount = 0;
+          let mediumCount = 0;
+          let lowCount = 0;
+          let totalCount = 0;
+
+          // 1. CodeQL / Code scanning alerts
+          console.log('Checking Code scanning alerts...');
+          const csRes = runGh(`repos/${repo}/code-scanning/alerts?state=open&per_page=100`);
+          if (csRes.success && Array.isArray(csRes.data)) {
+            for (const alert of csRes.data) {
+              totalCount++;
+              let level = alert.rule?.security_severity_level || '';
+              if (!level) {
+                const r = alert.rule?.severity || '';
+                if (r === 'error') level = 'high';
+                else if (r === 'warning') level = 'medium';
+                else if (r === 'note') level = 'low';
+                else level = r;
+              }
+              level = level.toLowerCase();
+              if (level === 'critical') criticalCount++;
+              else if (level === 'high') highCount++;
+              else if (level === 'medium') mediumCount++;
+              else if (level === 'low') lowCount++;
+              else highCount++;
+            }
+            console.log(`Found ${csRes.data.length} code scanning alerts`);
+          } else {
+            console.log('Code scanning alert check skipped or unavailable:', csRes.stderr || csRes.error);
+          }
+
+          // 2. Dependabot alerts
+          console.log('Checking Dependabot alerts...');
+          const depRes = runGh(`repos/${repo}/dependabot/alerts?state=open&per_page=100`);
+          if (depRes.success && Array.isArray(depRes.data)) {
+            for (const alert of depRes.data) {
+              totalCount++;
+              const level = (alert.security_advisory?.severity || '').toLowerCase();
+              if (level === 'critical') criticalCount++;
+              else if (level === 'high') highCount++;
+              else if (level === 'medium') mediumCount++;
+              else if (level === 'low') lowCount++;
+              else mediumCount++;
+            }
+            console.log(`Found ${depRes.data.length} dependabot alerts`);
+          } else {
+            console.log('Dependabot alert check skipped or unavailable:', depRes.stderr || depRes.error);
+          }
+
+          // 3. Secret scanning alerts
+          console.log('Checking Secret scanning alerts...');
+          let secretScanningNote = '';
+          const secRes = runGh(`repos/${repo}/secret-scanning/alerts?state=open&per_page=100`);
+          if (secRes.success && Array.isArray(secRes.data)) {
+            for (const alert of secRes.data) {
+              totalCount++;
+              highCount++;
+            }
+            console.log(`Found ${secRes.data.length} secret scanning alerts`);
+          } else {
+            secretScanningNote = 'Secret scanning ใช้การแจ้งเตือนจาก GitHub โดยตรงอยู่ก่อน';
+            console.log(secretScanningNote);
+          }
+
+          let textLines = [];
+          if (totalCount > 0) {
+            textLines.push('*🛡️ สรุปความปลอดภัยประจำวัน (Security Summary) - TONG_JEERAKIT*');
+            textLines.push('• *สถานะ:* พบคำเตือนความปลอดภัยที่ยังเปิดอยู่');
+            textLines.push(`• *จำนวนทั้งหมด:* ${totalCount} รายการ`);
+            textLines.push('• *ระดับความรุนแรง:*');
+            textLines.push(`  - Critical: ${criticalCount}`);
+            textLines.push(`  - High: ${highCount}`);
+            textLines.push(`  - Medium: ${mediumCount}`);
+            textLines.push(`  - Low: ${lowCount}`);
+            textLines.push(`• *ลิงก์หน้า Security:* ${securityUrl}`);
+          } else {
+            textLines.push('*🛡️ สรุปความปลอดภัยประจำวัน (Security Summary) - TONG_JEERAKIT*');
+            textLines.push('• *สถานะ:* ไม่พบคำเตือนความปลอดภัยที่ยังเปิดอยู่');
+            textLines.push(`• *ลิงก์หน้า Security:* ${securityUrl}`);
+          }
+
+          if (secretScanningNote) {
+            textLines.push(`• *หมายเหตุ:* ${secretScanningNote}`);
+          }
+
+          const payload = { text: textLines.join('\n') };
+          fs.writeFileSync('slack-payload.json', JSON.stringify(payload, null, 2));
+          console.log('Slack payload written successfully');
+          EOF
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: slack-payload.json
