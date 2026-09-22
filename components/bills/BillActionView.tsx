@@ -27,7 +27,7 @@ import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
 import { BusinessSettings } from '@/lib/types/rental-pos'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { generateCorrelationId } from '@/lib/audit-storage'
-import { processReturnWorkflow, processSplitPaymentWorkflow } from '@/lib/bill-workflow-service'
+import { processReturnWorkflow, processSplitPaymentWorkflow, fetchLatestPaymentBatch } from '@/lib/bill-workflow-service'
 
 interface ConfirmRentalReturnItemPayload {
   rental_bill_item_id: string
@@ -175,7 +175,14 @@ export function BillActionView({
 
   // Saved return & payment document numbers for accurate post-save printing
   const [savedReturnInfo, setSavedReturnInfo] = useState<{ returnNo?: string } | null>(null)
-  const [savedPaymentInfo, setSavedPaymentInfo] = useState<{ paymentNo?: string; receiptNo?: string } | null>(null)
+  const [savedPaymentInfo, setSavedPaymentInfo] = useState<{
+    paymentNo?: string
+    receiptNo?: string
+    outstandingAfter?: number
+    paidAmountAfter?: number
+    totalAmount?: number
+    tenders?: SplitPaymentTender[]
+  } | null>(null)
 
   // Post-Save Print Confirmation Modal State
   const [postSavePrintModal, setPostSavePrintModal] = useState<{
@@ -544,6 +551,35 @@ export function BillActionView({
   // Unified Payment Document Renderer
   const renderPaymentDoc = (customReceiptNo?: string) => {
     if (!activeBill) return null
+
+    const channelLabels: Record<string, string> = {
+      CASH: 'เงินสด (Cash)',
+      TRANSFER: 'โอนเงินผ่านธนาคาร (Bank Transfer)',
+      QR: 'สแกน QR Code (PromptPay)',
+      UNPAID: 'ยังไม่ชำระ (Unpaid)',
+      CHEQUE: 'เช็คธนาคาร (Cheque)',
+    }
+
+    const activeTenders = savedPaymentInfo?.tenders || splitTenders.filter((t) => Number(t.amount || 0) > 0)
+    const totalAmount = savedPaymentInfo?.totalAmount ?? (userCollectedAmount > 0 ? userCollectedAmount : activeBill.paidAmount)
+
+    const receiptItems = activeTenders.map((t) => ({
+      name: `รับชำระค่าบริการเช่า (${channelLabels[t.paymentMethod] || t.paymentMethod})`,
+      code: activeBill.billNo,
+      description: t.referenceNo ? `เลขอ้างอิง: ${t.referenceNo}` : `ชำระบิล ${activeBill.billNo}`,
+      amount: Number(t.amount),
+      paymentMethod: channelLabels[t.paymentMethod] || t.paymentMethod,
+    }))
+
+    const channelSummary = activeTenders.length > 1
+      ? 'หลายช่องทาง (Split Payment)'
+      : (channelLabels[activeTenders[0]?.paymentMethod] || paymentChannel)
+
+    // Use database confirmed outstanding after payment without double deduction
+    const remainingOutstanding = savedPaymentInfo?.outstandingAfter !== undefined
+      ? savedPaymentInfo.outstandingAfter
+      : activeBill.outstandingAmount
+
     return (
       <PaymentReceiptPlaceholder
         businessName={business?.businessName}
@@ -553,12 +589,13 @@ export function BillActionView({
         customerName={activeBill.customerName}
         customerPhone={activeBill.customerPhone}
         customerAddress={activeBill.customerAddress}
-        receiptNo={customReceiptNo || savedReceiptDocNo}
+        receiptNo={customReceiptNo || savedPaymentInfo?.receiptNo || savedReceiptDocNo}
         billNo={activeBill.billNo}
         paymentDate={paymentDate}
-        amount={userCollectedAmount}
-        paymentChannel={paymentChannel}
-        outstandingRemaining={Math.max(0, activeBill.outstandingAmount - userCollectedAmount)}
+        amount={totalAmount}
+        paymentChannel={channelSummary}
+        items={receiptItems.length > 0 ? receiptItems : undefined}
+        outstandingRemaining={remainingOutstanding}
         originalBillTotal={activeBill.grandTotal}
         note={`ชำระยอดค้างชำระ บิล ${activeBill.billNo}`}
       />
@@ -865,12 +902,9 @@ export function BillActionView({
       const actorUserId = user?.userId || 'system'
       const actorDisplayName = user?.displayName || 'ระบบ'
 
-      const paymentBatchId = `PAY-${Date.now().toString().slice(-6)}`
-      const receiptNo = `RC-${Date.now().toString().slice(-6)}`
-      setPaymentRequestId(generateUUID())
-
-      const { bill: updatedBill } = processSplitPaymentWorkflow({
+      const { bill: updatedBill, batchId, receiptNo: confirmedReceiptNo } = await processSplitPaymentWorkflow({
         billId: activeBill.id,
+        requestId: paymentRequestId,
         tenders: validTenders.map((t) => ({
           paymentMethod: t.paymentMethod,
           amount: Number(t.amount || 0),
@@ -884,6 +918,9 @@ export function BillActionView({
         },
       })
 
+      // Advance paymentRequestId for subsequent fresh payments
+      setPaymentRequestId(generateUUID())
+
       setBills((prev) =>
         prev.map((b) => (b.id === updatedBill.id ? updatedBill : b))
       )
@@ -895,8 +932,12 @@ export function BillActionView({
       )
 
       setSavedPaymentInfo({
-        paymentNo: paymentBatchId,
-        receiptNo,
+        paymentNo: batchId,
+        receiptNo: confirmedReceiptNo,
+        outstandingAfter: updatedBill.outstandingAmount,
+        paidAmountAfter: updatedBill.paidAmount,
+        totalAmount: totalPayment,
+        tenders: validTenders,
       })
       const isPartial = updatedBill.outstandingAmount > 0
       setPostSavePrintModal({

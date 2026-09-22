@@ -1,11 +1,12 @@
 /**
  * Shared Finance Storage
  *
- * Backed by localStorage key 'app_finance_storage'.
+ * Backed by localStorage key 'app_finance_storage' and Supabase public.statement_transactions table.
  * Single source of truth for financial transactions, cash inflow/outflow, and statement records.
  */
 
 import { loadBills } from '@/lib/bill-storage'
+import { createClient } from '@/lib/supabase/client'
 
 const STORAGE_KEY = 'app_finance_storage'
 
@@ -37,7 +38,8 @@ export function loadTransactions(): StatementTransaction[] {
       if (Array.isArray(parsed)) return parsed as StatementTransaction[]
     }
     return []
-  } catch {
+  } catch (err: any) {
+    console.error('Failed to parse transactions from localStorage:', err)
     return []
   }
 }
@@ -48,8 +50,9 @@ export function saveTransactions(txs: StatementTransaction[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(txs))
-  } catch {
-    // silently ignore quota issues
+  } catch (err: any) {
+    console.error('Failed to save transactions to localStorage:', err)
+    throw new Error(`ไม่สามารถบันทึกข้อมูลธุรกรรมลง Storage ได้: ${err?.message || err}`)
   }
 }
 
@@ -79,6 +82,65 @@ export function deleteTransaction(id: string): StatementTransaction[] {
   const next = current.filter((t) => t.id !== id)
   saveTransactions(next)
   return next
+}
+
+// ─── Database Row Mapping ──────────────────────────────────────────
+
+export function dbTxToStatementTransaction(row: any): StatementTransaction {
+  return {
+    id: row.id,
+    dateTime: row.date_time,
+    refNo: row.ref_no,
+    type: row.type || 'INCOME',
+    category: row.category || 'ค่าเช่าอุปกรณ์',
+    description: row.description || '',
+    customerName: row.customer_name || undefined,
+    incomeAmount: Number(row.income_amount || 0),
+    expenseAmount: Number(row.expense_amount || 0),
+    runningBalance: Number(row.running_balance || 0),
+    channel: row.channel,
+    billId: row.bill_id || undefined,
+    billNo: row.bill_no || undefined,
+    correlationId: row.correlation_id || undefined,
+    isDeposit: !!row.is_deposit,
+  }
+}
+
+export async function fetchTransactionsFromSupabase(): Promise<StatementTransaction[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('statement_transactions')
+    .select('*')
+    .order('date_time', { ascending: false })
+
+  if (error) {
+    throw new Error(`ไม่สามารถดึงข้อมูลธุรกรรมจาก Supabase ได้: ${error.message}`)
+  }
+
+  const mapped = (data || []).map(dbTxToStatementTransaction)
+  saveTransactions(mapped)
+  return mapped
+}
+
+export async function fetchTransactionsForBillFromSupabase(
+  billId: string,
+  billNo?: string
+): Promise<StatementTransaction[]> {
+  const supabase = createClient()
+  let query = supabase.from('statement_transactions').select('*')
+  if (billNo) {
+    query = query.or(`bill_id.eq.${billId},bill_no.eq.${billNo}`)
+  } else {
+    query = query.eq('bill_id', billId)
+  }
+
+  const { data, error } = await query.order('date_time', { ascending: true })
+
+  if (error) {
+    throw new Error(`ไม่สามารถดึงข้อมูลธุรกรรมของบิล ${billId} จาก Supabase ได้: ${error.message}`)
+  }
+
+  return (data || []).map(dbTxToStatementTransaction)
 }
 
 export interface RecordBillPaymentParams {
@@ -195,7 +257,7 @@ export function recordExpense(
   let finalChannel = 'โอนเงิน'
   let finalDate: string | undefined
   let finalCategory = 'คืนเงินมัดจำ'
-  let finalDescription = ''
+  let finalDescription: string | undefined
   let finalBillId: string | undefined
   let finalBillNo: string | undefined
   let finalOriginalTxId: string | undefined

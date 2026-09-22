@@ -17,15 +17,30 @@ import {
   Trash2,
   AlertTriangle,
   RefreshCw,
+  Send,
+  ListChecks,
 } from 'lucide-react'
 import { Appointment, Customer, AppointmentStatus, AppointmentType } from '@/lib/types/rental-pos'
 import { CustomDatePicker, getLocalDateString, parseLocalDate } from '@/components/common/CustomDatePicker'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { CustomerAutocomplete } from '@/components/common/CustomerAutocomplete'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
+import { DataTableFrame } from '@/components/common/DataTableFrame'
+import { ActionButton } from '@/components/common/ActionButton'
 import { useToast } from '@/components/common/Toast'
 import { logger } from '@/lib/utils/logger'
 import { AddAppointmentModal, DEFAULT_APPOINTMENT_TYPES } from '@/components/appointments/AddAppointmentModal'
+
+const WORK_ORDER_STAGES = [
+  { key: 'DISPATCH', label: 'สั่งงาน' },
+  { key: 'ACCEPT', label: 'รับงาน' },
+  { key: 'PREPARE', label: 'เตรียม' },
+  { key: 'PREPARED', label: 'เตรียมเสร็จ' },
+  { key: 'TRANSIT', label: 'ออกส่ง/ออกเก็บ' },
+  { key: 'ARRIVED', label: 'ถึงหน้างาน' },
+  { key: 'INSPECT', label: 'ตรวจรายการ' },
+  { key: 'COMPLETED', label: 'เสร็จงาน' },
+]
 import {
   loadAppointments,
   addAppointment,
@@ -86,6 +101,21 @@ export default function AppointmentsPage() {
   // Delete Confirmation State
   const [deletingApt, setDeletingApt] = useState<Appointment | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Work Order Dispatch Modal State (สั่งงาน)
+  const [orderApt, setOrderApt] = useState<Appointment | null>(null)
+
+  // Work Order Timeline Modal State (สถานะงาน)
+  const [timelineApt, setTimelineApt] = useState<Appointment | null>(null)
+
+  // UI-only Bill action handler
+  const handleBillClick = (apt: Appointment) => {
+    if (apt.billId || apt.billNo) {
+      showToast('สถานะบิล (UI)', `บิลเลขที่ ${apt.billNo || apt.billId}`, 'INFO')
+    } else {
+      showToast('สร้างบิล (UI)', `งาน "${apt.title}" ยังไม่มีบิลเชื่อมโยง (รอบนี้เป็น UI only)`, 'INFO')
+    }
+  }
 
   // Load Data
   const loadData = useCallback(async () => {
@@ -323,120 +353,191 @@ export default function AppointmentsPage() {
             />
           </div>
         ) : (
-          /* 3. Appointment List Workspace */
+          /* 3. Appointment List Workspace (Data Table) */
           <div className="flex-1 min-h-0 p-2 flex flex-col gap-2 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2.5">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-              <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                รายการนัดหมาย ({filteredTasks.length})
-              </span>
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  {activeTab === 'TODAY'
+                    ? 'รายการงานวันนี้'
+                    : activeTab === 'TOMORROW'
+                    ? 'รายการงานพรุ่งนี้'
+                    : 'รายการงานทั้งหมด'}{' '}
+                  ({filteredTasks.length})
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className="flex-1 min-h-0 space-y-2 overflow-y-auto overflow-x-hidden pr-1">
-            {filteredTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                {filteredTasks.map((apt) => {
-                  const typeInfo = getTypeBadge(apt.type)
-                  return (
-                    <div
-                      key={apt.id}
-                      onClick={() => setSelectedApt(apt)}
-                      className="p-3 rounded-2xl border space-y-2 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 shadow-xs hover:border-blue-500/60 transition-all cursor-pointer group flex flex-col justify-between"
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-start">
-                          <span className="font-bold text-slate-900 dark:text-slate-100 block group-hover:text-blue-600 transition-colors">
-                            {apt.title}
-                          </span>
+            <DataTableFrame
+              className="flex-1 min-h-0 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 shadow-none p-0 overflow-hidden"
+              containerClassName="h-full flex-1 min-h-0"
+              bodyClassName="h-full !min-h-0 !max-h-none overflow-y-auto"
+              empty={filteredTasks.length === 0}
+              emptyState={
+                <div className="text-center py-12 text-slate-400 font-bold text-xs">
+                  ไม่มีรายการนัดหมายในช่วงนี้
+                </div>
+              }
+            >
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                    <th className="px-3 py-2.5 font-bold whitespace-nowrap min-w-[130px]">ประเภทงาน</th>
+                    <th className="px-3 py-2.5 font-bold whitespace-nowrap min-w-[140px]">ลูกค้า / สถานที่</th>
+                    <th className="px-3 py-2.5 font-bold whitespace-nowrap min-w-[110px]">วัน / เวลา</th>
+                    <th className="px-3 py-2.5 font-bold whitespace-nowrap text-center min-w-[100px]">สถานะ</th>
+                    <th className="px-3 py-2.5 font-bold whitespace-nowrap text-center min-w-[260px]">การทำงาน</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredTasks.map((apt) => {
+                    const typeInfo = getTypeBadge(apt.type)
+                    const hasBill = Boolean(apt.billId || apt.billNo)
+                    return (
+                      <tr
+                        key={apt.id}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                      >
+                        {/* 1. ประเภทงาน */}
+                        <td className="px-3 py-2.5 align-top">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${typeInfo.bg}`}>
+                                {typeInfo.label}
+                              </span>
+                            </div>
+                            <p className="font-bold text-slate-900 dark:text-slate-100" title={apt.title}>
+                              {apt.title}
+                            </p>
+                            {apt.details && (
+                              <p className="text-[11px] text-slate-400 line-clamp-1 italic" title={apt.details}>
+                                💬 {apt.details}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 2. ลูกค้า / สถานที่ */}
+                        <td className="px-3 py-2.5 align-top">
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-slate-900 dark:text-slate-100" title={apt.customerName}>
+                              {apt.customerName}
+                            </p>
+                            {apt.phone && (
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                📞 {apt.phone}
+                              </p>
+                            )}
+                            {apt.location ? (
+                              <p className="text-[11px] text-slate-400 line-clamp-1" title={apt.location}>
+                                📍 {apt.location}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-slate-400 italic">-</p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 3. วัน / เวลา */}
+                        <td className="px-3 py-2.5 align-top whitespace-nowrap font-mono text-xs">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">
+                            📅 {apt.date}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            ⏰ {apt.startTime} - {apt.endTime} น.
+                          </p>
+                        </td>
+
+                        {/* 4. สถานะ */}
+                        <td className="px-3 py-2.5 align-top text-center whitespace-nowrap">
                           <span
-                            className={`px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0 ml-2 ${
+                            className={`px-2.5 py-1 rounded-full font-bold text-[10px] inline-block ${
                               apt.status === 'DONE'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                                 : apt.status === 'IN_PROGRESS'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
                                 : apt.status === 'CANCELLED'
-                                ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
-                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                             }`}
                           >
                             {apt.status === 'DONE'
-                              ? 'เสร็จแล้ว'
+                              ? '✓ เสร็จแล้ว'
                               : apt.status === 'IN_PROGRESS'
-                              ? 'กำลังดำเนินการ'
+                              ? '⏳ กำลังทำ'
                               : apt.status === 'CANCELLED'
-                              ? 'ยกเลิก'
-                              : 'รอดำเนินการ'}
+                              ? '✕ ยกเลิก'
+                              : '🕒 รอดำเนินการ'}
                           </span>
-                        </div>
+                        </td>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${typeInfo.bg}`}>
-                            {typeInfo.label}
-                          </span>
-                        </div>
+                        {/* 5. การทำงาน */}
+                        <td className="px-3 py-2.5 align-top text-center">
+                          <div className="flex items-center justify-center gap-1 flex-wrap sm:flex-nowrap">
+                            <ActionButton
+                              variant="neutral"
+                              onClick={() => setSelectedApt(apt)}
+                              className="h-7 px-2 text-[11px] rounded-lg"
+                              title="ดูข้อมูลงาน"
+                            >
+                              ดูข้อมูล
+                            </ActionButton>
 
-                        <p className="text-slate-600 dark:text-slate-400 text-[11px]">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            ลูกค้า: {apt.customerName}
-                          </span>
-                          {apt.phone && ` (${apt.phone})`}
-                        </p>
+                            <ActionButton
+                              variant="primary"
+                              onClick={() => setOrderApt(apt)}
+                              className="h-7 px-2 text-[11px] rounded-lg"
+                              title="สั่งงาน"
+                            >
+                              สั่งงาน
+                            </ActionButton>
 
-                        <div className="text-[11px] text-slate-400 space-y-0.5 font-mono">
-                          <p>
-                            📅 {apt.date} ({apt.startTime} - {apt.endTime} น.)
-                          </p>
-                          {apt.location && <p className="truncate">📍 {apt.location}</p>}
-                        </div>
+                            <ActionButton
+                              variant={hasBill ? 'outline' : 'secondary'}
+                              onClick={() => handleBillClick(apt)}
+                              className="h-7 px-2 text-[11px] rounded-lg"
+                              title={hasBill ? `สถานะบิล (${apt.billNo || apt.billId})` : 'สร้างบิล'}
+                            >
+                              {hasBill ? 'สถานะบิล' : 'สร้างบิล'}
+                            </ActionButton>
 
-                        {/* Preview details snippet if present */}
-                        {apt.details && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700 line-clamp-2 italic">
-                            💬 {apt.details}
-                          </p>
-                        )}
-                      </div>
+                            <ActionButton
+                              variant="utility"
+                              onClick={() => setTimelineApt(apt)}
+                              className="h-7 px-2 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700"
+                              title="สถานะงาน"
+                            >
+                              สถานะงาน
+                            </ActionButton>
 
-                      {/* Actions */}
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex justify-between items-center mt-2">
-                        <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 group-hover:underline">
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>ดูรายละเอียดงาน</span>
-                        </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(apt)}
+                              title="แก้ไข"
+                              className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
 
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(apt)}
-                            title="แก้ไข"
-                            className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeletingApt(apt)}
-                            title="ลบ"
-                            className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-slate-400 font-bold text-xs">
-                ไม่มีรายการนัดหมายในช่วงนี้
-              </div>
-            )}
+                            <button
+                              type="button"
+                              onClick={() => setDeletingApt(apt)}
+                              title="ลบ"
+                              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </DataTableFrame>
           </div>
-        </div>
-      )}
+        )}
       </div>
 
       {/* APPOINTMENT DETAIL MODAL */}
@@ -665,6 +766,176 @@ export default function AppointmentsPage() {
                   ปิดหน้าต่าง
                 </button>
               </div>
+            </AppModalFooter>
+          </>
+        )}
+      </AppModal>
+
+      {/* WORK ORDER DISPATCH MODAL (สั่งงาน) */}
+      <AppModal isOpen={!!orderApt} onClose={() => setOrderApt(null)} size="md">
+        {orderApt && (
+          <>
+            <AppModalHeader
+              onClose={() => setOrderApt(null)}
+              icon={<Send className="w-5 h-5 text-emerald-600" />}
+              title="สั่งงาน (Work Order Dispatch)"
+            />
+            <AppModalBody className="space-y-4">
+              {/* Job Info Summary */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex justify-between items-start gap-2">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">{orderApt.title}</h4>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border shrink-0 ${getTypeBadge(orderApt.type).bg}`}>
+                    {getTypeBadge(orderApt.type).label}
+                  </span>
+                </div>
+                <div className="text-xs space-y-1 text-slate-600 dark:text-slate-300">
+                  <p>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">ลูกค้า:</span>{' '}
+                    {orderApt.customerName} {orderApt.phone && `(${orderApt.phone})`}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">สถานที่:</span>{' '}
+                    {orderApt.location || 'ไม่ได้ระบุสถานที่'}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">วัน/เวลา:</span>{' '}
+                    📅 {orderApt.date} ⏰ {orderApt.startTime} - {orderApt.endTime} น.
+                  </p>
+                  {orderApt.details && (
+                    <p className="italic text-slate-500 dark:text-slate-400 mt-1">
+                      💬 {orderApt.details}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Employee Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  พนักงานผู้รับผิดชอบ
+                </label>
+                <div className="px-3.5 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-900 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                  ยังไม่ได้เชื่อมข้อมูลพนักงาน
+                </div>
+              </div>
+
+              {/* Channel / LINE Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  ช่องทางส่งงาน
+                </label>
+                <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">LINE Notify / OA</span>
+                  </div>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                    ยังไม่เชื่อม LINE
+                  </span>
+                </div>
+              </div>
+            </AppModalBody>
+            <AppModalFooter>
+              <button
+                type="button"
+                onClick={() => setOrderApt(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                ปิด
+              </button>
+              <button
+                type="button"
+                disabled
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                title="ยังไม่เชื่อม LINE"
+              >
+                ส่งงาน (ยังไม่เชื่อม LINE)
+              </button>
+            </AppModalFooter>
+          </>
+        )}
+      </AppModal>
+
+      {/* WORK ORDER TIMELINE MODAL (สถานะงาน) */}
+      <AppModal isOpen={!!timelineApt} onClose={() => setTimelineApt(null)} size="md">
+        {timelineApt && (
+          <>
+            <AppModalHeader
+              onClose={() => setTimelineApt(null)}
+              icon={<ListChecks className="w-5 h-5 text-blue-600" />}
+              title="สถานะงาน (Work Order Timeline)"
+            />
+            <AppModalBody className="space-y-4">
+              {/* Overview Status Banner */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">{timelineApt.title}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      ลูกค้า: {timelineApt.customerName} {timelineApt.location && `| 📍 ${timelineApt.location}`}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`px-2.5 py-1 rounded-full font-bold text-xs inline-block ${
+                        timelineApt.status === 'DONE'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+                          : timelineApt.status === 'IN_PROGRESS'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300'
+                          : timelineApt.status === 'CANCELLED'
+                          ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
+                      }`}
+                    >
+                      {timelineApt.status === 'DONE'
+                        ? 'เสร็จแล้ว'
+                        : timelineApt.status === 'IN_PROGRESS'
+                        ? 'กำลังดำเนินการ'
+                        : timelineApt.status === 'CANCELLED'
+                        ? 'ยกเลิก'
+                        : 'รอดำเนินการ'}
+                    </span>
+                    <p className="text-[10px] text-slate-400 mt-0.5">ภาพรวมนัดหมาย</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Work Order Stage Flow */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  ขั้นตอนงาน (Work Order Stages)
+                </p>
+                <div className="relative pl-7 space-y-2 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
+                  {WORK_ORDER_STAGES.map((stage, idx) => (
+                    <div key={stage.key} className="relative flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                      <span className="absolute -left-7 flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-xs">
+                        {idx + 1}
+                      </span>
+                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                        {stage.label}
+                      </span>
+                      <span className="text-[11px] text-slate-400 italic">
+                        ยังไม่มีข้อมูล
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note */}
+              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
+                ⚠️ ยังไม่มีการบันทึก Work Order Event รายขั้นตอนจริง ข้อมูลด้านบนแสดงตามโครงสร้าง MASTER ขั้นตอนงาน
+              </div>
+            </AppModalBody>
+            <AppModalFooter>
+              <button
+                type="button"
+                onClick={() => setTimelineApt(null)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
             </AppModalFooter>
           </>
         )}

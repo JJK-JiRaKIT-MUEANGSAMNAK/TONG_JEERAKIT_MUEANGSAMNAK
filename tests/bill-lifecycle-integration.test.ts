@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   loadBills,
   saveBills,
+  saveBillToSupabase,
   canHardDeleteBill,
   deleteBill,
   loadBillById,
@@ -200,11 +201,11 @@ describe('Comprehensive Bill Lifecycle Integration Suite', () => {
   })
 
   // 2. Split payment: records 1 transaction per method, totals match
-  it('2. Split payment: records 1 transaction per channel, bill totals match exactly', () => {
+  it('2. Split payment: records 1 transaction per channel, bill totals match exactly', async () => {
     const createResult = createBillWorkflow({
       bill: {
-        id: 'bill-002',
-        billNo: 'BILL-20260912-0002',
+        id: `bill-002-${Date.now()}`,
+        billNo: `BILL-20260912-0002-${Date.now().toString(36)}`,
         customerName: 'สมศรี มีทรัพย์',
         customerPhone: '0899998888',
         billDate: '2026-09-12',
@@ -225,8 +226,10 @@ describe('Comprehensive Bill Lifecycle Integration Suite', () => {
       actor,
     })
 
+    await saveBillToSupabase(createResult.bill)
+
     // Split payment across Cash (800) and Transfer (1200)
-    const payResult = processSplitPaymentWorkflow({
+    const payResult = await processSplitPaymentWorkflow({
       billId: createResult.bill.id,
       splits: [
         { channel: 'CASH', amount: 800, referenceNo: 'CASH-SLIP-01' },
@@ -234,6 +237,7 @@ describe('Comprehensive Bill Lifecycle Integration Suite', () => {
       ],
       actor,
     })
+
 
     expect(payResult.bill.paidAmount).toBe(2000)
     expect(payResult.bill.paymentStatus).toBe('PAID')

@@ -16,6 +16,7 @@ import {
   loadBills,
   saveBills,
   updateBill,
+  dbBillToFullBill,
   canHardDeleteBill,
   deleteBill as deleteBillFromStorage,
 } from '@/lib/bill-storage'
@@ -24,8 +25,10 @@ import {
   recordExpense,
   getBillFinanceSummary,
   loadTransactions,
+  addTransaction,
   StatementTransaction,
 } from '@/lib/finance-storage'
+import { createClient } from '@/lib/supabase/client'
 import {
   rentProductStock,
   returnProductStock,
@@ -743,6 +746,7 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
 
 export interface ProcessSplitPaymentOptions {
   billId: string
+  requestId?: string
   tenders?: SplitTenderInput[]
   splits?: Array<{ channel?: string; paymentMethod?: string; amount: number; referenceNo?: string }>
   actor: ActorInfo
@@ -750,25 +754,29 @@ export interface ProcessSplitPaymentOptions {
   correlationId?: string
 }
 
-export function processSplitPaymentWorkflow(options: ProcessSplitPaymentOptions): {
+export interface ProcessSplitPaymentResult {
   bill: FullBill
   correlationId: string
   transactions: StatementTransaction[]
-} {
+  batchId?: string
+  receiptNo?: string
+  tenders?: SplitTenderInput[]
+  isIdempotentReplay?: boolean
+}
+
+export async function processSplitPaymentWorkflow(
+  options: ProcessSplitPaymentOptions
+): Promise<ProcessSplitPaymentResult> {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
   const actorDisplayName = options.actor.displayName || 'ระบบ'
-
-  const currentBills = loadBills()
-  const targetBill = currentBills.find((b) => b.id === options.billId)
-  if (!targetBill) {
-    throw new Error(`Bill ${options.billId} not found`)
-  }
+  const requestId = options.requestId || generateCorrelationId()
 
   const rawTenders = options.tenders || (options.splits || []).map((s) => ({
     paymentMethod: s.paymentMethod || s.channel || 'เงินสด',
     amount: s.amount,
     referenceNo: s.referenceNo,
+    cashReceived: s.amount,
   }))
   const validTenders = rawTenders.filter((t) => Number(t.amount || 0) > 0)
   const totalPayment = validTenders.reduce((sum, t) => sum + Number(t.amount || 0), 0)
@@ -776,82 +784,110 @@ export function processSplitPaymentWorkflow(options: ProcessSplitPaymentOptions)
   if (totalPayment <= 0) {
     throw new Error('Total payment amount must be greater than 0')
   }
-  if (totalPayment > (targetBill.outstandingAmount || 0) + 0.001) {
-    throw new Error('Payment amount cannot exceed outstanding amount')
-  }
 
-  const transactions: StatementTransaction[] = []
-
-  // Create 1 transaction per valid channel
-  for (const tender of validTenders) {
-    const tx = recordBillPayment({
-      billId: targetBill.id,
-      billNo: targetBill.billNo,
-      amount: Number(tender.amount),
-      channel: tender.paymentMethod,
-      customerName: targetBill.customerName,
-      date: options.paymentDate,
-      category: 'ค่าเช่าอุปกรณ์',
-      isDeposit: false,
-      refNo: tender.referenceNo ? `TX-${targetBill.billNo}-${tender.referenceNo}` : undefined,
-      description: `รับชำระเงิน (${tender.paymentMethod}) บิลเลขที่ ${targetBill.billNo}`,
-      correlationId,
-    })
-    transactions.push(tx)
-
-    recordAuditLog({
-      userId: actorUserId,
-      displayName: actorDisplayName,
-      action: 'PAYMENT_RECEIVE',
-      entityType: 'FINANCE',
-      entityId: tx.id,
-      before: null,
-      after: {
-        billNo: targetBill.billNo,
-        amount: tender.amount,
-        channel: tender.paymentMethod,
-      },
-      correlationId,
-    })
-  }
-
-  const newPaidAmount = (targetBill.paidAmount || 0) + totalPayment
-  const newOutstandingAmount = Math.max(0, (targetBill.outstandingAmount || 0) - totalPayment)
-  const newPaymentStatus = newOutstandingAmount <= 0 ? 'PAID' : 'PARTIAL'
-
-  const updatedBill: FullBill = {
-    ...targetBill,
-    paidAmount: newPaidAmount,
-    outstandingAmount: newOutstandingAmount,
-    paymentStatus: newPaymentStatus,
-  }
-
-  updateBill(updatedBill)
-
-  recordAuditLog({
-    userId: actorUserId,
-    displayName: actorDisplayName,
-    action: 'BILL_PAYMENT',
-    entityType: 'BILL',
-    entityId: updatedBill.id,
-    before: {
-      billNo: targetBill.billNo,
-      paidAmount: targetBill.paidAmount,
-      outstandingAmount: targetBill.outstandingAmount,
-      paymentStatus: targetBill.paymentStatus,
-    },
-    after: {
-      billNo: updatedBill.billNo,
-      paidAmount: updatedBill.paidAmount,
-      outstandingAmount: updatedBill.outstandingAmount,
-      paymentStatus: updatedBill.paymentStatus,
-      totalReceived: totalPayment,
-      channelCount: validTenders.length,
-    },
-    correlationId,
+  // Create deterministic payload hash for idempotency comparison
+  const payloadHash = JSON.stringify({
+    billId: options.billId,
+    tenders: validTenders
+      .map((t) => ({
+        method: t.paymentMethod,
+        amount: Number(t.amount),
+        ref: t.referenceNo || '',
+      }))
+      .sort((a, b) => a.method.localeCompare(b.method)),
   })
 
-  return { bill: updatedBill, correlationId, transactions }
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('process_split_payment_rpc', {
+    p_bill_id: options.billId,
+    p_request_id: requestId,
+    p_payload_hash: payloadHash,
+    p_tenders: validTenders.map((t) => ({
+      paymentMethod: t.paymentMethod,
+      amount: Number(t.amount),
+      referenceNo: t.referenceNo || '',
+      cashReceived: Number(t.cashReceived || t.amount),
+    })),
+    p_payment_date: options.paymentDate ? new Date(options.paymentDate).toISOString() : new Date().toISOString(),
+    p_actor_user_id: actorUserId,
+    p_actor_display_name: actorDisplayName,
+    p_correlation_id: correlationId,
+  })
+
+  if (error) {
+    // Strictly throw error - do not silently fallback to localStorage
+    throw new Error(`การรับชำระเงินล้มเหลว: ${error.message}`)
+  }
+
+  if (!data || data.status === 'ERROR') {
+    throw new Error(`การรับชำระเงินล้มเหลว: ${data?.message || 'ไม่สามารถประมวลผลธุรกรรมได้'}`)
+  }
+
+  const updatedBill = dbBillToFullBill(data.bill)
+  const transactions: StatementTransaction[] = Array.isArray(data.transactions)
+    ? data.transactions.map((tx: any) => ({
+        id: tx.id,
+        dateTime: options.paymentDate || new Date().toISOString(),
+        refNo: tx.refNo || tx.ref_no || `TX-${updatedBill.billNo}`,
+        type: 'INCOME' as const,
+        category: 'ค่าเช่าอุปกรณ์',
+        description: `รับชำระเงิน (${tx.channel}) บิลเลขที่ ${updatedBill.billNo}`,
+        customerName: updatedBill.customerName,
+        incomeAmount: Number(tx.amount || tx.income_amount || 0),
+        expenseAmount: 0,
+        runningBalance: 0,
+        channel: tx.channel,
+        billId: updatedBill.id,
+        billNo: updatedBill.billNo,
+        correlationId,
+        isDeposit: false,
+      }))
+    : []
+
+  // Update local memory cache with confirmed DB data
+  updateBill(updatedBill)
+  for (const tx of transactions) {
+    addTransaction(tx)
+  }
+
+  return {
+    bill: updatedBill,
+    correlationId,
+    transactions,
+    batchId: data.batch_id,
+    receiptNo: data.receipt_no,
+    tenders: validTenders,
+    isIdempotentReplay: data.status === 'IDEMPOTENT_REPLAY',
+  }
+}
+
+export async function fetchLatestPaymentBatch(billId: string): Promise<{
+  paymentNo: string
+  receiptNo: string
+  totalAmount: number
+  outstandingAfter: number
+  paidAmountAfter: number
+  tenders: SplitTenderInput[]
+} | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('payment_batches')
+    .select('*')
+    .eq('bill_id', billId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+
+  return {
+    paymentNo: data.id,
+    receiptNo: data.receipt_no,
+    totalAmount: Number(data.total_amount || 0),
+    outstandingAfter: Number(data.outstanding_after || 0),
+    paidAmountAfter: Number(data.paid_amount_after || 0),
+    tenders: Array.isArray(data.tenders) ? data.tenders : [],
+  }
 }
 
 // ─── 3. RETURN WORKFLOW (NORMAL, DAMAGED, LOST) ──────────────────────────────
