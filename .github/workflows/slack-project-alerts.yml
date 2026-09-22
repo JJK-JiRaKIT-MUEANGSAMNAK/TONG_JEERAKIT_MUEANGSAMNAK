@@ -26,12 +26,11 @@ jobs:
     steps:
       - name: Prepare Slack Payload
         env:
-          EVENT_PATH: ${{ github.event_path }}
           ACTOR: ${{ github.actor }}
         run: |
           node - << 'EOF'
           const fs = require('fs');
-          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
           const action = event.action;
           const issue = event.issue;
           const actor = process.env.ACTOR;
@@ -84,13 +83,12 @@ jobs:
     steps:
       - name: Prepare Slack Payload
         env:
-          EVENT_PATH: ${{ github.event_path }}
           EVENT_NAME: ${{ github.event_name }}
           ACTOR: ${{ github.actor }}
         run: |
           node - << 'EOF'
           const fs = require('fs');
-          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
           const eventName = process.env.EVENT_NAME;
           const action = event.action;
           const pr = event.pull_request;
