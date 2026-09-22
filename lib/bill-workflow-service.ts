@@ -26,10 +26,24 @@ import {
   recordExpense,
   getBillFinanceSummary,
   loadTransactions,
+  saveTransactions,
   addTransaction,
   StatementTransaction,
 } from '@/lib/finance-storage'
 import { createClient } from '@/lib/supabase/client'
+import {
+  toSatang,
+  toBaht,
+  addSatang,
+  subtractSatang,
+  multiplySatang,
+  calculateDepositSettlement,
+} from '@/lib/money'
+import {
+  calculateFinancialCore,
+  calculateRevenueRecognized,
+  getBillFinancialCoreSummary,
+} from '@/lib/calculation-service'
 import {
   rentProductStock,
   returnProductStock,
@@ -414,8 +428,11 @@ export function createBillWorkflow(options: CreateBillOptions): {
       })
     }
   } else if (incomingBill.paidAmount > 0 && incomingBill.paymentStatus !== 'UNPAID') {
-    // Single revenue payment
-    const revAmount = Math.max(0, incomingBill.paidAmount - depositAmount)
+    // Single revenue payment (Financial Core: paidAmount is strictly bill payment without deposit; handle legacy combined)
+    let revAmount = incomingBill.paidAmount
+    if (depositAmount > 0 && incomingBill.paidAmount > incomingBill.grandTotal && incomingBill.paidAmount === (incomingBill.grandTotal + depositAmount)) {
+      revAmount = incomingBill.grandTotal
+    }
     if (revAmount > 0) {
       const tx = recordBillPayment({
         billId: incomingBill.id,
@@ -1079,68 +1096,145 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
   const isFullyReturned = totalRemainingOutstanding === 0
   const nextRentalStatus = isFullyReturned ? 'RETURNED' : 'PARTIAL_RETURNED'
 
-  // 4. Calculate Damage / Loss Fees (Eliminate 150/1000 fallback, use Master Product defaults or actual charges)
-  let totalDamageFee = 0
+  // 4. Calculate Damage / Loss Fees using Money Core in Satang
+  let totalDamageSatang = 0
+  let totalDefaultSatang = 0
+
   for (const it of returnItemsList) {
     const chargeOverride = options.actualDamageCharges?.find(
       (c) => c.rentalBillItemId === it.rentalBillItemId || (it.productId && c.productId === it.productId)
     )
     const masterProd = allMasterProducts.find((p) => p.id === it.productId)
 
+    const defaultRepairFee = Number(masterProd?.defaultDamageFee ?? masterProd?.defaultRepairFee ?? 0)
+    const defaultLossFee = Number(masterProd?.defaultLossFee ?? masterProd?.defaultReplacementFee ?? 0)
+
     let repairFee = 0
     let lossFee = 0
 
+    const damagedQty = Math.max(0, it.damagedQty || 0)
+    const lostQty = Math.max(0, it.lostQty || 0)
+
     if (chargeOverride) {
       if (chargeOverride.actualDamageCharge !== undefined) {
-        totalDamageFee += Number(chargeOverride.actualDamageCharge || 0)
+        repairFee = damagedQty > 0 ? Number(chargeOverride.actualDamageCharge) / damagedQty : 0
       } else {
-        repairFee = Number(chargeOverride.damageCharge ?? chargeOverride.repairFeePerUnit ?? 0)
-        totalDamageFee += Math.max(0, it.damagedQty || 0) * repairFee
+        repairFee = Number(chargeOverride.damageCharge ?? chargeOverride.repairFeePerUnit ?? defaultRepairFee)
       }
 
       if (chargeOverride.actualLossCharge !== undefined) {
-        totalDamageFee += Number(chargeOverride.actualLossCharge || 0)
+        lossFee = lostQty > 0 ? Number(chargeOverride.actualLossCharge) / lostQty : 0
       } else {
-        lossFee = Number(chargeOverride.lossCharge ?? chargeOverride.replacementFeePerUnit ?? 0)
-        totalDamageFee += Math.max(0, it.lostQty || 0) * lossFee
+        lossFee = Number(chargeOverride.lossCharge ?? chargeOverride.replacementFeePerUnit ?? defaultLossFee)
       }
     } else {
       repairFee = it.repairFeePerUnit !== undefined && it.repairFeePerUnit > 0
         ? it.repairFeePerUnit
-        : Number(masterProd?.defaultDamageFee ?? masterProd?.defaultRepairFee ?? 0)
+        : defaultRepairFee
 
       lossFee = it.replacementFeePerUnit !== undefined && it.replacementFeePerUnit > 0
         ? it.replacementFeePerUnit
-        : Number(masterProd?.defaultLossFee ?? masterProd?.defaultReplacementFee ?? 0)
+        : defaultLossFee
+    }
 
-      const itemDamage = (Math.max(0, it.damagedQty || 0) * repairFee) + (Math.max(0, it.lostQty || 0) * lossFee)
-      totalDamageFee += itemDamage
+    const itemDamageSatang = multiplySatang(toSatang(repairFee), damagedQty)
+    const itemLossSatang = multiplySatang(toSatang(lossFee), lostQty)
+    const itemDefaultDamageSatang = multiplySatang(toSatang(defaultRepairFee), damagedQty)
+    const itemDefaultLossSatang = multiplySatang(toSatang(defaultLossFee), lostQty)
+
+    totalDamageSatang = addSatang(totalDamageSatang, itemDamageSatang, itemLossSatang)
+    totalDefaultSatang = addSatang(totalDefaultSatang, itemDefaultDamageSatang, itemDefaultLossSatang)
+
+    if (itemDamageSatang > 0) {
+      recordAuditLog({
+        userId: actorUserId,
+        displayName: actorDisplayName,
+        action: 'DAMAGE_CHARGE',
+        entityType: 'FINANCE',
+        entityId: it.rentalBillItemId,
+        billId: targetBill.id,
+        before: null,
+        after: {
+          billId: targetBill.id,
+          billNo: targetBill.billNo,
+          productId: it.productId,
+          productName: (it as any).productName || masterProd?.name || targetBill.items?.find((i: any) => i.id === it.rentalBillItemId)?.productName || '',
+          quantity: damagedQty,
+          defaultAmount: toBaht(itemDefaultDamageSatang),
+          actualAmount: toBaht(itemDamageSatang),
+          returnNo,
+        },
+        reason: 'บันทึกค่าปรับสินค้าชำรุด',
+        correlationId,
+      })
+    }
+
+    if (itemLossSatang > 0) {
+      recordAuditLog({
+        userId: actorUserId,
+        displayName: actorDisplayName,
+        action: 'LOSS_CHARGE',
+        entityType: 'FINANCE',
+        entityId: it.rentalBillItemId,
+        billId: targetBill.id,
+        before: null,
+        after: {
+          billId: targetBill.id,
+          billNo: targetBill.billNo,
+          productId: it.productId,
+          productName: (it as any).productName || masterProd?.name || targetBill.items?.find((i: any) => i.id === it.rentalBillItemId)?.productName || '',
+          quantity: lostQty,
+          defaultAmount: toBaht(itemDefaultLossSatang),
+          actualAmount: toBaht(itemLossSatang),
+          returnNo,
+        },
+        reason: 'บันทึกค่าปรับสินค้าสูญหาย',
+        correlationId,
+      })
     }
   }
 
-  // 5. Deposit Settlement
+  const totalDamageFee = toBaht(totalDamageSatang)
+  const totalDefaultCompensation = toBaht(totalDefaultSatang)
+
+  // 5. Deposit Settlement strictly using Money Core
   const heldDepositBefore = Number(targetBill.heldDepositAmount || 0)
   let depositApplied = 0
   let depositRefundDue = 0
   let additionalAmountDue = 0
   let heldDepositAfter = heldDepositBefore
-
   let updatedDeposits = targetBill.deposits || []
 
+  // Deposit is applied ONLY when explicitly confirmed by user
   if (options.deductFromDeposit && totalDamageFee > 0) {
-    if (heldDepositBefore >= totalDamageFee) {
-      // Case 10 & 11: Deposit >= damage
-      depositApplied = totalDamageFee
-      heldDepositAfter = heldDepositBefore - depositApplied
-      depositRefundDue = heldDepositAfter
-      additionalAmountDue = 0
-    } else {
-      // Case 12: Deposit < damage
-      depositApplied = heldDepositBefore
-      heldDepositAfter = 0
-      depositRefundDue = 0
-      additionalAmountDue = totalDamageFee - heldDepositBefore
-    }
+    const settlement = calculateDepositSettlement(heldDepositBefore, totalDamageFee)
+    depositApplied = settlement.appliedDeposit
+    depositRefundDue = settlement.refundDue
+    additionalAmountDue = settlement.balanceDue
+    heldDepositAfter = toBaht(Math.max(0, subtractSatang(toSatang(heldDepositBefore), toSatang(depositApplied))))
+
+    recordAuditLog({
+      userId: actorUserId,
+      displayName: actorDisplayName,
+      action: 'DEPOSIT_APPLY',
+      entityType: 'FINANCE',
+      entityId: targetBill.id,
+      billId: targetBill.id,
+      before: { billNo: targetBill.billNo, heldDeposit: heldDepositBefore },
+      after: {
+        billId: targetBill.id,
+        billNo: targetBill.billNo,
+        defaultAmount: totalDefaultCompensation,
+        actualAmount: totalDamageFee,
+        depositHeld: heldDepositBefore,
+        depositApplied,
+        refundDue: depositRefundDue,
+        balanceDue: additionalAmountDue,
+        returnNo,
+      },
+      reason: 'หักเงินมัดจำชำระค่าเสียหายตามการยืนยันของผู้ใช้',
+      correlationId,
+    })
 
     if (depositApplied > 0) {
       recordBillPayment({
@@ -1169,39 +1263,39 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
         description: `คืนเงินมัดจำส่วนที่เหลือ ใบคืน ${returnNo}`,
         correlationId,
       })
+
+      recordAuditLog({
+        userId: actorUserId,
+        displayName: actorDisplayName,
+        action: 'DEPOSIT_REFUND',
+        entityType: 'FINANCE',
+        entityId: targetBill.id,
+        billId: targetBill.id,
+        before: { billNo: targetBill.billNo, heldDeposit: heldDepositBefore },
+        after: {
+          billId: targetBill.id,
+          billNo: targetBill.billNo,
+          defaultAmount: totalDefaultCompensation,
+          actualAmount: totalDamageFee,
+          depositHeld: heldDepositBefore,
+          depositApplied,
+          refundDue: depositRefundDue,
+          balanceDue: additionalAmountDue,
+          returnNo,
+        },
+        reason: 'คืนเงินมัดจำส่วนที่เหลือจากการหักชำระค่าเสียหาย',
+        correlationId,
+      })
       heldDepositAfter = 0
     }
 
     updatedDeposits = (targetBill.deposits || []).map((dep) => ({
       ...dep,
       heldAmount: heldDepositAfter,
-      appliedAmount: (dep.appliedAmount || 0) + depositApplied,
-      refundAmount: (dep.refundAmount || 0) + depositRefundDue,
+      appliedAmount: toBaht(addSatang(toSatang(dep.appliedAmount || 0), toSatang(depositApplied))),
+      refundAmount: toBaht(addSatang(toSatang(dep.refundAmount || 0), toSatang(depositRefundDue))),
       status: (heldDepositAfter === 0 ? 'SETTLED' : dep.status) as any,
     }))
-
-    recordAuditLog({
-      userId: actorUserId,
-      displayName: actorDisplayName,
-      action: 'DEPOSIT_SETTLEMENT',
-      entityType: 'FINANCE',
-      entityId: targetBill.id,
-      before: {
-        billNo: targetBill.billNo,
-        heldDeposit: heldDepositBefore,
-        outstandingAmount: targetBill.outstandingAmount,
-      },
-      after: {
-        billNo: targetBill.billNo,
-        totalDamageFee,
-        depositApplied,
-        depositRefundDue,
-        additionalAmountDue,
-        heldDepositAfter,
-        returnNo,
-      },
-      correlationId,
-    })
   } else if (!options.deductFromDeposit && totalDamageFee > 0) {
     additionalAmountDue = totalDamageFee
   }
@@ -1229,6 +1323,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       action: 'PAYMENT_RECEIVE',
       entityType: 'FINANCE',
       entityId: feeTx.id,
+      billId: targetBill.id,
       before: null,
       after: {
         billNo: targetBill.billNo,
@@ -1239,22 +1334,27 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     })
   }
 
-  // 7. Calculate final financial figures on the bill
-  const newGrandTotal = (targetBill.grandTotal || 0) + totalDamageFee
-  const newPaidAmount = (targetBill.paidAmount || 0) + depositApplied + extraCollected
-  const newOutstanding = Math.max(0, (targetBill.outstandingAmount || 0) + additionalAmountDue - extraCollected)
+  // 7. Calculate final financial figures on the bill using Central Financial Core
+  const newGrandTotal = toBaht(addSatang(toSatang(targetBill.grandTotal || 0), toSatang(totalDamageFee)))
+  const newBillAmount = newGrandTotal
+
+  // Strictly reconcile Net Paid from transaction history
+  const finSummary = getBillFinanceSummary(targetBill.id, targetBill.billNo)
+  const newPaidAmount = finSummary.netPaid
+  const newOutstanding = toBaht(Math.max(0, subtractSatang(toSatang(newGrandTotal), toSatang(newPaidAmount))))
 
   const updatedBill: FullBill = {
     ...targetBill,
     items: updatedItems,
     rentalStatus: nextRentalStatus,
     grandTotal: newGrandTotal,
+    billAmount: newBillAmount,
     paidAmount: newPaidAmount,
     outstandingAmount: newOutstanding,
     heldDepositAmount: heldDepositAfter,
-    depositApplied: (targetBill.depositApplied || 0) + depositApplied,
-    refundDueAmount: (targetBill.refundDueAmount || 0) + depositRefundDue,
-    paymentStatus: newOutstanding > 0 ? (newPaidAmount > 0 ? 'PARTIAL' : 'UNPAID') : targetBill.paymentStatus,
+    depositApplied: toBaht(addSatang(toSatang(targetBill.depositApplied || 0), toSatang(depositApplied))),
+    refundDueAmount: toBaht(addSatang(toSatang(targetBill.refundDueAmount || 0), toSatang(depositRefundDue))),
+    paymentStatus: newOutstanding <= 0 ? 'PAID' : (newPaidAmount > 0 ? 'PARTIAL' : 'UNPAID'),
     deposits: updatedDeposits,
   }
 
@@ -1976,7 +2076,7 @@ export function processDepositRefundWorkflow(options: ProcessDepositRefundOption
 export interface ProcessPaymentRefundOptions {
   billId: string
   amount: number
-  channel: string
+  channel?: string
   reason: string
   referenceNo?: string
   originalTxId?: string
@@ -1984,19 +2084,27 @@ export interface ProcessPaymentRefundOptions {
   correlationId?: string
 }
 
-export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOptions): {
+export interface ProcessPaymentRefundResult {
   bill: FullBill
   correlationId: string
   transaction: StatementTransaction
   refundTx: StatementTransaction
-} {
+}
+
+export function processPaymentRefundWorkflow(
+  options: ProcessPaymentRefundOptions
+): ProcessPaymentRefundResult & PromiseLike<ProcessPaymentRefundResult> {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
   const actorDisplayName = options.actor.displayName || 'ระบบ'
-  const trimmedReason = options.reason.trim()
+  const trimmedReason = options.reason?.trim()
+
+  if (options.amount <= 0) {
+    throw new Error('INVALID_AMOUNT: Refund amount must be greater than 0')
+  }
 
   if (!trimmedReason) {
-    throw new Error('Reason is required for payment refund')
+    throw new Error('REASON_REQUIRED: Reason is strictly required for payment refund')
   }
 
   const currentBills = loadBills()
@@ -2005,16 +2113,60 @@ export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOption
     throw new Error(`Bill ${options.billId} not found`)
   }
 
-  // Enforce cumulative refund limit
+  // Enforce cumulative refund limit using Money Core in Satang
   const summary = getBillFinanceSummary(targetBill.id, targetBill.billNo)
-  if (options.amount <= 0 || options.amount > summary.netPaid + 0.001) {
-    throw new Error(`Refund amount (${options.amount}) exceeds available net paid revenue of ฿${summary.netPaid}`)
+  const refundAmountSatang = toSatang(options.amount)
+  const netPaidSatang = toSatang(summary.netPaid)
+
+  if (refundAmountSatang > netPaidSatang) {
+    throw new Error(
+      `Refund amount (${options.amount}) exceeds available net paid revenue of ฿${summary.netPaid}`
+    )
   }
 
-  const tx = recordExpense({
+  let effectiveChannel = options.channel
+
+  // Validate original transaction if provided
+  if (options.originalTxId) {
+    const origTx = summary.transactions.find(
+      (t) => t.id === options.originalTxId && t.type === 'INCOME' && !t.isDeposit
+    )
+    if (!origTx) {
+      throw new Error(
+        `ORIGINAL_TX_NOT_FOUND: Original payment transaction ${options.originalTxId} not found for bill ${targetBill.billNo}`
+      )
+    }
+
+    const priorRefundsSatang = summary.transactions
+      .filter((t) => t.originalTxId === options.originalTxId && t.type === 'EXPENSE' && !t.isDeposit)
+      .reduce((sum, t) => addSatang(sum, toSatang(t.expenseAmount)), 0)
+
+    const origAmountSatang = toSatang(origTx.incomeAmount)
+    if (addSatang(priorRefundsSatang, refundAmountSatang) > origAmountSatang) {
+      const remainingBaht = toBaht(Math.max(0, origAmountSatang - priorRefundsSatang))
+      throw new Error(
+        `REFUND_EXCEEDS_ORIGINAL_TX: Refund amount (${options.amount}) exceeds remaining amount of original payment (฿${remainingBaht} available)`
+      )
+    }
+
+    if (!effectiveChannel) {
+      effectiveChannel = origTx.channel
+    }
+  }
+
+  effectiveChannel = effectiveChannel || 'โอนเงิน'
+
+  // Pre-calculate local fallback state using Satang integer math
+  const newNetPaidSatang = Math.max(0, subtractSatang(netPaidSatang, refundAmountSatang))
+  const newPaidAmount = toBaht(newNetPaidSatang)
+  const newOutstanding = toBaht(Math.max(0, subtractSatang(toSatang(targetBill.grandTotal), newNetPaidSatang)))
+  const newPaymentStatus = newPaidAmount <= 0 ? 'REFUNDED' : 'REFUND_PARTIAL'
+
+  // Create local transaction
+  const localTx = recordExpense({
     refNo: options.referenceNo || `PAY-REF-${Date.now().toString().slice(-6)}`,
     amount: options.amount,
-    channel: options.channel,
+    channel: effectiveChannel,
     customerName: targetBill.customerName,
     category: 'คืนเงินลูกค้า',
     description: `คืนเงินรับชำระ บิลเลขที่ ${targetBill.billNo}: ${trimmedReason}`,
@@ -2030,37 +2182,36 @@ export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOption
     displayName: actorDisplayName,
     action: 'PAYMENT_REFUND',
     entityType: 'FINANCE',
-    entityId: tx.id,
+    entityId: localTx.id,
+    billId: targetBill.id,
     before: { billNo: targetBill.billNo, netPaid: summary.netPaid },
     after: {
-      refNo: tx.refNo,
+      refNo: localTx.refNo,
       amount: options.amount,
-      netPaidRemaining: summary.netPaid - options.amount,
+      netPaidRemaining: newPaidAmount,
       reason: trimmedReason,
+      originalTxId: options.originalTxId,
+      channel: effectiveChannel,
     },
     reason: trimmedReason,
     correlationId,
   })
 
-  const newPaidAmount = Math.max(0, (targetBill.paidAmount || 0) - options.amount)
-  const newOutstanding = Math.max(0, targetBill.grandTotal - newPaidAmount)
-  const newPaymentStatus = newPaidAmount <= 0 ? 'REFUNDED' : 'REFUND_PARTIAL'
-
-  const updatedBill: FullBill = {
+  const localUpdatedBill: FullBill = {
     ...targetBill,
     paidAmount: newPaidAmount,
     outstandingAmount: newOutstanding,
     paymentStatus: newPaymentStatus,
   }
-
-  updateBill(updatedBill)
+  updateBill(localUpdatedBill)
 
   recordAuditLog({
     userId: actorUserId,
     displayName: actorDisplayName,
     action: 'BILL_PAYMENT_UPDATE',
     entityType: 'BILL',
-    entityId: updatedBill.id,
+    entityId: localUpdatedBill.id,
+    billId: targetBill.id,
     before: {
       billNo: targetBill.billNo,
       paidAmount: targetBill.paidAmount,
@@ -2068,7 +2219,7 @@ export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOption
       paymentStatus: targetBill.paymentStatus,
     },
     after: {
-      billNo: updatedBill.billNo,
+      billNo: localUpdatedBill.billNo,
       paidAmount: newPaidAmount,
       outstandingAmount: newOutstanding,
       paymentStatus: newPaymentStatus,
@@ -2077,7 +2228,95 @@ export function processPaymentRefundWorkflow(options: ProcessPaymentRefundOption
     correlationId,
   })
 
-  return { bill: updatedBill, correlationId, transaction: tx, refundTx: tx }
+  const localResult: ProcessPaymentRefundResult = {
+    bill: localUpdatedBill,
+    correlationId,
+    transaction: localTx,
+    refundTx: localTx,
+  }
+
+  // Primary Database RPC execution when running with Supabase backend
+  const supabase = createClient()
+  const rpcPromise = (async (): Promise<ProcessPaymentRefundResult> => {
+    try {
+      const { data, error } = await supabase.rpc('process_payment_refund_rpc', {
+        p_bill_id: targetBill.id,
+        p_original_tx_id: options.originalTxId || null,
+        p_amount: options.amount,
+        p_channel: effectiveChannel,
+        p_reason: trimmedReason,
+        p_actor_user_id: actorUserId,
+        p_actor_display_name: actorDisplayName,
+        p_correlation_id: correlationId,
+      })
+
+      if (error) {
+        if (error.message.includes('FORBIDDEN') || error.message.includes('REFUND_EXCEEDS')) {
+          throw new Error(error.message)
+        }
+        return localResult
+      }
+
+      if (data && data.status === 'SUCCESS') {
+        const dbBill = data.bill ? dbBillToFullBill(data.bill) : localUpdatedBill
+        const dbTx: StatementTransaction = {
+          id: data.refund_tx_id || localTx.id,
+          dateTime: new Date().toISOString(),
+          refNo: data.ref_no || localTx.refNo,
+          type: 'EXPENSE',
+          category: 'คืนเงินลูกค้า',
+          description: `คืนเงินรับชำระ บิลเลขที่ ${targetBill.billNo}: ${trimmedReason}`,
+          customerName: targetBill.customerName,
+          incomeAmount: 0,
+          expenseAmount: Number(data.amount || options.amount),
+          runningBalance: 0,
+          channel: data.channel || effectiveChannel,
+          billId: targetBill.id,
+          billNo: targetBill.billNo,
+          originalTxId: options.originalTxId,
+          correlationId,
+          isDeposit: false,
+        }
+
+        // Reconcile local storage using authoritative DB result (prevent duplicate transactions)
+        const allTxs = loadTransactions().filter((t) => t.id !== localTx.id && t.id !== dbTx.id)
+        saveTransactions([dbTx, ...allTxs])
+        updateBill(dbBill)
+
+        return {
+          bill: dbBill,
+          correlationId,
+          transaction: dbTx,
+          refundTx: dbTx,
+        }
+      }
+
+      return localResult
+    } catch (err: any) {
+      if (err?.message?.includes('FORBIDDEN') || err?.message?.includes('REFUND_EXCEEDS')) {
+        throw err
+      }
+      return localResult
+    }
+  })()
+
+  // Return hybrid result that works synchronously and as a Thenable
+  return Object.assign(localResult, {
+    then<TResult1 = ProcessPaymentRefundResult, TResult2 = never>(
+      onfulfilled?: ((value: ProcessPaymentRefundResult) => TResult1 | PromiseLike<TResult1>) | null,
+      onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+    ): Promise<TResult1 | TResult2> {
+      return rpcPromise.then(onfulfilled, onrejected)
+    },
+    catch<TResult = never>(
+      onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
+    ): Promise<ProcessPaymentRefundResult | TResult> {
+      return rpcPromise.catch(onrejected)
+    },
+    finally(onfinally?: (() => void) | null): Promise<ProcessPaymentRefundResult> {
+      return rpcPromise.finally(onfinally)
+    },
+  })
 }
 
 // ─── 8. FULFILL BACKORDER WORKFLOW ───────────────────────────────────────────

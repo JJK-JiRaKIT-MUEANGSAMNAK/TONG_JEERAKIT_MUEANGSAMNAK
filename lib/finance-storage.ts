@@ -7,6 +7,7 @@
 
 import { loadBills } from '@/lib/bill-storage'
 import { createClient } from '@/lib/supabase/client'
+import { toSatang, toBaht, addSatang, subtractSatang } from '@/lib/money'
 
 const STORAGE_KEY = 'app_finance_storage'
 
@@ -58,12 +59,14 @@ export function saveTransactions(txs: StatementTransaction[]): void {
 
 export function addTransaction(incoming: StatementTransaction): StatementTransaction[] {
   const current = loadTransactions()
-  // Calculate new running balance: latest balance + (income - expense)
-  const latestBalance = current.length > 0 ? current[0].runningBalance : 0
-  const netDelta = (incoming.incomeAmount || 0) - (incoming.expenseAmount || 0)
+  // Calculate new running balance using integer Satang
+  const latestSatang = toSatang(current.length > 0 ? current[0].runningBalance : 0)
+  const incSatang = toSatang(incoming.incomeAmount)
+  const expSatang = toSatang(incoming.expenseAmount)
+  const newBalanceSatang = latestSatang + incSatang - expSatang
   const txWithBalance: StatementTransaction = {
     ...incoming,
-    runningBalance: latestBalance + netDelta,
+    runningBalance: toBaht(newBalanceSatang),
   }
   const next = [txWithBalance, ...current]
   saveTransactions(next)
@@ -325,29 +328,32 @@ export function getBillFinanceSummary(billId: string, billNo?: string): {
   transactions: StatementTransaction[]
 } {
   const txs = getTransactionsForBill(billId, billNo)
-  let totalPaid = 0
-  let totalRefunded = 0
-  let depositReceived = 0
-  let depositRefunded = 0
+  let totalPaidSatang = 0
+  let totalRefundedSatang = 0
+  let depositReceivedSatang = 0
+  let depositRefundedSatang = 0
 
   for (const t of txs) {
     const isDep = t.isDeposit || t.category === 'เงินมัดจำ' || t.category === 'คืนเงินมัดจำ'
     if (isDep) {
-      if (t.type === 'INCOME') depositReceived += t.incomeAmount || 0
-      if (t.type === 'EXPENSE') depositRefunded += t.expenseAmount || 0
+      if (t.type === 'INCOME') depositReceivedSatang = addSatang(depositReceivedSatang, toSatang(t.incomeAmount))
+      if (t.type === 'EXPENSE') depositRefundedSatang = addSatang(depositRefundedSatang, toSatang(t.expenseAmount))
     } else {
-      if (t.type === 'INCOME') totalPaid += t.incomeAmount || 0
-      if (t.type === 'EXPENSE') totalRefunded += t.expenseAmount || 0
+      if (t.type === 'INCOME') totalPaidSatang = addSatang(totalPaidSatang, toSatang(t.incomeAmount))
+      if (t.type === 'EXPENSE') totalRefundedSatang = addSatang(totalRefundedSatang, toSatang(t.expenseAmount))
     }
   }
 
+  const netPaidSatang = Math.max(0, totalPaidSatang - totalRefundedSatang)
+  const netDepositHeldSatang = Math.max(0, depositReceivedSatang - depositRefundedSatang)
+
   return {
-    totalPaid,
-    totalRefunded,
-    netPaid: Math.max(0, totalPaid - totalRefunded),
-    depositReceived,
-    depositRefunded,
-    netDepositHeld: Math.max(0, depositReceived - depositRefunded),
+    totalPaid: toBaht(totalPaidSatang),
+    totalRefunded: toBaht(totalRefundedSatang),
+    netPaid: toBaht(netPaidSatang),
+    depositReceived: toBaht(depositReceivedSatang),
+    depositRefunded: toBaht(depositRefundedSatang),
+    netDepositHeld: toBaht(netDepositHeldSatang),
     transactions: txs,
   }
 }

@@ -27,6 +27,7 @@ export interface AuditLogEntry {
   action: string
   entityType: AuditEntityType
   entityId: string
+  billId?: string
   before: Record<string, any> | null
   after: Record<string, any> | null
   reason?: string | null
@@ -48,6 +49,7 @@ export const HIGH_RISK_ACTIONS = [
   'DISCOUNT_OVERRIDE',
   'BACKDATED_EDIT',
   'SETTING_FINANCE_STOCK_UPDATE',
+  'PAYMENT_REFUND',
 ] as const
 
 /**
@@ -76,6 +78,7 @@ export interface CreateAuditLogParams {
   action: string
   entityType: AuditEntityType
   entityId: string
+  billId?: string
   before?: Record<string, any> | null
   after?: Record<string, any> | null
   reason?: string | null
@@ -96,6 +99,12 @@ export function recordAuditLog(params: CreateAuditLogParams): AuditLogEntry {
     }
   }
 
+  const determinedBillId =
+    params.billId ||
+    params.before?.billId ||
+    params.after?.billId ||
+    (params.entityType === 'BILL' ? params.entityId : undefined)
+
   const newEntry: AuditLogEntry = {
     id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     userId: params.userId || 'system',
@@ -103,6 +112,7 @@ export function recordAuditLog(params: CreateAuditLogParams): AuditLogEntry {
     action: params.action,
     entityType: params.entityType,
     entityId: params.entityId,
+    billId: determinedBillId,
     before: params.before ?? null,
     after: params.after ?? null,
     reason: trimmedReason,
@@ -193,6 +203,8 @@ export function getAuditLogsByCorrelationId(correlationId: string): AuditLogEntr
 export function getAuditLogsForBill(billId: string, billNo?: string): AuditLogEntry[] {
   const allLogs = loadAuditLogs()
   return allLogs.filter((e) => {
+    if (e.billId === billId) return true
+    if (e.before?.billId === billId || e.after?.billId === billId) return true
     if (e.entityType === 'BILL' && e.entityId === billId) return true
     if (billNo) {
       if (e.before?.billNo === billNo || e.after?.billNo === billNo || e.entityId === billNo) {

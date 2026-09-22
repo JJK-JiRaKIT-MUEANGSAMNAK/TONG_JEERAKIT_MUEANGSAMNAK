@@ -22,6 +22,17 @@ import {
   VatCalculationMode,
 } from '@/lib/settings-storage'
 import { RentalType } from '@/lib/types/rental-pos'
+import {
+  toSatang,
+  toBaht,
+  addSatang,
+  subtractSatang,
+  multiplySatang,
+  calculateLineTotalSatang,
+  calculateVatSatang,
+  calculateDiscountSatang,
+  calculateDepositSettlement,
+} from '@/lib/money'
 
 export interface RoundMoneyOptions {
   precision?: number
@@ -31,14 +42,19 @@ export interface RoundMoneyOptions {
 /**
  * Rounds a financial amount based on specified precision and rounding rule.
  * Defaults to values configured in system settings.
+ * Uses integer Satang for standard 2-decimal money calculations.
  */
 export function roundMoney(amount: number, options?: RoundMoneyOptions): number {
   if (isNaN(amount) || !isFinite(amount)) return 0
   const settings = loadSystemSettings()
   const precision = options?.precision !== undefined ? options.precision : (settings.financePayment.moneyPrecision ?? 2)
   const mode = options?.mode || settings.financePayment.roundingMode || 'ROUND_HALF_UP'
-  const factor = Math.pow(10, precision)
 
+  if (precision === 2 && (mode === 'ROUND_HALF_UP' || mode === 'ROUND')) {
+    return toBaht(toSatang(amount))
+  }
+
+  const factor = Math.pow(10, precision)
   if (mode === 'ROUND_UP' || (mode as any) === 'CEIL') {
     return Math.ceil(amount * factor) / factor
   }
@@ -63,7 +79,6 @@ export interface LineItemInput {
  */
 export function calculateLineTotal(item: LineItemInput, settings?: SystemConfig): number {
   const qty = Number(item.quantity) || 0
-  const price = Number(item.unitPrice) || 0
   const isSale = item.rentalType === 'SALE'
 
   let multiplier = 1
@@ -82,10 +97,9 @@ export function calculateLineTotal(item: LineItemInput, settings?: SystemConfig)
     }
   }
 
-  const raw = qty * price * multiplier
-  const precision = settings?.financePayment.moneyPrecision ?? 2
-  const mode = settings?.financePayment.roundingMode ?? 'ROUND_HALF_UP'
-  return roundMoney(raw, { precision, mode })
+  const priceSatang = toSatang(item.unitPrice)
+  const lineSatang = calculateLineTotalSatang(priceSatang, qty, multiplier)
+  return toBaht(lineSatang)
 }
 
 export interface CalculateTotalsOptions {
@@ -130,41 +144,38 @@ export function calculateBillTotals(options: CalculateTotalsOptions): BillCalcul
   const roundingMode = cfg.financePayment.roundingMode ?? 'ROUND_HALF_UP'
   const maxDiscountPercent = cfg.financePayment.maximumDiscountPercent ?? 50
 
-  // 1. Subtotal
-  let rawSubtotal = 0
+  // 1. Subtotal in Satang
+  let rawSubtotalSatang = 0
   for (const it of options.items) {
     if (typeof it.lineTotal === 'number') {
-      rawSubtotal += it.lineTotal
+      rawSubtotalSatang = addSatang(rawSubtotalSatang, toSatang(it.lineTotal))
     } else {
-      rawSubtotal += calculateLineTotal(it as LineItemInput, cfg)
+      rawSubtotalSatang = addSatang(rawSubtotalSatang, toSatang(calculateLineTotal(it as LineItemInput, cfg)))
     }
   }
-  const subtotal = roundMoney(rawSubtotal, { precision, mode: roundingMode })
+  const subtotal = toBaht(rawSubtotalSatang)
 
-  // 2. Discount & Ceiling Validation
-  const maxDiscountAllowed = roundMoney((subtotal * maxDiscountPercent) / 100, { precision, mode: roundingMode })
-  let requestedDiscount = 0
+  // 2. Discount & Ceiling Validation in Satang
+  const discountCalc = calculateDiscountSatang(rawSubtotalSatang, {
+    discountPercent: options.discountPercent,
+    discountAmountSatang: options.discountAmount !== undefined ? toSatang(options.discountAmount) : (options.discount !== undefined ? toSatang(options.discount) : undefined),
+    maxDiscountPercent,
+  })
 
-  const directDiscount = options.discountAmount !== undefined ? options.discountAmount : options.discount
-  if (options.discountPercent !== undefined && options.discountPercent > 0) {
-    requestedDiscount = roundMoney((subtotal * options.discountPercent) / 100, { precision, mode: roundingMode })
-  } else if (directDiscount !== undefined && directDiscount > 0) {
-    requestedDiscount = roundMoney(Number(directDiscount), { precision, mode: roundingMode })
-  }
+  const discountAmount = toBaht(discountCalc.discountSatang)
+  const maxDiscountAllowed = toBaht(discountCalc.maxAllowedSatang)
+  const isDiscountExceeded = discountCalc.isDiscountExceeded
+  const effectiveDiscountPercent = discountCalc.effectivePercent
 
-  const isDiscountExceeded = requestedDiscount > maxDiscountAllowed + 0.0001
-  // Cap at max allowed discount and subtotal
-  const cappedDiscount = Math.min(requestedDiscount, maxDiscountAllowed)
-  const discountAmount = roundMoney(Math.min(cappedDiscount, subtotal), { precision, mode: roundingMode })
-  const effectiveDiscountPercent = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0
+  // 3. Net Subtotal (after discount) in Satang
+  const netSubtotalSatang = Math.max(0, subtractSatang(rawSubtotalSatang, discountCalc.discountSatang))
+  const netSubtotal = toBaht(netSubtotalSatang)
 
-  // 3. Net Subtotal (after discount)
-  const netSubtotal = roundMoney(Math.max(0, subtotal - discountAmount), { precision, mode: roundingMode })
+  // 4. Shipping Fee in Satang
+  const shippingFeeSatang = Math.max(0, toSatang(options.shippingFee))
+  const shippingFee = toBaht(shippingFeeSatang)
 
-  // 4. Shipping Fee
-  const shippingFee = roundMoney(Math.max(0, Number(options.shippingFee) || 0), { precision, mode: roundingMode })
-
-  // 5. VAT (calculated AFTER discount)
+  // 5. VAT in Satang
   let vatRate = 0
   if (options.taxRate !== undefined) {
     vatRate = options.taxRate
@@ -173,43 +184,38 @@ export function calculateBillTotals(options: CalculateTotalsOptions): BillCalcul
   }
 
   const includeShippingInTax = options.includeShippingInTax !== false
-  const taxBase = includeShippingInTax ? netSubtotal + shippingFee : netSubtotal
+  const taxBaseSatang = includeShippingInTax
+    ? addSatang(netSubtotalSatang, shippingFeeSatang)
+    : netSubtotalSatang
 
-  let rawVat = 0
-  if (vatRate > 0) {
-    if (cfg.financePayment.vatCalculationMode === 'INCLUSIVE') {
-      // Inclusive: taxBase * (vatRate / (1 + vatRate))
-      rawVat = taxBase * (vatRate / (1 + vatRate))
-    } else {
-      // Exclusive: taxBase * vatRate
-      rawVat = taxBase * vatRate
-    }
-  }
-  const vatAmount = roundMoney(rawVat, { precision, mode: roundingMode })
+  const isVatInclusive = cfg.financePayment.vatCalculationMode === 'INCLUSIVE'
+  const vatAmountSatang = calculateVatSatang(taxBaseSatang, vatRate, isVatInclusive)
+  const vatAmount = toBaht(vatAmountSatang)
 
-  // 6. Revenue Total (Rental + Sales + Shipping + Tax, strictly excluding held deposit)
-  let revenueTotal = 0
-  if (cfg.financePayment.vatCalculationMode === 'INCLUSIVE') {
-    revenueTotal = roundMoney(netSubtotal + shippingFee, { precision, mode: roundingMode })
+  // 6. Revenue Total in Satang
+  let revenueTotalSatang = 0
+  if (isVatInclusive) {
+    revenueTotalSatang = addSatang(netSubtotalSatang, shippingFeeSatang)
   } else {
-    revenueTotal = roundMoney(netSubtotal + shippingFee + vatAmount, { precision, mode: roundingMode })
+    revenueTotalSatang = addSatang(netSubtotalSatang, shippingFeeSatang, vatAmountSatang)
   }
+  const revenueTotal = toBaht(revenueTotalSatang)
 
-  const subtotalWithoutTax =
-    cfg.financePayment.vatCalculationMode === 'INCLUSIVE'
-      ? roundMoney(netSubtotal - vatAmount, { precision, mode: roundingMode })
-      : netSubtotal
+  const subtotalWithoutTax = isVatInclusive
+    ? toBaht(Math.max(0, subtractSatang(netSubtotalSatang, vatAmountSatang)))
+    : netSubtotal
 
-  // 7. Deposit (Held separately from Revenue)
-  let depositAmount = roundMoney(Math.max(0, Number(options.depositAmount) || 0), { precision, mode: roundingMode })
-  if (depositAmount === 0 && cfg.financePayment.defaultDepositPercent > 0 && subtotal > 0) {
-    depositAmount = roundMoney((subtotal * cfg.financePayment.defaultDepositPercent) / 100, { precision, mode: roundingMode })
+  // 7. Deposit in Satang (Held strictly separately from Revenue)
+  let depositAmountSatang = Math.max(0, toSatang(options.depositAmount))
+  if (depositAmountSatang === 0 && cfg.financePayment.defaultDepositPercent > 0 && rawSubtotalSatang > 0) {
+    depositAmountSatang = Math.round((rawSubtotalSatang * cfg.financePayment.defaultDepositPercent) / 100)
   }
+  const depositAmount = toBaht(depositAmountSatang)
 
   // 8. Bill Amount & Grand Total (Strictly excludes Security Deposit per MASTER v2.3.0)
   const billAmount = revenueTotal
   const grandTotal = billAmount
-  const totalPayableWithDeposit = roundMoney(billAmount + depositAmount, { precision, mode: roundingMode })
+  const totalPayableWithDeposit = toBaht(addSatang(revenueTotalSatang, depositAmountSatang))
 
   return {
     subtotal,
@@ -272,39 +278,42 @@ export interface FinancialCoreResult {
  * - Security Deposit: strictly separated from Net Paid and Revenue Recognized
  */
 export function calculateFinancialCore(params: FinancialCoreParams): FinancialCoreResult {
-  const billAmount = Math.max(0, Number(params.billAmount) || 0)
-  const netPaid = Math.max(0, Number(params.netPaid) || 0)
-  const revenueRecognized = Math.max(0, Number(params.revenueRecognized) || 0)
+  const billAmountSatang = Math.max(0, toSatang(params.billAmount))
+  const netPaidSatang = Math.max(0, toSatang(params.netPaid))
+  const revenueRecognizedSatang = Math.max(0, toSatang(params.revenueRecognized))
 
-  const billOutstanding = Math.max(0, billAmount - netPaid)
-  const earnedOutstanding = Math.max(0, revenueRecognized - netPaid)
-  const unearnedService = Math.max(0, billAmount - revenueRecognized)
-  const advanceDeferred = Math.min(Math.max(0, netPaid - revenueRecognized), unearnedService)
-  const overpayment = Math.max(0, netPaid - billAmount)
-  const refundDue = overpayment
+  const billOutstandingSatang = Math.max(0, billAmountSatang - netPaidSatang)
+  const earnedOutstandingSatang = Math.max(0, revenueRecognizedSatang - netPaidSatang)
+  const unearnedServiceSatang = Math.max(0, billAmountSatang - revenueRecognizedSatang)
+  const advanceDeferredSatang = Math.min(
+    Math.max(0, netPaidSatang - revenueRecognizedSatang),
+    unearnedServiceSatang
+  )
+  const overpaymentSatang = Math.max(0, netPaidSatang - billAmountSatang)
+  const refundDueSatang = overpaymentSatang
 
   const dep = params.securityDeposit || {}
-  const depRequired = Math.max(0, Number(dep.required) || 0)
-  const depReceived = Math.max(0, Number(dep.received) || 0)
-  const depRefunded = Math.max(0, Number(dep.refunded) || 0)
-  const depApplied = Math.max(0, Number(dep.applied) || 0)
-  const depHeld = Math.max(0, depReceived - depRefunded - depApplied)
+  const depRequiredSatang = Math.max(0, toSatang(dep.required))
+  const depReceivedSatang = Math.max(0, toSatang(dep.received))
+  const depRefundedSatang = Math.max(0, toSatang(dep.refunded))
+  const depAppliedSatang = Math.max(0, toSatang(dep.applied))
+  const depHeldSatang = Math.max(0, depReceivedSatang - depRefundedSatang - depAppliedSatang)
 
   return {
-    billAmount,
-    netPaid,
-    billOutstanding,
-    revenueRecognized,
-    earnedOutstanding,
-    advanceDeferred,
-    overpayment,
-    refundDue,
+    billAmount: toBaht(billAmountSatang),
+    netPaid: toBaht(netPaidSatang),
+    billOutstanding: toBaht(billOutstandingSatang),
+    revenueRecognized: toBaht(revenueRecognizedSatang),
+    earnedOutstanding: toBaht(earnedOutstandingSatang),
+    advanceDeferred: toBaht(advanceDeferredSatang),
+    overpayment: toBaht(overpaymentSatang),
+    refundDue: toBaht(refundDueSatang),
     securityDeposit: {
-      required: depRequired,
-      received: depReceived,
-      refunded: depRefunded,
-      applied: depApplied,
-      held: depHeld,
+      required: toBaht(depRequiredSatang),
+      received: toBaht(depReceivedSatang),
+      refunded: toBaht(depRefundedSatang),
+      applied: toBaht(depAppliedSatang),
+      held: toBaht(depHeldSatang),
     },
   }
 }
@@ -340,13 +349,13 @@ export function calculateRevenueRecognized(options: CalculateRevenueRecognizedOp
   }
 
   const now = options.referenceDate ? new Date(options.referenceDate) : new Date()
-  let recognized = 0
+  let recognizedSatang = 0
 
   for (const item of options.items) {
     const qty = Number(item.quantity) || 0
-    const price = Number(item.unitPrice) || 0
+    const priceSatang = toSatang(item.unitPrice)
     if (item.rentalType === 'SALE') {
-      recognized += qty * price
+      recognizedSatang = addSatang(recognizedSatang, multiplySatang(priceSatang, qty))
       continue
     }
 
@@ -363,15 +372,61 @@ export function calculateRevenueRecognized(options: CalculateRevenueRecognizedOp
       } else {
         days = Math.max(1, item.billableDays || 1)
       }
-      recognized += qty * price * days
+      recognizedSatang = addSatang(recognizedSatang, multiplySatang(priceSatang, qty * days))
     } else {
       // Round-based
       const rounds = Math.max(1, item.usageCount || 1)
-      recognized += qty * price * rounds
+      recognizedSatang = addSatang(recognizedSatang, multiplySatang(priceSatang, qty * rounds))
     }
   }
 
-  return roundMoney(recognized)
+  return toBaht(recognizedSatang)
+}
+
+/**
+ * Single Central Financial Summary
+ * Reconciles Bill Amount, Net Paid from Transaction History, Revenue Recognized, and Core Metrics.
+ */
+export function getBillFinancialCoreSummary(
+  bill: {
+    billAmount?: number
+    grandTotal: number
+    dispatchStatus?: string
+    items?: any[]
+    heldDepositAmount?: number
+    paidDepositAmount?: number
+    depositRefunded?: number
+    depositApplied?: number
+    depositRequired?: number
+  },
+  netPaidBaht: number
+): FinancialCoreResult {
+  const billAmount = bill.billAmount !== undefined ? bill.billAmount : bill.grandTotal
+  const revenueRecognized = calculateRevenueRecognized({
+    dispatchStatus: bill.dispatchStatus,
+    items: (bill.items || []).map((it) => ({
+      rentalType: it.rentalType,
+      quantity: it.quantity,
+      unitPrice: it.dailyRate || it.unitPrice || 0,
+      dailyStartDate: it.rentalStartDate,
+      dailyEndDate: it.scheduledReturnDate,
+      actualReturnDate: it.actualReturnDate,
+      billableDays: it.billableDays,
+      usageCount: it.usageCount,
+    })),
+  })
+
+  return calculateFinancialCore({
+    billAmount,
+    netPaid: netPaidBaht,
+    revenueRecognized,
+    securityDeposit: {
+      required: bill.depositRequired,
+      received: bill.paidDepositAmount,
+      refunded: bill.depositRefunded,
+      applied: bill.depositApplied,
+    },
+  })
 }
 
 /**

@@ -29,6 +29,13 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { generateCorrelationId } from '@/lib/audit-storage'
 import { processReturnWorkflow, processSplitPaymentWorkflow, fetchLatestPaymentBatch } from '@/lib/bill-workflow-service'
 import { loadProducts } from '@/lib/product-storage'
+import {
+  toSatang,
+  toBaht,
+  addSatang,
+  multiplySatang,
+  calculateDepositSettlement,
+} from '@/lib/money'
 
 interface ConfirmRentalReturnItemPayload {
   rental_bill_item_id: string
@@ -86,19 +93,36 @@ function computeReturnCalculation(
   _config?: unknown,
   billSummary?: { grandTotal: number; paidAmount: number; outstandingAmount: number }
 ): ReturnCalculationResult {
-  const repairTotal = items.reduce((sum, i) => sum + (i.damagedQty || 0) * (i.repairFeePerUnit || 0), 0)
-  const replaceTotal = items.reduce((sum, i) => sum + (i.lostQty || 0) * (i.replacementFeePerUnit || 0), 0)
-  const damageTotal = repairTotal + replaceTotal
+  let repairTotalSatang = 0
+  let replaceTotalSatang = 0
+
+  for (const i of items) {
+    repairTotalSatang = addSatang(repairTotalSatang, multiplySatang(toSatang(i.repairFeePerUnit || 0), i.damagedQty || 0))
+    replaceTotalSatang = addSatang(replaceTotalSatang, multiplySatang(toSatang(i.replacementFeePerUnit || 0), i.lostQty || 0))
+  }
+
+  const damageTotalSatang = addSatang(repairTotalSatang, replaceTotalSatang)
+  const damageTotal = toBaht(damageTotalSatang)
+  const repairTotal = toBaht(repairTotalSatang)
+  const replaceTotal = toBaht(replaceTotalSatang)
+
   const persistedGrand = billSummary?.grandTotal || 0
   const persistedPaid = billSummary?.paidAmount || 0
   const persistedOutstanding = billSummary?.outstandingAmount || 0
-  const grandTotalCharge = persistedGrand + damageTotal
+  const grandTotalCharge = toBaht(addSatang(toSatang(persistedGrand), damageTotalSatang))
 
-  // Outstanding fee after deducting paid amounts
-  const unreservedDue = grandTotalCharge - persistedPaid
-  // If deducting from deposit, apply held deposit against the due amount
-  const netAmount = deductDeposit ? unreservedDue - heldDeposit : unreservedDue
-  const netRefundAmount = netAmount < 0 ? Math.abs(netAmount) : 0
+  // Settlement strictly using Money Core
+  let netRefundAmount = 0
+  let netAmount = 0
+
+  if (deductDeposit) {
+    const settlement = calculateDepositSettlement(heldDeposit, damageTotal)
+    netRefundAmount = settlement.refundDue
+    netAmount = settlement.balanceDue > 0 ? settlement.balanceDue : (settlement.refundDue > 0 ? -settlement.refundDue : 0)
+  } else {
+    netAmount = damageTotal
+    netRefundAmount = 0
+  }
 
   return {
     actualRentalDays: 0,

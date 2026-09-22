@@ -280,7 +280,7 @@ export default function CheckoutPage() {
             : [
                 {
                   paymentMethod,
-                  amount: Math.max(0, grandTotal - (depositAmount || 0)),
+                  amount: grandTotal,
                   referenceNo: bankRef || undefined,
                 },
               ],
@@ -300,10 +300,12 @@ export default function CheckoutPage() {
             : [
                 {
                   paymentMethod,
-                  amount: Math.max(0, grandTotal - (depositAmount || 0)),
+                  amount: grandTotal,
                   referenceNo: bankRef || undefined,
                 },
               ],
+          depositAmount,
+          depositChannel: paymentMethod,
           actor: {
             userId: actorUserId,
             displayName: actorDisplayName,
