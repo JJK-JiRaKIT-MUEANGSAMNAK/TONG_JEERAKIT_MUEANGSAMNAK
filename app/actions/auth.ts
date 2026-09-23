@@ -230,7 +230,7 @@ export async function registerUser(formData: {
     const rawUsername = (formData.username || '').trim()
     const password = formData.password || ''
 
-    if (!firstName || !lastName || !rawEmail || !rawUsername || !password) {
+    if (!rawEmail || !rawUsername || !password) {
       return {
         success: false,
         error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน',
@@ -239,7 +239,6 @@ export async function registerUser(formData: {
 
     const cleanUsername = rawUsername.replace(/^@+/, '').toLowerCase()
     const cleanEmail = rawEmail.toLowerCase()
-    const fullName = `${firstName} ${lastName}`.trim()
 
     // Validation
     if (cleanUsername.length < 3) {
@@ -280,8 +279,6 @@ export async function registerUser(formData: {
           username: cleanUsername,
           first_name: firstName,
           last_name: lastName,
-          full_name: fullName,
-          role: 'USER',
         },
       },
     })
@@ -290,48 +287,6 @@ export async function registerUser(formData: {
       return {
         success: false,
         error: signUpError?.message || 'ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง',
-      }
-    }
-
-    // Detect if this is an existing user to prevent deleting existing accounts.
-    // In Supabase Auth, existing users returned during signUp have an empty identities array: identities: []
-    const userCreatedAt = signUpData.user.created_at ? new Date(signUpData.user.created_at).getTime() : NaN
-    const isExistingUser =
-      (Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) ||
-      (!isNaN(userCreatedAt) && Date.now() - userCreatedAt > 120000)
-
-    if (!isExistingUser) {
-      newlyCreatedUserId = signUpData.user.id
-    }
-
-    // Ensure profile row is created and linked to auth.users id
-    const userId = signUpData.user.id
-    const { error: insertProfileError } = await adminClient
-      .from('profiles')
-      .upsert({
-        id: userId,
-        username: cleanUsername,
-        email: cleanEmail,
-        first_name: firstName,
-        last_name: lastName,
-        full_name: fullName,
-        role: 'USER',
-        business_id: null,
-      })
-
-    if (insertProfileError) {
-      // Rollback newly created Auth user if profile creation failed
-      if (newlyCreatedUserId) {
-        try {
-          await adminClient.auth.admin.deleteUser(newlyCreatedUserId)
-        } catch (deleteError) {
-          console.error('Failed to rollback auth user:', deleteError)
-        }
-      }
-
-      return {
-        success: false,
-        error: 'เกิดข้อผิดพลาดในการสร้างโปรไฟล์ผู้ใช้ กรุณาลองใหม่อีกครั้ง',
       }
     }
 
@@ -352,6 +307,68 @@ export async function registerUser(formData: {
       success: false,
       error: message,
     }
+  }
+}
+
+/**
+ * Forgot password:
+ * Sends a password reset email using Supabase Auth.
+ */
+export async function resetPasswordForEmail(email: string): Promise<AuthActionResult> {
+  try {
+    const rawEmail = (email || '').trim()
+    if (!rawEmail) {
+      return { success: false, error: 'กรุณากรอกอีเมล' }
+    }
+
+    const serverClient = await createServerSupabase()
+    
+    // Determine the base URL for the redirect
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+    const { error } = await serverClient.auth.resetPasswordForEmail(rawEmail.toLowerCase(), {
+      redirectTo: `${siteUrl}/reset-password`,
+    })
+
+    if (error) {
+      // Don't expose if account exists or not, standard practice for security
+      // Just log it and return generic success or specific non-enumeration errors if any
+      console.error('Reset password error:', error)
+      return { success: false, error: 'ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง' }
+    }
+
+    return { success: true }
+  } catch (err: unknown) {
+    console.error('Reset password exception:', err)
+    return { success: false, error: 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ' }
+  }
+}
+
+/**
+ * Update password (for reset password flow / change password):
+ * Uses the active session to update the user's password.
+ */
+export async function updatePassword(password: string): Promise<AuthActionResult> {
+  try {
+    if (!password || password.length < 8) {
+      return { success: false, error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร' }
+    }
+
+    const serverClient = await createServerSupabase()
+    const { error } = await serverClient.auth.updateUser({
+      password: password,
+    })
+
+    if (error) {
+      console.error('Update password error:', error)
+      return { success: false, error: error.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้' }
+    }
+
+    return { success: true }
+  } catch (err: unknown) {
+    console.error('Update password exception:', err)
+    return { success: false, error: 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ' }
   }
 }
 

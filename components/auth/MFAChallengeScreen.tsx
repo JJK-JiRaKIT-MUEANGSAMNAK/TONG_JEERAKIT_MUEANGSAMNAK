@@ -2,15 +2,27 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { ShieldCheck, LogOut, AlertCircle, ArrowRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 interface MFAChallengeScreenProps {
   onSuccess?: () => void
 }
 
 export function MFAChallengeScreen({ onSuccess }: MFAChallengeScreenProps) {
-  const user = null as any
-  const logout = () => {}
-  const challengeMfa = async (_c: string) => true
+  const supabase = createClient()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+  }, []) // We can ignore supabase.auth warning or we can use react-hooks/exhaustive-deps ignore
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   const [code, setCode] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -21,40 +33,44 @@ export function MFAChallengeScreen({ onSuccess }: MFAChallengeScreenProps) {
     inputRef.current?.focus()
   }, [])
 
-  const handleVerify = useCallback(
-    async (codeToVerify: string) => {
-      const clean = codeToVerify.trim().replace(/\D/g, '')
-      if (clean.length !== 6) {
-        setErrorMsg('กรุณากรอกรหัสยืนยัน 6 หลัก')
-        return
-      }
+  const handleVerify = async (codeToVerify: string) => {
+    const clean = codeToVerify.trim().replace(/\D/g, '')
+    if (clean.length !== 6) {
+      setErrorMsg('กรุณากรอกรหัสยืนยัน 6 หลัก')
+      return
+    }
 
-      setIsSubmitting(true)
-      setErrorMsg(null)
-      try {
-        const success = await challengeMfa(clean)
-        if (success) {
-          setCode('')
-          if (onSuccess) {
-            onSuccess()
-          }
-        } else {
-          setIsShaking(true)
-          setTimeout(() => setIsShaking(false), 500)
-          setErrorMsg('รหัสยืนยัน 6 หลักไม่ถูกต้องหรือหมดอายุ')
-          setCode('')
-        }
-      } catch (err: any) {
-        setIsShaking(true)
-        setTimeout(() => setIsShaking(false), 500)
-        setErrorMsg(err?.message || 'รหัสยืนยัน 6 หลักไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่อีกครั้ง')
-        setCode('')
-      } finally {
-        setIsSubmitting(false)
+    setIsSubmitting(true)
+    setErrorMsg(null)
+    try {
+      const { data: factorsData } = await supabase.auth.mfa.listFactors()
+      const verifiedFactor = factorsData?.all?.find((f) => f.status === 'verified')
+      if (!verifiedFactor) throw new Error('ไม่พบ 2FA ที่ใช้งานอยู่')
+      
+      const challenge = await supabase.auth.mfa.challenge({ factorId: verifiedFactor.id })
+      if (challenge.error) throw challenge.error
+      
+      const verify = await supabase.auth.mfa.verify({
+        factorId: verifiedFactor.id,
+        challengeId: challenge.data.id,
+        code: clean
+      })
+      
+      if (verify.error) throw verify.error
+
+      setCode('')
+      if (onSuccess) {
+        onSuccess()
       }
-    },
-    [challengeMfa, onSuccess]
-  )
+    } catch (err: any) {
+      setIsShaking(true)
+      setTimeout(() => setIsShaking(false), 500)
+      setErrorMsg(err?.message || 'รหัสยืนยัน 6 หลักไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่อีกครั้ง')
+      setCode('')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6)

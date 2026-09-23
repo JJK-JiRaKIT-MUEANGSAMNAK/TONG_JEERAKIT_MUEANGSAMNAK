@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react'
 import { AuthLayout } from '@/components/auth/AuthLayout'
+import { resetPasswordForEmail } from '@/app/actions/auth'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -14,6 +15,20 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsSubmitting(true)
+    
+    try {
+      const result = await resetPasswordForEmail(email)
+      if (result.success) {
+        setIsSubmitted(true)
+      } else {
+        setError(result.error || 'เกิดข้อผิดพลาดในการส่งลิงก์')
+      }
+    } catch (err) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

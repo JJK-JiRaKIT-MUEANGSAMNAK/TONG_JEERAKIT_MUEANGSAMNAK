@@ -79,8 +79,8 @@ const validatePin = (pin: string) => {
 }
 
 const validatePassword = (pwd: string, _context?: any) => {
-  if (!pwd || pwd.length < 6) {
-    return { isValid: false, error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร' }
+  if (!pwd || pwd.length < 8) {
+    return { isValid: false, error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร' }
   }
   return { isValid: true, error: null }
 }
@@ -255,6 +255,7 @@ import {
   DEFAULT_NOTIFICATION_SETTINGS,
   DEFAULT_BRANDING_SETTINGS,
 } from '@/lib/settings-storage'
+import { updatePassword } from '@/app/actions/auth'
 
 export default function SettingsPage() {
   const { showToast } = useToast()
@@ -303,8 +304,22 @@ export default function SettingsPage() {
   })
 
   const [autoLockDuration, setAutoLockDuration] = useState<AutoLockDuration>('5')
-  const isMfaEnrolled = false
-  const mfaFactors: any[] = []
+  const [isMfaEnrolled, setIsMfaEnrolled] = useState(false)
+  const [mfaFactors, setMfaFactors] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadMfaStatus() {
+      const { createClient } = require('@/lib/supabase/client')
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.mfa.listFactors()
+      if (data && !error) {
+        const totpFactors = data.all || []
+        setMfaFactors(totpFactors)
+        setIsMfaEnrolled(totpFactors.some((f: any) => f.status === 'verified'))
+      }
+    }
+    loadMfaStatus()
+  }, [])
 
   const lock = () => {
     if (typeof window !== 'undefined') {
@@ -330,10 +345,33 @@ export default function SettingsPage() {
 
   const { pinEnabled } = useAppLock()
   const [showPinSetupModal, setShowPinSetupModal] = useState(false)
-  const changePassword = async (_pwd: string) => {}
-  const enrollMfaTotp = async () => ({ factorId: '', secret: '', qrCode: '', uri: '' })
-  const verifyMfaEnrollment = async (_factorId: string, _code: string) => {}
-  const unenrollMfa = async (_factorId: string) => {}
+  const changePassword = async (pwd: string) => {
+    const res = await updatePassword(pwd)
+    if (!res.success) throw new Error(res.error || 'ไม่สามารถเปลี่ยนรหัสผ่านได้')
+  }
+  const { createClient } = require('@/lib/supabase/client')
+  const supabase = createClient()
+  
+  const enrollMfaTotp = async () => {
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+    if (error) throw error
+    return { 
+      factorId: data.id, 
+      secret: data.totp.secret, 
+      qrCode: data.totp.qr_code, 
+      uri: data.totp.uri 
+    }
+  }
+  const verifyMfaEnrollment = async (factorId: string, code: string) => {
+    const challenge = await supabase.auth.mfa.challenge({ factorId })
+    if (challenge.error) throw challenge.error
+    const verify = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.data.id, code })
+    if (verify.error) throw verify.error
+  }
+  const unenrollMfa = async (factorId: string) => {
+    const { error } = await supabase.auth.mfa.unenroll({ factorId })
+    if (error) throw error
+  }
   const updateAutoLockSetting = async (dur: AutoLockDuration) => {
     setAutoLockDuration(dur)
     showToast('บันทึกสำเร็จ', 'อัปเดตระยะเวลาล็อกหน้าจอแล้ว', 'SUCCESS')
@@ -636,6 +674,11 @@ export default function SettingsPage() {
       setIsEnrollingMfa(false)
       setMfaEnrollData(null)
       setMfaVerifyCode('')
+      setIsMfaEnrolled(true)
+      
+      const { data } = await supabase.auth.mfa.listFactors()
+      if (data) setMfaFactors(data.all || [])
+
       showToast('เปิดใช้งาน 2FA สำเร็จ', 'ระบบเปิดใช้งานการยืนยันตัวตนสองชั้นเรียบร้อยแล้ว (ระดับความปลอดภัย AAL2)', 'SUCCESS')
     } catch (err: any) {
       setMfaVerifyError(err?.message || 'รหัสยืนยันไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
@@ -665,6 +708,8 @@ export default function SettingsPage() {
     try {
       await unenrollMfa(verifiedFactor.id)
       setShowUnenrollConfirm(false)
+      setIsMfaEnrolled(false)
+      setMfaFactors(mfaFactors.filter(f => f.id !== verifiedFactor.id))
       showToast('ปิดใช้งาน 2FA แล้ว', 'ยกเลิกการยืนยันตัวตนสองชั้นเรียบร้อยแล้ว', 'INFO')
     } catch (err: any) {
       showToast('เกิดข้อผิดพลาด', err?.message || 'ไม่สามารถปิดการใช้งาน 2FA ได้', 'ERROR')

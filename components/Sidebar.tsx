@@ -167,7 +167,7 @@ function SidebarContent() {
           className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {MENU_ITEMS.map((item) => {
+          {MENU_ITEMS.filter(item => item.href !== '/owner-permissions' || user?.role === 'OWNER').map((item) => {
             if (item.href === '/dashboard') {
               const isDashboardActive = pathname === '/dashboard'
               const currentView = searchParams.get('view') || 'assets'

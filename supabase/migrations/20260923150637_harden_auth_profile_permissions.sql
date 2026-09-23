@@ -47,8 +47,7 @@ BEGIN
         WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'user_id'
           AND is_generated = 'NEVER'
     ) THEN
-        ALTER TABLE public.profiles DROP COLUMN user_id;
-        ALTER TABLE public.profiles ADD COLUMN user_id UUID GENERATED ALWAYS AS (id) STORED;
+        RAISE EXCEPTION 'legacy user_id requires reviewed migration';
     END IF;
 END $$;
 

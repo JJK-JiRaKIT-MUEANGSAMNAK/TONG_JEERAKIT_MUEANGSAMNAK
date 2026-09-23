@@ -88,10 +88,30 @@ const categoryNames: Record<AuditSubTab, string> = {
   SYSTEM: 'รายงานตรวจสอบระบบทั่วไป',
 }
 
+import { getCurrentUser } from '@/app/actions/auth'
+
 export default function OwnerPermissionsPage() {
   const router = useRouter()
-  const [user] = useState<{ id: string; role: string } | null>(null)
-  const authLoading = false
+  const [user, setUser] = useState<{ id: string; role: string } | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const currentUser = await getCurrentUser()
+        if (currentUser) {
+          setUser({ id: currentUser.userId, role: currentUser.role })
+        } else {
+          router.push('/login')
+        }
+      } catch (err) {
+        console.error('Failed to load user', err)
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+    loadUser()
+  }, [router])
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('PERMISSIONS')
   const [auditSubTab, setAuditSubTab] = useState<AuditSubTab>('BILL')
@@ -143,27 +163,23 @@ export default function OwnerPermissionsPage() {
     }
   }, [activeTab, auditSubTab, selectedActorId, loadLogs])
 
-  // Member Actions
+  // Member Actions (Pending Backend Implementation)
   const handleApprove = async (member: BusinessMemberUser) => {
-    setActionLoading(null)
-    showNotification(`อนุมัติผู้ใช้งาน ${member.profile?.fullName || member.profile?.username} สำเร็จ`)
+    showNotification('การดำเนินการถูกระงับ: PENDING_BACKEND (ยังไม่มีระบบรองรับ)', 'error')
   }
 
   const handleSuspend = async (member: BusinessMemberUser) => {
-    setActionLoading(null)
-    showNotification(`ระงับสิทธิ์ผู้ใช้งาน ${member.profile?.fullName || member.profile?.username} สำเร็จ`)
+    showNotification('การดำเนินการถูกระงับ: PENDING_BACKEND (ยังไม่มีระบบรองรับ)', 'error')
   }
 
   const handleRoleChange = async (member: BusinessMemberUser, newRole: string) => {
-    setActionLoading(null)
-    showNotification(`เปลี่ยนระดับสิทธิ์เป็น ${newRole} สำเร็จ`)
+    showNotification('การดำเนินการถูกระงับ: PENDING_BACKEND (ยังไม่มีระบบรองรับ)', 'error')
   }
 
   const handleDeleteMember = async () => {
     if (!deleteConfirmMember) return
-    setActionLoading(null)
     setDeleteConfirmMember(null)
-    showNotification('ลบผู้ใช้งานออกจากร้านเรียบร้อยแล้ว')
+    showNotification('การดำเนินการถูกระงับ: PENDING_BACKEND (ยังไม่มีระบบรองรับ)', 'error')
   }
 
   const handleOpenPermissionsModal = (member: BusinessMemberUser) => {
@@ -205,13 +221,8 @@ export default function OwnerPermissionsPage() {
   const handleSavePermissions = async () => {
     if (!permModalMember) return
     setSavingPerms(false)
-    showNotification(`บันทึกสิทธิ์ของ ${permModalMember.profile?.fullName || permModalMember.profile?.username} สำเร็จ`)
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === permModalMember.id ? { ...m, permissions: selectedPermCodes } : m
-      )
-    )
     setPermModalMember(null)
+    showNotification('การดำเนินการถูกระงับ: PENDING_BACKEND (ยังไม่มีระบบรองรับ)', 'error')
   }
 
   // Format dates helper

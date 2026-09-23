@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { updatePassword } from '@/app/actions/auth'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -16,6 +17,30 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    if (password.length < 8) {
+      setError('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await updatePassword(password)
+      if (result.success) {
+        setIsSuccess(true)
+      } else {
+        setError(result.error || 'ไม่สามารถเปลี่ยนรหัสผ่านได้')
+      }
+    } catch (err) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -71,7 +96,7 @@ export default function ResetPasswordPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="อย่างน้อย 12 ตัวอักษร (A-Z, a-z, 0-9, อักขระพิเศษ)"
+                  placeholder="อย่างน้อย 8 ตัวอักษร"
                   autoFocus
                   className="w-full pl-10 pr-10 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 />

@@ -1,22 +1,54 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Mail, CheckCircle2, Clock, RefreshCw, ArrowRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 type VerifyState = 'CHECKING' | 'VERIFIED' | 'EXPIRED'
 
 export default function VerifyEmailPage() {
-  const [status, setStatus] = useState<VerifyState>('VERIFIED')
+  const [status, setStatus] = useState<VerifyState>('CHECKING')
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  
+  const supabase = createClient()
 
-  const handleResend = () => {
+  useEffect(() => {
+    async function checkStatus() {
+      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        setUserEmail(user.email ?? null)
+        if (user.email_confirmed_at || session) {
+          setStatus('VERIFIED')
+        } else {
+          setStatus('EXPIRED')
+        }
+      } else {
+        // If no user, it might be an invalid or expired link
+        setStatus('EXPIRED')
+      }
+    }
+    checkStatus()
+  }, [])
+
+  const handleResend = async () => {
+    if (!userEmail) return
     setIsResending(true)
-    setTimeout(() => {
-      setIsResending(false)
+    try {
+      await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      })
       setResendSuccess(true)
-    }, 1200)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsResending(false)
+    }
   }
 
   return (
@@ -34,28 +66,6 @@ export default function VerifyEmailPage() {
           <p className="text-slate-400 text-xs mt-1">
             การยืนยันอีเมลสำหรับบัญชีผู้ใช้งาน Rental POS
           </p>
-        </div>
-
-        {/* Status Switcher (For Frontend Testing & Contract Verification) */}
-        <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-xl text-[10px] font-bold text-slate-400">
-          <button
-            onClick={() => setStatus('CHECKING')}
-            className={`px-2.5 py-1 rounded-lg transition-colors ${status === 'CHECKING' ? 'bg-blue-600 text-white' : 'hover:text-white'}`}
-          >
-            กำลังตรวจสอบ
-          </button>
-          <button
-            onClick={() => setStatus('VERIFIED')}
-            className={`px-2.5 py-1 rounded-lg transition-colors ${status === 'VERIFIED' ? 'bg-emerald-600 text-white' : 'hover:text-white'}`}
-          >
-            ยืนยันแล้ว
-          </button>
-          <button
-            onClick={() => setStatus('EXPIRED')}
-            className={`px-2.5 py-1 rounded-lg transition-colors ${status === 'EXPIRED' ? 'bg-amber-600 text-white' : 'hover:text-white'}`}
-          >
-            ลิงก์หมดอายุ
-          </button>
         </div>
 
         {/* State Display */}
