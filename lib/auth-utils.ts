@@ -15,8 +15,8 @@ export function buildCurrentUser(
   authUser: AuthUserLike,
   profileData?: Record<string, unknown> | null
 ): CurrentUser {
-  const rawRole = (profileData?.role as string) || (authUser.user_metadata?.role as string) || 'USER'
-  const resolvedRole: UserRole = rawRole === 'OWNER' ? 'OWNER' : 'USER'
+  // Role is trusted ONLY from profiles table. Never trust or fallback to user_metadata.role.
+  const resolvedRole: UserRole = profileData?.role === 'OWNER' ? 'OWNER' : 'USER'
 
   const firstName =
     (profileData?.first_name as string) ||

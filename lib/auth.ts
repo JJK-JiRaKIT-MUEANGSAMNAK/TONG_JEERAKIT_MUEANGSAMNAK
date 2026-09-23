@@ -29,7 +29,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         .maybeSingle()
       profile = data
     } catch {
-      // If admin client or profiles lookup is unavailable, continue with authUser metadata
+      // If admin client or profiles lookup is unavailable, profile is null and role safely defaults to USER
     }
 
     return buildCurrentUser(authUser, profile)

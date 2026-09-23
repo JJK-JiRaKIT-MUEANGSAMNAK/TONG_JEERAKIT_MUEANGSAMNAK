@@ -24,8 +24,7 @@ export async function normalizeUsername(username: string): Promise<string> {
  * 1. Checks Supabase configuration (returns config error if invalid)
  * 2. Normalizes username
  * 3. Uses server admin client to query public.profiles
- * 4. Falls back to direct email if username is already in email format
- * 5. Returns 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' if username is not found
+ * 4. Returns 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' if username is not found in profiles (no email fallback)
  */
 export async function resolveUsernameToEmail(username: string): Promise<{
   success: boolean
@@ -75,15 +74,7 @@ export async function resolveUsernameToEmail(username: string): Promise<{
       }
     }
 
-    // Fallback if user typed an email address directly into username field
-    if (cleanUsername.includes('@')) {
-      return {
-        success: true,
-        email: cleanUsername,
-      }
-    }
-
-    // Username not found in profiles
+    // Username not found in profiles (direct email login is disallowed)
     return {
       success: false,
       error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
@@ -196,7 +187,6 @@ export async function loginWithUsername(formData: {
       success: true,
       data: {
         userId: signInData.user.id,
-        email: signInData.user.email,
       },
     }
   } catch (err: unknown) {

@@ -10,6 +10,7 @@ import {
 import { validateSupabaseAdminConfig, createAdminClient } from '@/lib/supabase/admin'
 import { createClient as createServerSupabase } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth'
+import { buildCurrentUser, type AuthUserLike } from '@/lib/auth-utils'
 
 // Load environment variables from .env.local for testing if not already loaded
 const envPath = path.resolve(process.cwd(), '.env.local')
@@ -73,10 +74,11 @@ describe('Supabase Username Auth Flow', () => {
       expect(result.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
     })
 
-    it.runIf(hasRealSupabaseEnv)('falls back to email if username is an email address', async () => {
+    it.runIf(hasRealSupabaseEnv)('rejects direct email input if not present as a username in public.profiles', async () => {
       const result = await resolveUsernameToEmail('direct_user@example.com')
-      expect(result.success).toBe(true)
-      expect(result.email).toBe('direct_user@example.com')
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+      expect(result.email).toBeUndefined()
     })
   })
 
@@ -146,6 +148,15 @@ describe('Supabase Username Auth Flow', () => {
       const res = await loginWithUsername({
         username: '',
         password: '',
+      })
+      expect(res.success).toBe(false)
+      expect(res.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+    })
+
+    it.runIf(hasRealSupabaseEnv)('fails login when email is entered instead of username and email is not in profiles.username', async () => {
+      const res = await loginWithUsername({
+        username: 'jeerakitplasticformworkutt2024@gmail.com',
+        password: 'AnyPassword123!',
       })
       expect(res.success).toBe(false)
       expect(res.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
@@ -225,6 +236,79 @@ describe('Supabase Username Auth Flow', () => {
       expect(loginPageContent).not.toContain('.from("profiles")')
       expect(loginPageContent).not.toContain('createClient')
       expect(loginPageContent).not.toContain('supabase.from')
+    })
+  })
+
+  describe('8. Role Trust and Authorization Logic (Strictly from public.profiles)', () => {
+    const baseAuthUser: AuthUserLike = {
+      id: 'usr-12345',
+      email: 'member@example.com',
+      email_confirmed_at: '2026-01-01T00:00:00Z',
+      user_metadata: {},
+    }
+
+    it('A. profile.role = OWNER → resolves to OWNER', () => {
+      const user = buildCurrentUser(baseAuthUser, { role: 'OWNER', username: 'storeowner' })
+      expect(user.role).toBe('OWNER')
+    })
+
+    it('B. profile.role = USER → resolves to USER', () => {
+      const user = buildCurrentUser(baseAuthUser, { role: 'USER', username: 'staff1' })
+      expect(user.role).toBe('USER')
+    })
+
+    it('C. ไม่มี profile + user_metadata.role = OWNER → ต้องได้ USER', () => {
+      const authUserWithMetaOwner: AuthUserLike = {
+        ...baseAuthUser,
+        user_metadata: { role: 'OWNER' },
+      }
+      const user = buildCurrentUser(authUserWithMetaOwner, null)
+      expect(user.role).toBe('USER')
+    })
+
+    it('D. profile ไม่มี role + metadata OWNER → ต้องได้ USER', () => {
+      const authUserWithMetaOwner: AuthUserLike = {
+        ...baseAuthUser,
+        user_metadata: { role: 'OWNER' },
+      }
+      const user = buildCurrentUser(authUserWithMetaOwner, { username: 'testuser' })
+      expect(user.role).toBe('USER')
+    })
+
+    it('E. role แปลก เช่น ADMIN → ต้องได้ USER', () => {
+      const user = buildCurrentUser(baseAuthUser, { role: 'ADMIN', username: 'admin1' })
+      expect(user.role).toBe('USER')
+    })
+
+    it('F. preserves non-permission metadata (names, username, avatar) while strictly rejecting metadata role', () => {
+      const authUserWithMeta: AuthUserLike = {
+        ...baseAuthUser,
+        user_metadata: {
+          role: 'OWNER', // MUST BE IGNORED
+          first_name: 'สมชาย',
+          last_name: 'ใจดี',
+          username: 'somchai',
+          avatar_url: 'https://example.com/avatar.png',
+        },
+      }
+      const user = buildCurrentUser(authUserWithMeta, null)
+      expect(user.role).toBe('USER')
+      expect(user.firstName).toBe('สมชาย')
+      expect(user.username).toBe('somchai')
+      expect(user.avatarUrl).toBe('https://example.com/avatar.png')
+    })
+
+    it('G. never derives OWNER role from email, username, or name', () => {
+      const authUserOwnerNamed: AuthUserLike = {
+        ...baseAuthUser,
+        email: 'owner@example.com',
+        user_metadata: {
+          username: 'owner',
+          full_name: 'Store Owner',
+        },
+      }
+      const userWithoutRole = buildCurrentUser(authUserOwnerNamed, { username: 'owner' })
+      expect(userWithoutRole.role).toBe('USER')
     })
   })
 })

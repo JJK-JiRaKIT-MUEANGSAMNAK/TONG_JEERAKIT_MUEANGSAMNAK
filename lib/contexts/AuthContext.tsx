@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRole(currentUser.role)
       setSession(currentSession)
     } catch {
-      // Fallback to metadata if profiles table is not accessible yet
+      // Safe fallback if profiles table is not accessible: defaults to USER role
       const fallbackUser = buildCurrentUser(authUser, null)
       setUser(fallbackUser)
       setRole(fallbackUser.role)
