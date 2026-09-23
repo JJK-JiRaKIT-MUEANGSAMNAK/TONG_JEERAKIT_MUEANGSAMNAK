@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
 import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
+import { AppLockButton } from '@/components/auth/AppLockButton'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { getPageMeta } from '@/lib/navigation-meta'
 import { useLiveClock } from '@/lib/hooks/useLiveClock'
@@ -125,6 +126,7 @@ function SidebarContent() {
             <span className="font-mono text-slate-900 dark:text-slate-100 font-bold shrink-0">{currentTimeStr}</span>
           </div>
 
+          <AppLockButton variant="mobile" />
           <NotificationBell />
           <QuickActionLauncher />
         </div>
@@ -357,17 +359,20 @@ function SidebarContent() {
               </div>
             </div>
 
-            <button
-              onClick={async () => {
-                setIsMobileOpen(false)
-                await signOut()
-              }}
-              className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
-              title="ออกจากระบบ"
-              aria-label="ออกจากระบบ"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <AppLockButton variant="sidebar" />
+              <button
+                onClick={async () => {
+                  setIsMobileOpen(false)
+                  await signOut()
+                }}
+                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
+                title="ออกจากระบบ"
+                aria-label="ออกจากระบบ"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

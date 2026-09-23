@@ -1,16 +1,20 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { ShieldCheck, Delete, LogOut, AlertCircle, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { ShieldCheck, Delete, LogOut, AlertCircle, Eye, EyeOff, ArrowRight, X } from 'lucide-react'
 import { AuthLayout } from '@/components/auth/AuthLayout'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { useAppLock } from '@/lib/contexts/AppLockContext'
+import { validatePinFormat } from '@/lib/pin-lock'
 
-const validatePin = (_p: string) => ({ isValid: true, error: null as string | null })
+interface InitialPinSetupScreenProps {
+  onSuccess?: () => void
+  onCancel?: () => void
+}
 
-export function InitialPinSetupScreen() {
-  const user = null as any
-  const branding = null as any
-  const setInitialPin = async (_p: string) => {}
-  const logout = () => {}
+export function InitialPinSetupScreen({ onSuccess, onCancel }: InitialPinSetupScreenProps = {}) {
+  const { user, signOut } = useAuth()
+  const { setupPin } = useAppLock()
 
   const [step, setStep] = useState<'create' | 'confirm'>('create')
   const [pin, setPin] = useState('')
@@ -19,7 +23,6 @@ export function InitialPinSetupScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isShaking, setIsShaking] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [bgLoadError, setBgLoadError] = useState(false)
 
   const handleKeyPress = useCallback((digit: string) => {
     setErrorMsg(null)
@@ -54,7 +57,7 @@ export function InitialPinSetupScreen() {
 
   // Process Step 1 -> Step 2
   const handleProceedToConfirm = useCallback(() => {
-    const val = validatePin(pin)
+    const val = validatePinFormat(pin)
     if (!val.isValid) {
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 500)
@@ -78,16 +81,22 @@ export function InitialPinSetupScreen() {
     setIsSubmitting(true)
     setErrorMsg(null)
     try {
-      await setInitialPin(pin)
-    } catch (err: any) {
+      const ok = await setupPin(pin)
+      if (ok) {
+        onSuccess?.()
+      } else {
+        throw new Error('ไม่สามารถบันทึก PIN ได้')
+      }
+    } catch (err: unknown) {
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 500)
-      setErrorMsg(err?.message || 'ไม่สามารถบันทึก PIN ได้ กรุณาลองใหม่อีกครั้ง')
+      const message = err instanceof Error ? err.message : 'ไม่สามารถบันทึก PIN ได้ กรุณาลองใหม่อีกครั้ง'
+      setErrorMsg(message)
       setConfirmPin('')
     } finally {
       setIsSubmitting(false)
     }
-  }, [confirmPin, pin, setInitialPin])
+  }, [confirmPin, pin, setupPin, onSuccess])
 
   // Auto transition on 6 digits
   useEffect(() => {
@@ -118,7 +127,6 @@ export function InitialPinSetupScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyPress, handleDelete, handleClear])
 
-  const activeBg = !bgLoadError && branding?.authBackgroundImageUrl ? branding.authBackgroundImageUrl : null
   const currentVal = step === 'create' ? pin : confirmPin
 
   return (
@@ -132,18 +140,29 @@ export function InitialPinSetupScreen() {
             </div>
             <div>
               <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">Rental POS Security</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">ตั้งค่าความปลอดภัยครั้งแรก</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">ตั้งค่ารหัส PIN 6 หลัก</span>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-300 dark:border-slate-700/80 hover:border-rose-300 dark:hover:border-rose-700/50 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>ออกจากระบบ</span>
-          </button>
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>ปิด</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-300 dark:border-slate-700/80 hover:border-rose-300 dark:hover:border-rose-700/50 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>ออกจากระบบ</span>
+            </button>
+          )}
         </div>
 
         {/* Step Indicator */}
@@ -164,7 +183,7 @@ export function InitialPinSetupScreen() {
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {step === 'create'
-              ? `สวัสดีคุณ ${user?.fullName || user?.username || 'ผู้ใช้งาน'} กรุณาตั้ง PIN สำหรับล็อกหน้าจอ`
+              ? `สวัสดีคุณ ${user?.displayName || user?.fullName || user?.username || 'ผู้ใช้งาน'} กรุณาตั้ง PIN สำหรับล็อกระบบ`
               : 'กรุณากรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
           </p>
         </div>

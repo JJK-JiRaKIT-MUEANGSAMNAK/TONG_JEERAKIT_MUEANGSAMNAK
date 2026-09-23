@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
+import { useAppLock } from '@/lib/contexts/AppLockContext'
 import { PinLockScreen } from '@/components/auth/PinLockScreen'
 
 const PUBLIC_ROUTES = [
@@ -17,21 +18,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { session, loading, user } = useAuth()
-  const [isPinUnlocked, setIsPinUnlocked] = useState(false)
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  useEffect(() => {
-    if (user?.id) {
-      const unlocked = sessionStorage.getItem(`rental_pos_unlocked_${user.id}`) === 'true'
-      setIsPinUnlocked(unlocked)
-    } else {
-      setIsPinUnlocked(false)
-    }
-  }, [user?.id])
+  const { pinEnabled, isLocked, unlockApp } = useAppLock()
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname?.startsWith(route + '/')
@@ -82,16 +69,11 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Protected route: authenticated user must pass PIN lock screen first
-  if (session && user && !isPinUnlocked && isClient) {
+  // Protected route: show PinLockScreen ONLY if PIN is enabled AND the app is locked
+  if (session && user && pinEnabled && isLocked) {
     return (
       <PinLockScreen
-        onUnlockSuccess={() => {
-          if (user?.id) {
-            sessionStorage.setItem(`rental_pos_unlocked_${user.id}`, 'true')
-          }
-          setIsPinUnlocked(true)
-        }}
+        onUnlockSuccess={unlockApp}
       />
     )
   }

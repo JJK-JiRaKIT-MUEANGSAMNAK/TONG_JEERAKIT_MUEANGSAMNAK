@@ -42,6 +42,9 @@ import {
 import { useToast } from '@/components/common/Toast'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
+import { ModalPortal } from '@/components/common/ModalPortal'
+import { useAppLock } from '@/lib/contexts/AppLockContext'
+import { InitialPinSetupScreen } from '@/components/auth/InitialPinSetupScreen'
 import {
   TAB_CONTAINER_CLASSES,
   TAB_BUTTON_BASE_CLASSES,
@@ -325,23 +328,8 @@ export default function SettingsPage() {
     }
   }
 
-  const changePin = async (oldPin: string, newPin: string) => {
-    if (typeof window !== 'undefined') {
-      const userKey = `rental_pos_pin_${user?.id || 'default'}`
-      const saved = localStorage.getItem(userKey)
-      if (saved && saved !== oldPin) {
-        throw new Error('PIN เดิมไม่ถูกต้อง')
-      }
-      localStorage.setItem(userKey, newPin)
-    }
-  }
-
-  const resetPinWithPassword = async (_pwd: string, newPin: string) => {
-    if (typeof window !== 'undefined') {
-      const userKey = `rental_pos_pin_${user?.id || 'default'}`
-      localStorage.setItem(userKey, newPin)
-    }
-  }
+  const { pinEnabled } = useAppLock()
+  const [showPinSetupModal, setShowPinSetupModal] = useState(false)
   const changePassword = async (_pwd: string) => {}
   const enrollMfaTotp = async () => ({ factorId: '', secret: '', qrCode: '', uri: '' })
   const verifyMfaEnrollment = async (_factorId: string, _code: string) => {}
@@ -365,27 +353,13 @@ export default function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const appLogoInputRef = useRef<HTMLInputElement>(null)
 
-  // Tab 8 Account & Security Local States
-  const [oldPin, setOldPin] = useState('')
-  const [newPin, setNewPin] = useState('')
-  const [confirmNewPin, setConfirmNewPin] = useState('')
-  const [pinError, setPinError] = useState<string | null>(null)
-  const [pinSuccess, setPinSuccess] = useState(false)
-  const [pinLoading, setPinLoading] = useState(false)
-
+  // Tab 8 Password States
   const [oldPwd, setOldPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
   const [confirmNewPwd, setConfirmNewPwd] = useState('')
   const [pwdError, setPwdError] = useState<string | null>(null)
   const [pwdSuccess, setPwdSuccess] = useState(false)
   const [pwdLoading, setPwdLoading] = useState(false)
-
-  const [showForgotPinSection, setShowForgotPinSection] = useState(false)
-  const [forgotPinPwd, setForgotPinPwd] = useState('')
-  const [forgotPinNew, setForgotPinNew] = useState('')
-  const [forgotPinConfirm, setForgotPinConfirm] = useState('')
-  const [forgotPinErr, setForgotPinErr] = useState<string | null>(null)
-  const [forgotPinLoad, setForgotPinLoad] = useState(false)
 
   // Tab 8 MFA States
   const [isEnrollingMfa, setIsEnrollingMfa] = useState(false)
@@ -598,39 +572,6 @@ export default function SettingsPage() {
     }
   }
 
-  const handleChangePin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setPinError(null)
-    setPinSuccess(false)
-    if (oldPin.length !== 6) {
-      setPinError('กรุณากรอก PIN เดิม 6 หลัก')
-      return
-    }
-    const val = validatePin(newPin)
-    if (!val.isValid) {
-      setPinError(val.error || 'PIN ใหม่ไม่ถูกต้อง')
-      return
-    }
-    if (newPin !== confirmNewPin) {
-      setPinError('PIN ใหม่และยืนยัน PIN ไม่ตรงกัน')
-      return
-    }
-    setPinLoading(true)
-    try {
-      await changePin(oldPin, newPin)
-      setPinSuccess(true)
-      setOldPin('')
-      setNewPin('')
-      setConfirmNewPin('')
-      showToast('เปลี่ยน PIN สำเร็จ', 'บันทึกรหัส PIN 6 หลักใหม่เรียบร้อยแล้ว', 'SUCCESS')
-      setTimeout(() => setPinSuccess(false), 3000)
-    } catch (err: any) {
-      setPinError(err?.message || 'เกิดข้อผิดพลาดในการเปลี่ยน PIN')
-    } finally {
-      setPinLoading(false)
-    }
-  }
-
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPwdError(null)
@@ -738,39 +679,6 @@ export default function SettingsPage() {
     setCopiedSecret(true)
     showToast('คัดลอกแล้ว', 'คัดลอก Secret Key ไปยังคลิปบอร์ดแล้ว', 'INFO')
     setTimeout(() => setCopiedSecret(false), 2000)
-  }
-
-  const handleForgotPinReset = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setForgotPinErr(null)
-    if (!forgotPinPwd) {
-      setForgotPinErr('กรุณากรอกรหัสผ่านเพื่อยืนยันตัวตน')
-      return
-    }
-    const val = validatePin(forgotPinNew)
-    if (!val.isValid) {
-      setForgotPinErr(val.error || 'PIN ใหม่ไม่ถูกต้อง')
-      return
-    }
-    if (forgotPinNew !== forgotPinConfirm) {
-      setForgotPinErr('PIN ใหม่และยืนยัน PIN ไม่ตรงกัน')
-      return
-    }
-    setForgotPinLoad(true)
-    try {
-      await resetPinWithPassword(forgotPinPwd, forgotPinNew)
-      setForgotPinPwd('')
-      setForgotPinNew('')
-      setForgotPinConfirm('')
-      showToast('รีเซ็ต PIN สำเร็จ', 'ตั้งรหัส PIN ใหม่เรียบร้อยแล้ว', 'SUCCESS')
-      setTimeout(() => {
-        setShowForgotPinSection(false)
-      }, 2000)
-    } catch (err: any) {
-      setForgotPinErr(err?.message || 'เกิดข้อผิดพลาดในการรีเซ็ต PIN')
-    } finally {
-      setForgotPinLoad(false)
-    }
   }
 
   // Logo upload handler (Max 500 KB, Data URL)
@@ -4013,255 +3921,71 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* 2. Security: PIN 6-digits & Auto-Lock */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                      <span>ความปลอดภัยและการล็อกหน้าจอ</span>
-                    </h4>
-
-                    {/* Quick Lock & Auto Lock */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-xs">
-                          ล็อกหน้าจอตอนนี้ (Lock Now)
-                        </span>
-                        <p className="text-[11px] text-slate-500">
-                          ล็อกหน้าจอทันทีด้วย PIN 6 หลัก โดยไม่ต้องออกจากระบบ
-                        </p>
-                        <button
-                          type="button"
-                          onClick={lock}
-                          className="h-9 px-3.5 py-0 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
+                  {/* 2. Security: PIN 6-digits App Lock */}
+                  <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0">
                           <Lock className="w-4 h-4" />
-                          <span>ล็อกหน้าจอทันที</span>
-                        </button>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                            การล็อกหน้าจอด้วย PIN 6 หลัก (App Lock)
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            ป้องกันการเข้าใช้งานระบบบนอุปกรณ์นี้โดยไม่ต้องออกจากระบบ
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-xs">
-                          ตั้งเวลาล็อกอัตโนมัติเมื่อไม่ได้ใช้งาน (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก) (มือถือ/แท็บเล็ตจะล็อกเมื่อสลับแอปหรือหน้าจอถูกล็อก)
-                        </span>
-                        <CustomSelect
-                          buttonClassName="h-9 px-2.5 py-0 rounded-xl"
-                          value={autoLockDuration}
-                          onChange={(val) => updateAutoLockSetting(val as AutoLockDuration)}
-                          options={[
-                            { value: '3', label: '3 นาที' },
-                            { value: '5', label: '5 นาที (ค่าเริ่มต้น)' },
-                            { value: '10', label: '10 นาที' },
-                            { value: '15', label: '15 นาที' },
-                          ]}
-                        />
+                      <div>
+                        {pinEnabled ? (
+                          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 w-fit">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>PIN 6 หลัก: เปิดใช้งานแล้ว</span>
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300 font-bold text-xs w-fit inline-block">
+                            PIN 6 หลัก: ยังไม่ได้เปิดใช้งาน
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Change PIN Section */}
-                    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-                          <Key className="w-4 h-4 text-amber-500" />
-                          <span>เปลี่ยนรหัส PIN 6 หลัก (Change PIN)</span>
+                    {!pinEnabled && (
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
+                          ผู้ใช้สามารถเปิดใช้งาน PIN เพื่อล็อกระบบขณะทำงานได้
                         </span>
                         <button
                           type="button"
-                          onClick={() => setShowForgotPinSection((prev) => !prev)}
-                          className="text-[11px] text-blue-500 hover:underline font-bold cursor-pointer"
+                          onClick={() => setShowPinSetupModal(true)}
+                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
                         >
-                          {showForgotPinSection ? 'ซ่อนการรีเซ็ต PIN' : 'ลืม PIN เดิม?'}
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>เปิดใช้งาน PIN 6 หลัก</span>
                         </button>
                       </div>
+                    )}
+                  </div>
 
-                      {pinError && (
-                        <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 shrink-0" />
-                          <span>{pinError}</span>
+                  {showPinSetupModal && (
+                    <ModalPortal>
+                      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                        <div className="relative w-full max-w-sm">
+                          <InitialPinSetupScreen
+                            onSuccess={() => {
+                              setShowPinSetupModal(false)
+                              showToast('เปิดใช้งานสำเร็จ', 'เปิดใช้งาน PIN 6 หลักสำหรับล็อกระบบเรียบร้อยแล้ว', 'SUCCESS')
+                            }}
+                            onCancel={() => setShowPinSetupModal(false)}
+                          />
                         </div>
-                      )}
+                      </div>
+                    </ModalPortal>
+                  )}
 
-                      {pinSuccess && (
-                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 shrink-0" />
-                          <span>เปลี่ยน PIN สำเร็จเรียบร้อยแล้ว</span>
-                        </div>
-                      )}
-
-                      {/* Forgot PIN / Reset with Password Sub-form */}
-                      {showForgotPinSection ? (
-                        <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl space-y-2.5">
-                          <span className="font-bold text-amber-900 dark:text-amber-200 text-xs flex items-center gap-1.5">
-                            <KeyRound className="w-3.5 h-3.5" />
-                            <span>รีเซ็ต PIN ใหม่ด้วยรหัสผ่าน Rental POS</span>
-                          </span>
-
-                          {forgotPinErr && (
-                            <div className="p-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 text-rose-600 rounded-lg text-xs font-semibold">
-                              {forgotPinErr}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">รหัสผ่าน Rental POS</label>
-                              <div className="relative">
-                                <input
-                                  type={showForgotPinPwd ? "text" : "password"}
-                                  value={forgotPinPwd}
-                                  onChange={(e) => setForgotPinPwd(e.target.value)}
-                                  placeholder="รหัสผ่านผู้ใช้งาน"
-                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowForgotPinPwd(!showForgotPinPwd)}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                  aria-label={showForgotPinPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
-                                >
-                                  {showForgotPinPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PIN 6 หลักใหม่</label>
-                              <div className="relative">
-                                <input
-                                  type={showForgotPinNew ? "text" : "password"}
-                                  maxLength={6}
-                                  value={forgotPinNew}
-                                  onChange={(e) => setForgotPinNew(e.target.value.replace(/\D/g, ''))}
-                                  placeholder={showForgotPinNew ? "000000" : "••••••"}
-                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowForgotPinNew(!showForgotPinNew)}
-                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                  aria-label={showForgotPinNew ? "ซ่อน PIN" : "แสดง PIN"}
-                                >
-                                  {showForgotPinNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">ยืนยัน PIN ใหม่</label>
-                              <div className="relative">
-                                <input
-                                  type={showForgotPinConfirm ? "text" : "password"}
-                                  maxLength={6}
-                                  value={forgotPinConfirm}
-                                  onChange={(e) => setForgotPinConfirm(e.target.value.replace(/\D/g, ''))}
-                                  placeholder={showForgotPinConfirm ? "000000" : "••••••"}
-                                  className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowForgotPinConfirm(!showForgotPinConfirm)}
-                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                  aria-label={showForgotPinConfirm ? "ซ่อน PIN" : "แสดง PIN"}
-                                >
-                                  {showForgotPinConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end pt-1">
-                            <button
-                              type="button"
-                              onClick={handleForgotPinReset}
-                              disabled={forgotPinLoad}
-                              className="h-9 px-3.5 py-0 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
-                            >
-                              {forgotPinLoad ? 'กำลังตรวจสอบ...' : 'ยืนยันรีเซ็ต PIN'}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">PIN เดิม 6 หลัก</label>
-                            <div className="relative">
-                              <input
-                                type={showOldPin ? "text" : "password"}
-                                maxLength={6}
-                                value={oldPin}
-                                onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
-                                placeholder={showOldPin ? "000000" : "••••••"}
-                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowOldPin(!showOldPin)}
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                aria-label={showOldPin ? "ซ่อน PIN" : "แสดง PIN"}
-                              >
-                                {showOldPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">PIN ใหม่ 6 หลัก</label>
-                            <div className="relative">
-                              <input
-                                type={showNewPin ? "text" : "password"}
-                                maxLength={6}
-                                value={newPin}
-                                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                                placeholder={showNewPin ? "000000" : "••••••"}
-                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowNewPin(!showNewPin)}
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                aria-label={showNewPin ? "ซ่อน PIN" : "แสดง PIN"}
-                              >
-                                {showNewPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">ยืนยัน PIN ใหม่</label>
-                            <div className="relative">
-                              <input
-                                type={showConfirmNewPin ? "text" : "password"}
-                                maxLength={6}
-                                value={confirmNewPin}
-                                onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ''))}
-                                placeholder={showConfirmNewPin ? "000000" : "••••••"}
-                                className="w-full h-9 pl-3 pr-8 py-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center font-mono tracking-widest text-xs"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowConfirmNewPin(!showConfirmNewPin)}
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 focus:outline-none transition-colors cursor-pointer"
-                                aria-label={showConfirmNewPin ? "ซ่อน PIN" : "แสดง PIN"}
-                              >
-                                {showConfirmNewPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {!showForgotPinSection && (
-                        <div className="flex justify-end pt-1">
-                          <button
-                            type="button"
-                            onClick={handleChangePin}
-                            disabled={pinLoading}
-                            className="h-9 px-3.5 py-0 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
-                          >
-                            {pinLoading ? 'กำลังบันทึก...' : 'บันทึก PIN ใหม่'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 3. Two-Factor Authentication (2FA / TOTP) */}
+                  {/* 3. Two-Factor Authentication (2FA / TOTP) */}
                     <div className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
@@ -4553,7 +4277,6 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     </div>
-                  </div>
 
                     {/* 5. Session Management */}
                     <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">

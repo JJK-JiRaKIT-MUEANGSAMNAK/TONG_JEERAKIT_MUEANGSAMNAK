@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { Calendar, Clock } from 'lucide-react'
 import { NotificationBell } from '@/components/common/NotificationBell'
 import { QuickActionLauncher } from '@/components/common/QuickActionLauncher'
+import { AppLockButton } from '@/components/auth/AppLockButton'
 import { getPageName } from '@/lib/navigation-meta'
 import { useLiveClock } from '@/lib/hooks/useLiveClock'
 
@@ -27,7 +28,7 @@ function TopHeaderContent() {
         </h1>
       </div>
 
-      {/* Right: Actions (Date & Time + Notification Bell & Quick Action Launcher) */}
+      {/* Right: Actions (Date & Time + Lock Button + Notification Bell & Quick Action Launcher) */}
       <div className="flex items-center gap-3 shrink-0 z-10">
         <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 font-semibold shadow-xs">
           <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -37,6 +38,7 @@ function TopHeaderContent() {
           <span className="font-mono text-slate-900 dark:text-slate-100 font-bold">{currentTimeStr}</span>
         </div>
 
+        <AppLockButton variant="header" />
         <NotificationBell />
         <QuickActionLauncher />
       </div>
