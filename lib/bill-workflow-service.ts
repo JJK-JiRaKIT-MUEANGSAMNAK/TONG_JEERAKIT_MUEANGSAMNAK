@@ -358,7 +358,7 @@ export function createBillWorkflow(options: CreateBillOptions): {
     })
 
     if (incomingBill.quotationId) {
-      markQuotationConverted(incomingBill.quotationId, incomingBill.id, correlationId)
+      // markQuotationConverted is called at the end of the function
     }
   } else {
     // 2. DISPATCHED: Stock is physically handed over.
@@ -391,7 +391,7 @@ export function createBillWorkflow(options: CreateBillOptions): {
 
     if (incomingBill.quotationId) {
       dispatchReservationsBySource('QUOTATION', incomingBill.quotationId, correlationId)
-      markQuotationConverted(incomingBill.quotationId, incomingBill.id, correlationId)
+      // markQuotationConverted is called at the end of the function
     }
   }
 
