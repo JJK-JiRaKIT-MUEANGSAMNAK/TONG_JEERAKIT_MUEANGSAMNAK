@@ -440,7 +440,7 @@ CREATE POLICY "Allow authenticated write all" ON public.products FOR ALL TO auth
 
 -- STOCK MOVEMENTS (Append-only)
 CREATE POLICY "Allow authenticated read stock_movements" ON public.stock_movements FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated insert stock_movements" ON public.stock_movements FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Allow authenticated insert stock_movements" ON public.stock_movements FOR INSERT TO authenticated WITH CHECK (actor_user_id = auth.uid()::text);
 
 CREATE POLICY "Allow authenticated read all" ON public.reservations FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.reservations FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -454,3 +454,32 @@ CREATE POLICY "Users can read own permissions" ON public.permissions FOR SELECT 
 CREATE POLICY "OWNER can select permissions" ON public.permissions FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
 CREATE POLICY "OWNER can insert permissions" ON public.permissions FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
 CREATE POLICY "OWNER can update permissions" ON public.permissions FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
+
+-- FINANCE TABLE PRIVILEGES: Revoke all from default public/anon/authenticated to ensure strict control
+REVOKE ALL PRIVILEGES ON TABLE public.bills FROM PUBLIC;
+REVOKE ALL PRIVILEGES ON TABLE public.bills FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.bills FROM authenticated;
+
+REVOKE ALL PRIVILEGES ON TABLE public.payment_batches FROM PUBLIC;
+REVOKE ALL PRIVILEGES ON TABLE public.payment_batches FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.payment_batches FROM authenticated;
+
+REVOKE ALL PRIVILEGES ON TABLE public.statement_transactions FROM PUBLIC;
+REVOKE ALL PRIVILEGES ON TABLE public.statement_transactions FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.statement_transactions FROM authenticated;
+
+REVOKE ALL PRIVILEGES ON TABLE public.audit_logs FROM PUBLIC;
+REVOKE ALL PRIVILEGES ON TABLE public.audit_logs FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.audit_logs FROM authenticated;
+
+-- GRANT specific minimum privileges to authenticated
+GRANT SELECT, INSERT, UPDATE ON TABLE public.bills TO authenticated;
+GRANT SELECT ON TABLE public.payment_batches TO authenticated;
+GRANT SELECT ON TABLE public.statement_transactions TO authenticated;
+GRANT SELECT ON TABLE public.audit_logs TO authenticated;
+
+-- Explicitly ensure service_role has ALL to allow backend operations bypassing RLS
+GRANT ALL PRIVILEGES ON TABLE public.bills TO service_role;
+GRANT ALL PRIVILEGES ON TABLE public.payment_batches TO service_role;
+GRANT ALL PRIVILEGES ON TABLE public.statement_transactions TO service_role;
+GRANT ALL PRIVILEGES ON TABLE public.audit_logs TO service_role;
