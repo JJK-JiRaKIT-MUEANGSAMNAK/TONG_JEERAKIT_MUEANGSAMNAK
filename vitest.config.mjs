@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -27,6 +27,16 @@ if (fs.existsSync(envPath)) {
 // Resolution order: process.env (e.g. CI) > localEnv (.env.local) > ''
 const resolveEnv = (key) => process.env[key] || localEnv[key] || ''
 
+const supabaseUrl = resolveEnv('NEXT_PUBLIC_SUPABASE_URL')
+const supabaseAnon = resolveEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+const hasRealSupabase = Boolean(
+  supabaseUrl &&
+  !supabaseUrl.includes('placeholder') &&
+  (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://')) &&
+  supabaseAnon &&
+  !supabaseAnon.includes('placeholder')
+)
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -41,6 +51,11 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_ANON_KEY: resolveEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
       SUPABASE_SERVICE_ROLE_KEY: resolveEnv('SUPABASE_SERVICE_ROLE_KEY'),
     },
+    exclude: [
+      ...configDefaults.exclude,
+      ...(hasRealSupabase ? [] : ['tests/split-payment-receipt-audit.test.ts']),
+    ],
+    testNamePattern: hasRealSupabase ? undefined : /^(?!.*(Split payment: records 1 transaction per channel)).*$/,
   },
 })
 
