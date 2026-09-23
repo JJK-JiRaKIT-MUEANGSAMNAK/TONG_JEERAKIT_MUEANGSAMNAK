@@ -33,15 +33,22 @@ const AppLockContext = createContext<AppLockContextType>({
 })
 
 export function AppLockProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [pinEnabled, setPinEnabled] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+  const [checkedUserId, setCheckedUserId] = useState<string | null | undefined>(undefined)
   const [loading, setLoading] = useState(true)
 
   const refreshLockState = useCallback(() => {
+    if (authLoading) {
+      setLoading(true)
+      return
+    }
+
     if (!user?.id) {
       setPinEnabled(false)
       setIsLocked(false)
+      setCheckedUserId(null)
       setLoading(false)
       return
     }
@@ -57,12 +64,16 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       setAppLockedState(user.id, false)
     }
 
+    setCheckedUserId(user.id)
     setLoading(false)
-  }, [user?.id])
+  }, [user?.id, authLoading])
 
   useEffect(() => {
     refreshLockState()
   }, [refreshLockState])
+
+  const currentUserId = user?.id || null
+  const isAppLockLoading = loading || Boolean(authLoading) || (Boolean(currentUserId) && checkedUserId !== currentUserId)
 
   const setupPin = useCallback(async (pin: string): Promise<boolean> => {
     if (!user?.id) return false
@@ -101,13 +112,13 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppLockContextType>(() => ({
     pinEnabled,
     isLocked,
-    loading,
+    loading: isAppLockLoading,
     setupPin,
     verifyPin,
     lockApp,
     unlockApp,
     refreshLockState,
-  }), [pinEnabled, isLocked, loading, setupPin, verifyPin, lockApp, unlockApp, refreshLockState])
+  }), [pinEnabled, isLocked, isAppLockLoading, setupPin, verifyPin, lockApp, unlockApp, refreshLockState])
 
   return (
     <AppLockContext.Provider value={value}>

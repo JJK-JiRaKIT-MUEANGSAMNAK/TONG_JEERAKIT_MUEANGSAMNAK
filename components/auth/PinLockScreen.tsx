@@ -6,36 +6,13 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { useAppLock } from '@/lib/contexts/AppLockContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 
-const LOCKOUT_KEY = 'rental_pos_pin_lockout'
-
-const getPinLockoutDuration = (level: number) => {
-  if (level === 0) return 30
-  if (level === 1) return 60
-  return 300
-}
-
-const getStoredLockoutState = (): { failedAttempts: number; lockoutLevel: number; lockUntil: number } => {
-  if (typeof window === 'undefined') return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
-  try {
-    const raw = sessionStorage.getItem(LOCKOUT_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
-}
-
-const saveStoredLockoutState = (state: { failedAttempts: number; lockoutLevel: number; lockUntil: number }) => {
-  if (typeof window === 'undefined') return
-  try {
-    sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify(state))
-  } catch {}
-}
-
-const clearStoredLockoutState = () => {
-  if (typeof window === 'undefined') return
-  try {
-    sessionStorage.removeItem(LOCKOUT_KEY)
-  } catch {}
-}
+import {
+  getPinLockoutState,
+  savePinLockoutState,
+  clearPinLockoutState,
+  getPinLockoutDuration,
+  setAppLockedState,
+} from '@/lib/pin-lock'
 
 interface PinLockScreenProps {
   onUnlockSuccess?: () => void
@@ -43,7 +20,8 @@ interface PinLockScreenProps {
 
 export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
   const { user, signOut: logout } = useAuth()
-  const { verifyPin } = useAppLock()
+  const { verifyPin, unlockApp } = useAppLock()
+  const userId = user?.id || ''
 
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
@@ -54,16 +32,19 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
   const [lockoutSeconds, setLockoutSeconds] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Initialize lockout state from persistent sessionStorage
+  // Initialize lockout state from persistent sessionStorage for current user
   useEffect(() => {
-    const stored = getStoredLockoutState()
+    if (!userId) return
+    const stored = getPinLockoutState(userId)
     setFailedAttempts(stored.failedAttempts)
     setLockoutLevel(stored.lockoutLevel)
     if (stored.lockUntil > Date.now()) {
       const remaining = Math.ceil((stored.lockUntil - Date.now()) / 1000)
       setLockoutSeconds(remaining)
+    } else {
+      setLockoutSeconds(0)
     }
-  }, [])
+  }, [userId])
 
   // Lockout Countdown Timer
   useEffect(() => {
@@ -78,6 +59,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
 
   const handleFailedAttempt = useCallback(
     (customMsg?: string) => {
+      if (!userId) return
       const nextFailures = failedAttempts + 1
       let nextLevel = 0
       let duration = 0
@@ -89,7 +71,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
 
       const lockUntil = duration > 0 ? Date.now() + duration * 1000 : 0
 
-      saveStoredLockoutState({
+      savePinLockoutState(userId, {
         failedAttempts: nextFailures,
         lockoutLevel: nextLevel,
         lockUntil,
@@ -110,7 +92,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
         setErrorMsg(customMsg || `PIN ไม่ถูกต้อง (เหลือโอกาสอีก ${5 - nextFailures} ครั้ง)`)
       }
     },
-    [failedAttempts, lockoutLevel]
+    [userId, failedAttempts, lockoutLevel]
   )
 
   const handleKeyPress = useCallback(
@@ -127,7 +109,9 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
         try {
           const success = await verifyPin(nextPin)
           if (success) {
-            clearStoredLockoutState()
+            if (userId) {
+              clearPinLockoutState(userId)
+            }
             setFailedAttempts(0)
             setLockoutLevel(0)
             setLockoutSeconds(0)
@@ -146,7 +130,7 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
         }
       }
     },
-    [pin, isLockedOut, isSubmitting, verifyPin, onUnlockSuccess, handleFailedAttempt]
+    [pin, isLockedOut, isSubmitting, verifyPin, onUnlockSuccess, handleFailedAttempt, userId]
   )
 
   const handleDigitPress = handleKeyPress
@@ -180,7 +164,11 @@ export function PinLockScreen({ onUnlockSuccess }: PinLockScreenProps) {
   }, [handleKeyPress, handleDelete, handleClear])
 
   const handleLogout = async () => {
-    clearStoredLockoutState()
+    if (userId) {
+      setAppLockedState(userId, false)
+      clearPinLockoutState(userId)
+    }
+    unlockApp()
     await logout()
   }
 

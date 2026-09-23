@@ -17,15 +17,15 @@ const PUBLIC_ROUTES = [
 export function AuthShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { session, loading, user } = useAuth()
-  const { pinEnabled, isLocked, unlockApp } = useAppLock()
+  const { session, loading: authLoading, user } = useAuth()
+  const { pinEnabled, isLocked, loading: appLockLoading, unlockApp } = useAppLock()
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname?.startsWith(route + '/')
   )
 
   useEffect(() => {
-    if (!loading) {
+    if (!authLoading) {
       if (!session && !isPublicRoute) {
         // Not authenticated on protected route -> redirect to login
         router.replace('/login')
@@ -34,7 +34,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         router.replace('/pos')
       }
     }
-  }, [loading, session, user, isPublicRoute, pathname, router])
+  }, [authLoading, session, user, isPublicRoute, pathname, router])
 
   // Public routes: render content directly
   if (isPublicRoute) {
@@ -45,8 +45,8 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Protected route: show loading indicator while checking session
-  if (loading) {
+  // Protected route: show loading indicator while checking session or app lock
+  if (authLoading || appLockLoading) {
     return (
       <div className="fixed inset-0 bg-slate-100 dark:bg-background flex flex-col items-center justify-center gap-3 z-50">
         <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />

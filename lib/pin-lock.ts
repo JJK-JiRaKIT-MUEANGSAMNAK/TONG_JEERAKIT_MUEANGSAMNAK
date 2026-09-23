@@ -7,6 +7,7 @@
 const STORAGE_PREFIX = 'rental_pos_app_lock_'
 const SESSION_LOCK_PREFIX = 'rental_pos_app_locked_'
 const LEGACY_PLAINTEXT_PREFIX = 'rental_pos_pin_'
+const LOCKOUT_PREFIX = 'rental_pos_pin_lockout_'
 
 export interface StoredPinCredential {
   enabled: boolean
@@ -36,15 +37,6 @@ export function validatePinFormat(pin: string): { isValid: boolean; error: strin
   }
   if (!/^\d{6}$/.test(pin)) {
     return { isValid: false, error: 'PIN ต้องเป็นตัวเลข 6 หลักเท่านั้น' }
-  }
-  // Check repeating digits like '000000', '111111'
-  if (/^(\d)\1{5}$/.test(pin)) {
-    return { isValid: false, error: 'PIN ไม่ปลอดภัย (ห้ามใช้ตัวเลขซ้ำกันทั้งหมด)' }
-  }
-  // Check sequential digits like '012345', '123456', '654321', etc.
-  const sequential = ['012345', '123456', '234567', '345678', '456789', '987654', '876543', '765432', '654321', '543210']
-  if (sequential.includes(pin)) {
-    return { isValid: false, error: 'PIN ไม่ปลอดภัย (ห้ามใช้ตัวเลขเรียงติดกัน)' }
   }
   return { isValid: true, error: null }
 }
@@ -160,7 +152,49 @@ export function removePinCredential(userId: string): void {
   try {
     localStorage.removeItem(`${STORAGE_PREFIX}${userId}`)
     sessionStorage.removeItem(`${SESSION_LOCK_PREFIX}${userId}`)
+    sessionStorage.removeItem(`${LOCKOUT_PREFIX}${userId}`)
     removeLegacyPlaintextPin(userId)
+  } catch {}
+}
+
+export interface PinLockoutState {
+  failedAttempts: number
+  lockoutLevel: number
+  lockUntil: number
+}
+
+export function getPinLockoutDuration(level: number): number {
+  if (level === 0) return 30
+  if (level === 1) return 60
+  return 300
+}
+
+export function getPinLockoutKey(userId: string): string {
+  return `${LOCKOUT_PREFIX}${userId}`
+}
+
+export function getPinLockoutState(userId: string): PinLockoutState {
+  if (typeof window === 'undefined' || !userId) {
+    return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
+  }
+  try {
+    const raw = sessionStorage.getItem(`${LOCKOUT_PREFIX}${userId}`)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { failedAttempts: 0, lockoutLevel: 0, lockUntil: 0 }
+}
+
+export function savePinLockoutState(userId: string, state: PinLockoutState): void {
+  if (typeof window === 'undefined' || !userId) return
+  try {
+    sessionStorage.setItem(`${LOCKOUT_PREFIX}${userId}`, JSON.stringify(state))
+  } catch {}
+}
+
+export function clearPinLockoutState(userId: string): void {
+  if (typeof window === 'undefined' || !userId) return
+  try {
+    sessionStorage.removeItem(`${LOCKOUT_PREFIX}${userId}`)
   } catch {}
 }
 
