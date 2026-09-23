@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS public.appointments (
 CREATE TABLE IF NOT EXISTS public.permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    role TEXT NOT NULL DEFAULT 'USER', -- OWNER, ADMIN, USER
+    role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('OWNER', 'USER')),
     can_manage_products BOOLEAN NOT NULL DEFAULT false,
     can_manage_bills BOOLEAN NOT NULL DEFAULT false,
     can_manage_finance BOOLEAN NOT NULL DEFAULT false,
@@ -437,13 +437,20 @@ CREATE POLICY "Allow authenticated read all" ON public.units FOR SELECT TO authe
 CREATE POLICY "Allow authenticated write all" ON public.units FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.products FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.stock_movements FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.stock_movements FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- STOCK MOVEMENTS (Append-only)
+CREATE POLICY "Allow authenticated read stock_movements" ON public.stock_movements FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated insert stock_movements" ON public.stock_movements FOR INSERT TO authenticated WITH CHECK (true);
+
 CREATE POLICY "Allow authenticated read all" ON public.reservations FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.reservations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.backorders FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.backorders FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.appointments FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.appointments FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.permissions FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.permissions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- PERMISSIONS
+CREATE POLICY "Users can read own permissions" ON public.permissions FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "OWNER can select permissions" ON public.permissions FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
+CREATE POLICY "OWNER can insert permissions" ON public.permissions FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
+CREATE POLICY "OWNER can update permissions" ON public.permissions FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));

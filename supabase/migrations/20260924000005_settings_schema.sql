@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Secrets table (strict RLS, only OWNER or ADMIN can read)
+-- Secrets table (strict RLS, only service_role can read/write)
 CREATE TABLE IF NOT EXISTS public.system_secrets (
   id TEXT PRIMARY KEY DEFAULT 'default',
   line_channel_access_token TEXT,
@@ -27,11 +27,10 @@ ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_secrets ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow authenticated users to read settings" ON public.system_settings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users to update settings" ON public.system_settings FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Allow OWNER to update settings" ON public.system_settings FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'OWNER'));
 
--- Secrets should ideally only be readable by server/edge functions or strictly OWNER roles
-CREATE POLICY "Allow authenticated users to read secrets" ON public.system_secrets FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users to update secrets" ON public.system_secrets FOR UPDATE TO authenticated USING (true);
+-- Secrets: server-side only. No policies means deny all for anon and authenticated.
+-- service_role bypasses RLS by default.
 
 DROP TRIGGER IF EXISTS update_system_settings_updated_at ON public.system_settings;
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON public.system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
