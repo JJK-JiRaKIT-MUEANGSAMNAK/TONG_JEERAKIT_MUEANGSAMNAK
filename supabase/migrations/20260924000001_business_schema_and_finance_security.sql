@@ -1,5 +1,22 @@
 -- Migration: Business Schema and Finance Security Hardening (Workset 1)
 
+-- Shared updated_at trigger helper required by subsequent business migrations
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM anon;
+REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO service_role;
+
 -- 1. HARDEN FINANCIAL DATABASE SECURITY
 
 -- Remove anon access from all finance tables
