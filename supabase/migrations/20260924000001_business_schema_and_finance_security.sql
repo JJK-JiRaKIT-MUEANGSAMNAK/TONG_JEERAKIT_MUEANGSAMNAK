@@ -5,12 +5,12 @@ CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
-AS $
+AS $update_ts$
 BEGIN
     NEW.updated_at = now();
     RETURN NEW;
 END;
-$;
+$update_ts$;
 
 REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM anon;
