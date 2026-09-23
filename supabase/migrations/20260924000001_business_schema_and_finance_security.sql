@@ -330,7 +330,7 @@ REVOKE ALL ON FUNCTION public.process_split_payment_rpc(TEXT, TEXT, TEXT, JSONB,
 REVOKE ALL ON FUNCTION public.process_split_payment_rpc(TEXT, TEXT, TEXT, JSONB, TIMESTAMPTZ, TEXT) FROM anon;
 GRANT EXECUTE ON FUNCTION public.process_split_payment_rpc(TEXT, TEXT, TEXT, JSONB, TIMESTAMPTZ, TEXT) TO authenticated, service_role;
 
--- 2. BUSINESS DATABASE FOUNDATION SCHEMA
+-- 2. BUSINESS DATABASE FOUNDATION SCHEMA (Base tables only)
 
 CREATE TABLE IF NOT EXISTS public.product_categories (
     id TEXT PRIMARY KEY,
@@ -375,49 +375,6 @@ CREATE TABLE IF NOT EXISTS public.stock_movements (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.customers (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    phone TEXT,
-    address TEXT,
-    tax_id TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.quotations (
-    id TEXT PRIMARY KEY,
-    quotation_no TEXT UNIQUE NOT NULL,
-    customer_id TEXT REFERENCES public.customers(id),
-    customer_name TEXT NOT NULL,
-    customer_phone TEXT,
-    customer_address TEXT,
-    status TEXT NOT NULL DEFAULT 'DRAFT', -- DRAFT, SENT, ACCEPTED, REJECTED, CONVERTED
-    bill_id TEXT REFERENCES public.bills(id), -- If converted
-    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
-    discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
-    shipping_fee NUMERIC(12,2) NOT NULL DEFAULT 0,
-    tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
-    grand_total NUMERIC(12,2) NOT NULL DEFAULT 0,
-    security_deposit NUMERIC(12,2) NOT NULL DEFAULT 0,
-    remark TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.quotation_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    quotation_id TEXT NOT NULL REFERENCES public.quotations(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id),
-    product_name TEXT NOT NULL,
-    quantity INTEGER NOT NULL,
-    unit_price NUMERIC(12,2) NOT NULL,
-    total_price NUMERIC(12,2) NOT NULL,
-    type TEXT NOT NULL, -- RENT or SALE
-    rent_duration INTEGER,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS public.reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id TEXT NOT NULL REFERENCES public.products(id),
@@ -432,23 +389,15 @@ CREATE TABLE IF NOT EXISTS public.backorders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id TEXT NOT NULL REFERENCES public.products(id),
     quantity INTEGER NOT NULL,
-    customer_id TEXT REFERENCES public.customers(id),
+    customer_id TEXT, -- Will reference customers in 02
     customer_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, FULFILLED, CANCELLED
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.system_settings (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL,
-    description TEXT,
-    updated_by TEXT,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS public.appointments (
     id TEXT PRIMARY KEY,
-    customer_id TEXT REFERENCES public.customers(id),
+    customer_id TEXT, -- Will reference customers in 02
     customer_name TEXT NOT NULL,
     appointment_date TIMESTAMPTZ NOT NULL,
     topic TEXT NOT NULL,
@@ -456,38 +405,6 @@ CREATE TABLE IF NOT EXISTS public.appointments (
     status TEXT NOT NULL DEFAULT 'SCHEDULED', -- SCHEDULED, COMPLETED, CANCELLED
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.jobs (
-    id TEXT PRIMARY KEY,
-    job_no TEXT UNIQUE NOT NULL,
-    appointment_id TEXT REFERENCES public.appointments(id),
-    customer_id TEXT REFERENCES public.customers(id),
-    bill_id TEXT REFERENCES public.bills(id),
-    title TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'TODO', -- TODO, IN_PROGRESS, DONE, CANCELLED
-    scheduled_start TIMESTAMPTZ,
-    scheduled_end TIMESTAMPTZ,
-    actual_start TIMESTAMPTZ,
-    actual_end TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.job_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id TEXT NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
-    description TEXT NOT NULL,
-    is_completed BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.job_assignments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id TEXT NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
-    employee_id TEXT NOT NULL REFERENCES public.profiles(id),
-    role TEXT NOT NULL DEFAULT 'MEMBER',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS public.permissions (
@@ -509,46 +426,24 @@ ALTER TABLE public.product_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.units ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.quotations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.quotation_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backorders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.job_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.job_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow authenticated read all" ON public.product_categories FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.product_categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
--- Apply similar simple generic authenticated policies for now.
 CREATE POLICY "Allow authenticated read all" ON public.units FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.units FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.products FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.stock_movements FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.stock_movements FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.customers FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.customers FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.quotations FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.quotations FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.quotation_items FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.quotation_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.reservations FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.reservations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.backorders FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.backorders FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.system_settings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.system_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.appointments FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.appointments FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.jobs FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.jobs FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.job_items FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.job_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated read all" ON public.job_assignments FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Allow authenticated write all" ON public.job_assignments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated read all" ON public.permissions FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated write all" ON public.permissions FOR ALL TO authenticated USING (true) WITH CHECK (true);

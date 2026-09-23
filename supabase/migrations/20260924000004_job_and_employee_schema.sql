@@ -1,46 +1,49 @@
-CREATE TABLE employees (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  phone text,
-  role text DEFAULT 'TECHNICIAN',
-  line_user_id text,
-  line_integration_status text DEFAULT 'UNLINKED', -- UNLINKED, PENDING_EXTERNAL_CREDENTIALS, LINKED
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.employees (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT,
+  role TEXT DEFAULT 'TECHNICIAN',
+  line_user_id TEXT,
+  line_integration_status TEXT DEFAULT 'UNLINKED', -- UNLINKED, PENDING_EXTERNAL_CREDENTIALS, LINKED
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE jobs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_no text UNIQUE NOT NULL,
-  title text NOT NULL,
-  description text,
-  customer_id uuid REFERENCES customers(id),
-  bill_id uuid REFERENCES bills(id),
-  quotation_id uuid REFERENCES quotations(id),
-  status text DEFAULT 'TODO', -- TODO, IN_PROGRESS, DONE, CANCELLED
-  appointment_date date,
-  appointment_time text,
-  location text,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.jobs (
+  id TEXT PRIMARY KEY,
+  job_no TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  customer_id TEXT REFERENCES public.customers(id),
+  bill_id TEXT REFERENCES public.bills(id),
+  quotation_id TEXT REFERENCES public.quotations(id),
+  status TEXT DEFAULT 'TODO', -- TODO, IN_PROGRESS, DONE, CANCELLED
+  appointment_date DATE,
+  appointment_time TEXT,
+  location TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE job_assignments (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id uuid REFERENCES jobs(id) ON DELETE CASCADE,
-  employee_id uuid REFERENCES employees(id) ON DELETE CASCADE,
-  role text,
-  created_at timestamptz DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.job_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id TEXT REFERENCES public.jobs(id) ON DELETE CASCADE,
+  employee_id TEXT REFERENCES public.employees(id) ON DELETE CASCADE,
+  role TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- RLS
-ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE job_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_assignments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow authenticated users full access to employees" ON employees FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated users full access to jobs" ON jobs FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated users full access to job_assignments" ON job_assignments FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated users full access to employees" ON public.employees FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated users full access to jobs" ON public.jobs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated users full access to job_assignments" ON public.job_assignments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE TRIGGER update_employees_updated_at BEFORE UPDATE ON employees FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS update_employees_updated_at ON public.employees;
+CREATE TRIGGER update_employees_updated_at BEFORE UPDATE ON public.employees FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_jobs_updated_at ON public.jobs;
+CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON public.jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

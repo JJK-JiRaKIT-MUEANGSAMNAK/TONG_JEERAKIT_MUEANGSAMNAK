@@ -47,7 +47,7 @@ BEGIN
         v_actor_user_id := v_caller_uid::text;
         
         -- Look up verified display name from public.profiles
-        SELECT full_name INTO v_actor_display_name
+        SELECT display_name INTO v_actor_display_name
         FROM public.profiles
         WHERE id = v_caller_uid;
         
