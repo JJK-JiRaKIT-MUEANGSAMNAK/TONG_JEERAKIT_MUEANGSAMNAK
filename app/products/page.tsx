@@ -21,7 +21,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
-import { ActionButton } from '@/components/common/ActionButton'
+import { ActionButton, TAB_CONTAINER_CLASSES } from '@/components/common/ActionButton'
 import { Product, Unit, RentalType } from '@/lib/types/rental-pos'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { useToast } from '@/components/common/Toast'
@@ -587,17 +587,12 @@ function ProductsContent() {
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* Outer Row: p-2 border-b */}
         <div className="p-2 border-b border-slate-200 dark:border-slate-700 flex items-center shrink-0 overflow-x-auto">
-          {/* Segmented Group: h-9 */}
-          <div className="h-9 inline-flex items-center p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-900/90 border border-slate-300/70 dark:border-slate-800">
+          <div className={TAB_CONTAINER_CLASSES}>
             <ActionButton
               onClick={() => setActiveMainTab('LIST')}
+              size="sm"
               variant={activeMainTab === 'LIST' ? 'active' : 'ghost'}
-              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
-                activeMainTab === 'LIST'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
-              }`}
-              icon={<Layers className={`w-4 h-4 shrink-0 ${activeMainTab === 'LIST' ? 'text-blue-600 dark:text-blue-400' : 'text-blue-600/80 dark:text-blue-400/80'}`} />}
+              icon={<Layers className={`w-3.5 h-3.5 shrink-0 ${activeMainTab === 'LIST' ? 'text-blue-600 dark:text-blue-400' : 'text-blue-600/80 dark:text-blue-400/80'}`} />}
               badge={
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
                   activeMainTab === 'LIST'
@@ -613,13 +608,9 @@ function ProductsContent() {
 
             <ActionButton
               onClick={() => setActiveMainTab('ADD')}
+              size="sm"
               variant={activeMainTab === 'ADD' ? 'active' : 'ghost'}
-              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
-                activeMainTab === 'ADD'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
-              }`}
-              icon={<PackagePlus className={`w-4 h-4 shrink-0 ${activeMainTab === 'ADD' ? 'text-emerald-600 dark:text-emerald-400' : 'text-emerald-600/80 dark:text-emerald-400/80'}`} />}
+              icon={<PackagePlus className={`w-3.5 h-3.5 shrink-0 ${activeMainTab === 'ADD' ? 'text-emerald-600 dark:text-emerald-400' : 'text-emerald-600/80 dark:text-emerald-400/80'}`} />}
               badge={
                 createDraftRows.some((r) => r.name.trim() !== '') ? (
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="มีแบบร่างค้างอยู่" />
@@ -631,26 +622,18 @@ function ProductsContent() {
 
             <ActionButton
               onClick={() => setActiveMainTab('SETTINGS')}
+              size="sm"
               variant={activeMainTab === 'SETTINGS' ? 'active' : 'ghost'}
-              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
-                activeMainTab === 'SETTINGS'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
-              }`}
-              icon={<Settings className={`w-4 h-4 shrink-0 ${activeMainTab === 'SETTINGS' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
+              icon={<Settings className={`w-3.5 h-3.5 shrink-0 ${activeMainTab === 'SETTINGS' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
             >
               ตั้งค่าเสริม
             </ActionButton>
 
             <ActionButton
               onClick={() => setActiveMainTab('COUNT')}
+              size="sm"
               variant={activeMainTab === 'COUNT' ? 'active' : 'ghost'}
-              className={`!h-7 h-7 px-3.5 !py-0 !rounded-lg text-xs gap-1.5 ${
-                activeMainTab === 'COUNT'
-                  ? '!bg-white dark:!bg-slate-800 !text-slate-900 dark:!text-slate-50 !font-extrabold border border-slate-200/80 dark:border-slate-700 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                  : '!bg-transparent !text-slate-600 dark:!text-slate-400 hover:!text-slate-900 dark:hover:!text-slate-200 font-bold'
-              }`}
-              icon={<ClipboardList className={`w-4 h-4 shrink-0 ${activeMainTab === 'COUNT' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
+              icon={<ClipboardList className={`w-3.5 h-3.5 shrink-0 ${activeMainTab === 'COUNT' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600/80 dark:text-purple-400/80'}`} />}
             >
               นับสต็อก
             </ActionButton>

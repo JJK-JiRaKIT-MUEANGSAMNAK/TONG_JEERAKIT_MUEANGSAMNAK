@@ -29,6 +29,12 @@ import {
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import {
+  ActionButton,
+  TAB_BUTTON_BASE_CLASSES,
+  TAB_BUTTON_ACTIVE_CLASSES,
+  TAB_BUTTON_INACTIVE_CLASSES,
+} from '@/components/common/ActionButton'
+import {
   Customer,
   RentalBill,
   CustomerPaymentRecord,
@@ -418,13 +424,13 @@ export default function CustomersPage() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button
+          <ActionButton
             onClick={handleOpenAdd}
-            className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>+ เพิ่มลูกค้าใหม่</span>
-          </button>
+            + เพิ่มลูกค้าใหม่
+          </ActionButton>
         </div>
       </div>
 
@@ -432,13 +438,14 @@ export default function CustomersPage() {
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
         {/* Sub-tabs Navigation Bar (ปุ่มแถบติดอยู่บนหัวการ์ดเนื้อหา) */}
         <div className="p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl grid grid-cols-7 items-center w-full min-w-0">
+          <div className="bg-slate-100 dark:bg-slate-900/80 h-9 p-1 gap-1 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-7 items-center w-full min-w-0">
             <button
+              type="button"
               onClick={() => setActive360Tab('GENERAL')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'GENERAL'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <Users className="w-3.5 h-3.5 shrink-0" />
@@ -446,11 +453,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('RENTAL_HISTORY')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'RENTAL_HISTORY'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <History className="w-3.5 h-3.5 shrink-0" />
@@ -458,11 +466,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('PAYMENT_HISTORY')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'PAYMENT_HISTORY'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <CreditCard className="w-3.5 h-3.5 shrink-0" />
@@ -470,11 +479,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('OUTSTANDING_ITEMS')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'OUTSTANDING_ITEMS'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <Package className="w-3.5 h-3.5 shrink-0" />
@@ -482,11 +492,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('DOCUMENTS')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'DOCUMENTS'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <FileText className="w-3.5 h-3.5 shrink-0" />
@@ -494,11 +505,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('ANALYTICS')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'ANALYTICS'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5 shrink-0" />
@@ -506,11 +518,12 @@ export default function CustomersPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => setActive360Tab('NOTES_TAGS')}
-              className={`w-full min-w-0 h-7 px-3.5 py-0 overflow-hidden rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer ${
+              className={`w-full min-w-0 ${TAB_BUTTON_BASE_CLASSES} ${
                 active360Tab === 'NOTES_TAGS'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? TAB_BUTTON_ACTIVE_CLASSES
+                  : TAB_BUTTON_INACTIVE_CLASSES
               }`}
             >
               <Tag className="w-3.5 h-3.5 shrink-0" />

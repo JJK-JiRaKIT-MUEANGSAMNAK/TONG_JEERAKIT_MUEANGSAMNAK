@@ -3,22 +3,39 @@
 import React from 'react'
 
 export interface ActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'active' | 'primary' | 'neutral' | 'ghost' | 'dashed' | 'secondary' | 'outline' | 'utility'
+  variant?: 'active' | 'primary' | 'neutral' | 'ghost' | 'dashed' | 'secondary' | 'outline' | 'utility' | 'danger' | 'info'
+  size?: 'sm' | 'md'
   icon?: React.ReactNode
   badge?: React.ReactNode
 }
 
 /**
  * Standard Action/Toolbar Button base style
- * Base: px-3.5 py-2 rounded-xl text-xs gap-1.5 whitespace-nowrap icon 16x16
+ * Base: px-3.5 py-0 rounded-xl text-xs gap-1.5 whitespace-nowrap icon 16x16
  */
 export const ACTION_BUTTON_BASE_CLASSES =
   'h-9 px-3.5 py-0 rounded-xl text-xs gap-1.5 whitespace-nowrap inline-flex items-center justify-center font-bold transition-all cursor-pointer select-none [&>svg]:w-4 [&>svg]:h-4 [&>svg]:shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
+
+export const ACTION_BUTTON_SM_CLASSES =
+  'h-7 px-3 py-0 rounded-lg text-xs gap-1.5 whitespace-nowrap inline-flex items-center justify-center font-bold transition-all cursor-pointer select-none [&>svg]:w-3.5 [&>svg]:h-3.5 [&>svg]:shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
+
+export const TAB_CONTAINER_CLASSES =
+  'h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 inline-flex items-center shrink-0 overflow-x-auto no-scrollbar'
+
+export const TAB_BUTTON_BASE_CLASSES =
+  'h-7 px-3.5 py-0 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap select-none shrink-0'
+
+export const TAB_BUTTON_ACTIVE_CLASSES =
+  'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs border border-slate-200/80 dark:border-slate-600/80'
+
+export const TAB_BUTTON_INACTIVE_CLASSES =
+  'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/40'
 
 export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProps>(
   (
     {
       variant = 'neutral',
+      size = 'md',
       icon,
       badge,
       className = '',
@@ -35,6 +52,12 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
         break
       case 'primary':
         variantClasses = 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+        break
+      case 'danger':
+        variantClasses = 'bg-red-600 hover:bg-red-700 text-white shadow-xs'
+        break
+      case 'info':
+        variantClasses = 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
         break
       case 'neutral':
         variantClasses =
@@ -56,11 +79,13 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
         break
     }
 
+    const baseClasses = size === 'sm' ? ACTION_BUTTON_SM_CLASSES : ACTION_BUTTON_BASE_CLASSES
+
     return (
       <button
         ref={ref}
         type={type}
-        className={`${ACTION_BUTTON_BASE_CLASSES} ${variantClasses} ${className}`}
+        className={`${baseClasses} ${variantClasses} ${className}`}
         {...props}
       >
         {icon}

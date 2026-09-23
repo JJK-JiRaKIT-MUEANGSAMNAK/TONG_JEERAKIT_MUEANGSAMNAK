@@ -61,7 +61,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   // Protected route: show loading indicator while checking session
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
+      <div className="fixed inset-0 bg-slate-100 dark:bg-background flex flex-col items-center justify-center gap-3 z-50">
         <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
         <span className="text-xs text-slate-600 dark:text-slate-400 font-medium tracking-wide">
           กำลังตรวจสอบสิทธิ์เข้าใช้งาน...
@@ -73,7 +73,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   // Protected route: if unauthenticated, show redirecting state (do not render protected content)
   if (!session) {
     return (
-      <div className="fixed inset-0 bg-slate-100 dark:bg-[#07111f] flex flex-col items-center justify-center gap-3 z-50">
+      <div className="fixed inset-0 bg-slate-100 dark:bg-background flex flex-col items-center justify-center gap-3 z-50">
         <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
         <span className="text-xs text-slate-600 dark:text-slate-400 font-medium tracking-wide">
           กำลังพาคุณไปหน้าเข้าสู่ระบบ...

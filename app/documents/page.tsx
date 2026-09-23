@@ -18,6 +18,12 @@ import {
 } from 'lucide-react'
 
 import { CustomSelect } from '@/components/common/CustomSelect'
+import {
+  TAB_CONTAINER_CLASSES,
+  TAB_BUTTON_BASE_CLASSES,
+  TAB_BUTTON_ACTIVE_CLASSES,
+  TAB_BUTTON_INACTIVE_CLASSES,
+} from '@/components/common/ActionButton'
 import { useToast } from '@/components/common/Toast'
 import { Customer } from '@/lib/types/rental-pos'
 import { DocumentTemplate, CustomerDocument, CustomerSnapshot } from '@/lib/types/document'
@@ -47,12 +53,12 @@ export default function DocumentsPage() {
   // Tab State: 'CREATE_DOC' (สร้างเอกสาร) vs 'MANAGE_TEMPLATES' (จัดการเอกสาร)
   const [mainTab, setMainTab] = useState<'CREATE_DOC' | 'MANAGE_TEMPLATES'>('CREATE_DOC')
   const [mobileTab, setMobileTab] = useState<'WORKSPACE' | 'PREVIEW'>('WORKSPACE')
-  const business = {
+  const business = useMemo(() => ({
     companyName: '',
     phone: '',
     address: '',
     taxId: '',
-  }
+  }), [])
 
   // Template Sub-Tab State: 'LIBRARY' (คลังแบบฟอร์ม) vs 'ADD' (เพิ่มแบบฟอร์ม)
   const [templateSubTab, setTemplateSubTab] = useState<'LIBRARY' | 'ADD'>('LIBRARY')
@@ -543,14 +549,14 @@ export default function DocumentsPage() {
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden p-2 bg-slate-100 dark:bg-slate-900 gap-2 text-xs">
       {/* Mobile View Switcher (< md screens) */}
-      <div className="md:hidden flex items-center bg-white dark:bg-slate-800 h-9 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+      <div className={`md:hidden flex items-center ${TAB_CONTAINER_CLASSES}`}>
         <button
           type="button"
           onClick={() => setMobileTab('WORKSPACE')}
-          className={`flex-1 h-7 py-0 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 ${TAB_BUTTON_BASE_CLASSES} ${
             mobileTab === 'WORKSPACE'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300'
+              ? TAB_BUTTON_ACTIVE_CLASSES
+              : TAB_BUTTON_INACTIVE_CLASSES
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -559,10 +565,10 @@ export default function DocumentsPage() {
         <button
           type="button"
           onClick={() => setMobileTab('PREVIEW')}
-          className={`flex-1 h-7 py-0 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 ${TAB_BUTTON_BASE_CLASSES} ${
             mobileTab === 'PREVIEW'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-300'
+              ? TAB_BUTTON_ACTIVE_CLASSES
+              : TAB_BUTTON_INACTIVE_CLASSES
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -586,11 +592,11 @@ export default function DocumentsPage() {
               
               <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
                 {/* 0. Main Mode Switcher (50 / 50 Equal Width) */}
-                <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 font-extrabold text-xs">
+                <div className={`grid grid-cols-2 ${TAB_CONTAINER_CLASSES} w-full`}>
                   <button
                     type="button"
                     onClick={() => setMainTab('CREATE_DOC')}
-                    className="py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center bg-slate-900 dark:bg-slate-700 text-white dark:text-blue-300 shadow-sm"
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${TAB_BUTTON_ACTIVE_CLASSES}`}
                   >
                     <FilePlus className="w-3.5 h-3.5 shrink-0" />
                     <span>สร้างเอกสาร</span>
@@ -599,7 +605,7 @@ export default function DocumentsPage() {
                   <button
                     type="button"
                     onClick={() => setMainTab('MANAGE_TEMPLATES')}
-                    className="py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${TAB_BUTTON_INACTIVE_CLASSES}`}
                   >
                     <Layers className="w-3.5 h-3.5 shrink-0" />
                     <span>จัดการเอกสาร</span>
@@ -790,11 +796,11 @@ export default function DocumentsPage() {
 
               <div className="flex-1 min-h-0 flex flex-col space-y-2 overflow-hidden">
                 {/* 0. Main Mode Switcher (50 / 50 Equal Width - Same Exact Position) */}
-                <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 font-extrabold text-xs">
+                <div className={`grid grid-cols-2 ${TAB_CONTAINER_CLASSES} w-full`}>
                   <button
                     type="button"
                     onClick={() => setMainTab('CREATE_DOC')}
-                    className="py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${TAB_BUTTON_INACTIVE_CLASSES}`}
                   >
                     <FilePlus className="w-3.5 h-3.5 shrink-0" />
                     <span>สร้างเอกสาร</span>
@@ -803,7 +809,7 @@ export default function DocumentsPage() {
                   <button
                     type="button"
                     onClick={() => setMainTab('MANAGE_TEMPLATES')}
-                    className="py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center bg-slate-900 dark:bg-slate-700 text-white dark:text-blue-300 shadow-sm"
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${TAB_BUTTON_ACTIVE_CLASSES}`}
                   >
                     <Layers className="w-3.5 h-3.5 shrink-0" />
                     <span>จัดการเอกสาร</span>
@@ -814,14 +820,14 @@ export default function DocumentsPage() {
                 <div className="border-b border-slate-200 dark:border-slate-700/80 shrink-0 my-0.5" />
 
                 {/* Sub-Tab Switcher: คลังแบบฟอร์ม vs เพิ่มแบบฟอร์ม */}
-                <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 font-extrabold text-xs">
+                <div className={`grid grid-cols-2 ${TAB_CONTAINER_CLASSES} w-full`}>
                   <button
                     type="button"
                     onClick={() => setTemplateSubTab('LIBRARY')}
-                    className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center ${
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${
                       templateSubTab === 'LIBRARY'
-                        ? 'bg-slate-900 dark:bg-slate-700 text-white dark:text-blue-300 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                        ? TAB_BUTTON_ACTIVE_CLASSES
+                        : TAB_BUTTON_INACTIVE_CLASSES
                     }`}
                   >
                     <FileCode className="w-3.5 h-3.5 shrink-0" />
@@ -831,10 +837,10 @@ export default function DocumentsPage() {
                   <button
                     type="button"
                     onClick={() => setTemplateSubTab('ADD')}
-                    className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all text-center ${
+                    className={`${TAB_BUTTON_BASE_CLASSES} ${
                       templateSubTab === 'ADD'
-                        ? 'bg-slate-900 dark:bg-slate-700 text-white dark:text-blue-300 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                        ? TAB_BUTTON_ACTIVE_CLASSES
+                        : TAB_BUTTON_INACTIVE_CLASSES
                     }`}
                   >
                     <FilePlus className="w-3.5 h-3.5 shrink-0" />

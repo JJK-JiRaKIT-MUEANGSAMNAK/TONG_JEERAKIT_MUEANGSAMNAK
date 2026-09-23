@@ -43,6 +43,12 @@ import { useToast } from '@/components/common/Toast'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
 import {
+  TAB_CONTAINER_CLASSES,
+  TAB_BUTTON_BASE_CLASSES,
+  TAB_BUTTON_ACTIVE_CLASSES,
+  TAB_BUTTON_INACTIVE_CLASSES,
+} from '@/components/common/ActionButton'
+import {
   ProductCategoryRule,
   CalculationType,
   CALCULATION_OPTIONS,
@@ -1182,7 +1188,7 @@ export default function SettingsPage() {
       <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col">
         {/* แถวที่ 1: แถบหลัก (Main Tabs) */}
         <div className="px-2 sm:px-2.5 py-1.5 sm:py-2 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-          <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+          <div className={TAB_CONTAINER_CLASSES}>
             {[
               { id: 'BUSINESS' as const, label: 'กิจการ', icon: Building },
               { id: 'PRODUCTS_STOCK' as const, label: 'สินค้า / สต็อก', icon: Package },
@@ -1199,10 +1205,8 @@ export default function SettingsPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm text-slate-900 dark:text-slate-100 font-bold'
-                      : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                  className={`${TAB_BUTTON_BASE_CLASSES} ${
+                    isActive ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0 hidden xl:block" />
@@ -1216,14 +1220,12 @@ export default function SettingsPage() {
         {/* แถวที่ 2: แถบย่อย (Subtabs) - แสดงเฉพาะแท็บที่มีแถบย่อย */}
         {activeTab === 'BUSINESS' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className={TAB_CONTAINER_CLASSES}>
               <button
                 type="button"
                 onClick={() => setBusinessSubTab('INFO')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  businessSubTab === 'INFO'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  businessSubTab === 'INFO' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <Building className="w-3.5 h-3.5 shrink-0" />
@@ -1232,10 +1234,8 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setBusinessSubTab('BRANDING')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  businessSubTab === 'BRANDING'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  businessSubTab === 'BRANDING' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <ImageIcon className="w-3.5 h-3.5 shrink-0" />
@@ -1247,14 +1247,12 @@ export default function SettingsPage() {
 
         {activeTab === 'DOCUMENTS' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className={TAB_CONTAINER_CLASSES}>
               <button
                 type="button"
                 onClick={() => setDocumentsSubTab('NUMBERS')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  documentsSubTab === 'NUMBERS'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  documentsSubTab === 'NUMBERS' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <Hash className="w-3.5 h-3.5 shrink-0" />
@@ -1263,10 +1261,8 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setDocumentsSubTab('PRINTING')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  documentsSubTab === 'PRINTING'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  documentsSubTab === 'PRINTING' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 shrink-0" />
@@ -1278,14 +1274,12 @@ export default function SettingsPage() {
 
         {activeTab === 'SYSTEM_ACCOUNT' && (
           <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center overflow-x-auto no-scrollbar">
-            <div className="h-9 p-1 gap-1 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300/60 dark:border-slate-600/60 flex items-center shrink-0">
+            <div className={TAB_CONTAINER_CLASSES}>
               <button
                 type="button"
                 onClick={() => setSystemAccountSubTab('SECURITY')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  systemAccountSubTab === 'SECURITY'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  systemAccountSubTab === 'SECURITY' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <Shield className="w-3.5 h-3.5 shrink-0" />
@@ -1294,10 +1288,8 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setSystemAccountSubTab('BACKUP')}
-                className={`h-7 px-3.5 py-0 rounded-lg text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                  systemAccountSubTab === 'BACKUP'
-                    ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xs text-slate-900 dark:text-slate-100 font-bold'
-                    : 'bg-transparent border border-transparent text-slate-600 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-200'
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
+                  systemAccountSubTab === 'BACKUP' ? TAB_BUTTON_ACTIVE_CLASSES : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 <Save className="w-3.5 h-3.5 shrink-0" />

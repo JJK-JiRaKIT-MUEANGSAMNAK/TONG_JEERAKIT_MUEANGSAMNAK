@@ -35,6 +35,8 @@ import {
   Trash2,
 } from 'lucide-react'
 import { CustomSelect } from '@/components/common/CustomSelect'
+import { ActionButton } from '@/components/common/ActionButton'
+import { DATA_TABLE_THEAD_CLASSES, DATA_TABLE_TH_CLASSES, DATA_TABLE_TD_CLASSES } from '@/components/common/DataTableFrame'
 import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
 
 export default function BillsPage() {
@@ -281,7 +283,7 @@ export default function BillsPage() {
                   placeholder="ค้นหาเลขบิล, ชื่อลูกค้า หรือ เบอร์โทรศัพท์..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full h-9 pl-10 pr-4 py-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
               </div>
 
@@ -326,16 +328,16 @@ export default function BillsPage() {
               <div className="flex items-center gap-1.5 shrink-0">
                 {selectedRowBill?.rentalStatus === 'DRAFT' ? (
                   <>
-                    <button
+                    <ActionButton
                       onClick={() => router.push(`/pos?draftBillId=${selectedRowBill.id}`)}
-                      className="px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all shrink-0"
+                      variant="info"
+                      icon={<FileEdit className="w-3.5 h-3.5" />}
                       title="เปิดแบบร่างใน POS เพื่อแก้ไข"
                     >
-                      <FileEdit className="w-3.5 h-3.5" />
-                      <span>แก้ไขแบบร่าง</span>
-                    </button>
+                      แก้ไขแบบร่าง
+                    </ActionButton>
 
-                    <button
+                    <ActionButton
                       onClick={async () => {
                         if (confirm(`ยืนยันการเปิดบิลจากแบบร่าง ${selectedRowBill.billNo} ใช่หรือไม่?`)) {
                           try {
@@ -353,15 +355,15 @@ export default function BillsPage() {
                           }
                         }
                       }}
-                      className="px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shrink-0"
+                      variant="primary"
+                      icon={<CheckCircle2 className="w-3.5 h-3.5" />}
                       title="ยืนยันออกบิลเช่าจริง"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>ยืนยันบิล</span>
-                    </button>
+                      ยืนยันบิล
+                    </ActionButton>
 
                     {canHardDeleteBill(selectedRowBill) && (
-                      <button
+                      <ActionButton
                         onClick={async () => {
                           if (confirm(`คุณต้องการลบแบบร่าง ${selectedRowBill.billNo} หรือไม่?`)) {
                             try {
@@ -374,117 +376,96 @@ export default function BillsPage() {
                             }
                           }
                         }}
-                        className="px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm bg-red-600 hover:bg-red-700 text-white cursor-pointer transition-all shrink-0"
+                        variant="danger"
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
                         title="ลบแบบร่างนี้ทิ้ง"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>ลบแบบร่าง</span>
-                      </button>
+                        ลบแบบร่าง
+                      </ActionButton>
                     )}
                   </>
                 ) : (
                   <>
                     {/* Action Button 1: รับคืนสินค้า */}
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill}
                       onClick={() => setActiveWorkflow('RETURN')}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill ? 'primary' : 'neutral'}
+                      icon={<RefreshCw className="w-3.5 h-3.5" />}
                       title="รับคืนสินค้าจากลูกค้า"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>รับคืนสินค้า</span>
-                    </button>
+                      รับคืนสินค้า
+                    </ActionButton>
                     
                     {/* Action Button 2: รับชำระเงิน */}
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill}
                       onClick={() => setActiveWorkflow('PAYMENT')}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30 hover:scale-[1.02] cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill ? 'info' : 'neutral'}
+                      icon={<AlertCircle className="w-3.5 h-3.5" />}
                       title="บันทึกรับชำระเงิน"
                     >
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>รับชำระเงิน</span>
-                    </button>
+                      รับชำระเงิน
+                    </ActionButton>
 
                     <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
 
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill || !['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus)}
                       onClick={() => setActiveWorkflow('CORRECTION')}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus)
-                          ? 'bg-violet-600 hover:bg-violet-700 text-white cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus) ? 'outline' : 'neutral'}
+                      className={selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus) ? '!bg-violet-600 hover:!bg-violet-700 !text-white !border-transparent' : ''}
+                      icon={<Edit3 className="w-3.5 h-3.5" />}
                       title="แก้ไขรายการในบิล"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>แก้ไขบิล</span>
-                    </button>
+                      แก้ไขบิล
+                    </ActionButton>
 
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill || !['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus)}
                       onClick={() => setActiveWorkflow('EXTENSION')}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus)
-                          ? 'bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus) ? 'outline' : 'neutral'}
+                      className={selectedRowBill && ['RENTING', 'PARTIAL_RETURNED'].includes(selectedRowBill.rentalStatus) ? '!bg-cyan-600 hover:!bg-cyan-700 !text-white !border-transparent' : ''}
+                      icon={<CalendarPlus className="w-3.5 h-3.5" />}
                       title="ขยายเวลาเช่าต่อ"
                     >
-                      <CalendarPlus className="w-3.5 h-3.5" />
-                      <span>เช่าต่อ</span>
-                    </button>
+                      เช่าต่อ
+                    </ActionButton>
 
                     <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
 
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill || selectedRowBill.heldDepositAmount <= 0}
                       onClick={() => setShowDepositRefund(true)}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill && selectedRowBill.heldDepositAmount > 0
-                          ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill && selectedRowBill.heldDepositAmount > 0 ? 'outline' : 'neutral'}
+                      className={selectedRowBill && selectedRowBill.heldDepositAmount > 0 ? '!bg-amber-600 hover:!bg-amber-700 !text-white !border-transparent' : ''}
+                      icon={<WalletCards className="w-3.5 h-3.5" />}
                       title="คืนเงินมัดจำให้ลูกค้า"
                     >
-                      <WalletCards className="w-3.5 h-3.5" />
-                      <span>คืนมัดจำ</span>
-                    </button>
+                      คืนมัดจำ
+                    </ActionButton>
 
-                    <button
+                    <ActionButton
                       disabled={!selectedRowBill || selectedRowBill.paidAmount <= 0}
                       onClick={() => setShowPaymentRefund(true)}
-                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
-                        selectedRowBill && selectedRowBill.paidAmount > 0
-                          ? 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                      }`}
+                      variant={selectedRowBill && selectedRowBill.paidAmount > 0 ? 'danger' : 'neutral'}
+                      icon={<Receipt className="w-3.5 h-3.5" />}
                       title="คืนเงินรับชำระ"
                     >
-                      <Receipt className="w-3.5 h-3.5" />
-                      <span>คืนเงินรับชำระ</span>
-                    </button>
+                      คืนเงินรับชำระ
+                    </ActionButton>
                   </>
                 )}
 
                 {selectedRowBill && (
-                  <button
+                  <ActionButton
                     onClick={() => setSelectedBillForLog(selectedRowBill)}
-                    className="px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm bg-slate-700 hover:bg-slate-600 text-white cursor-pointer transition-all shrink-0"
+                    variant="neutral"
+                    icon={<History className="w-3.5 h-3.5" />}
                     title="ดูประวัติและไทม์ไลน์ของบิล"
                   >
-                    <History className="w-3.5 h-3.5" />
-                    <span>ประวัติบิล</span>
-                  </button>
+                    ประวัติบิล
+                  </ActionButton>
                 )}
               </div>
 
@@ -708,18 +689,18 @@ export default function BillsPage() {
                   <col className="w-[64px] sm:w-[72px] lg:w-[80px]" />
                   <col className="w-[58px] sm:w-[76px] lg:w-[104px]" />
                 </colgroup>
-                <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 text-slate-500 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
-                  <tr className="bg-[#E3E3E3] dark:bg-slate-900 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-xs">
-                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">เลขที่บิล</th>
-                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ลูกค้า / เบอร์</th>
-                    <th className="px-1 py-2 bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">กำหนดคืน</th>
-                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">วันเกิน</th>
-                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ยอดสุทธิ</th>
-                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">ชำระแล้ว</th>
-                    <th className="px-1 py-2 text-right bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">คงค้าง</th>
-                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">สถานะเช่า</th>
-                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">การชำระ</th>
-                    <th className="px-1 py-2 text-center bg-[#E3E3E3] dark:bg-slate-900 whitespace-nowrap">จัดการ</th>
+                <thead className={`${DATA_TABLE_THEAD_CLASSES} text-slate-500 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs`}>
+                  <tr className="uppercase tracking-wider text-xs">
+                    <th className={`px-1 ${DATA_TABLE_TH_CLASSES}`}>เลขที่บิล</th>
+                    <th className={`px-1 ${DATA_TABLE_TH_CLASSES}`}>ลูกค้า / เบอร์</th>
+                    <th className={`px-1 ${DATA_TABLE_TH_CLASSES}`}>กำหนดคืน</th>
+                    <th className={`px-1 text-center ${DATA_TABLE_TH_CLASSES}`}>วันเกิน</th>
+                    <th className={`px-1 text-right ${DATA_TABLE_TH_CLASSES}`}>ยอดสุทธิ</th>
+                    <th className={`px-1 text-right ${DATA_TABLE_TH_CLASSES}`}>ชำระแล้ว</th>
+                    <th className={`px-1 text-right ${DATA_TABLE_TH_CLASSES}`}>คงค้าง</th>
+                    <th className={`px-1 text-center ${DATA_TABLE_TH_CLASSES}`}>สถานะเช่า</th>
+                    <th className={`px-1 text-center ${DATA_TABLE_TH_CLASSES}`}>การชำระ</th>
+                    <th className={`px-1 text-center ${DATA_TABLE_TH_CLASSES}`}>จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">

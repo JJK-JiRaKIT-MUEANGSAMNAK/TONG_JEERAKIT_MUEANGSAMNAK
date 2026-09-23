@@ -26,7 +26,13 @@ import { CustomSelect } from '@/components/common/CustomSelect'
 import { CustomerAutocomplete } from '@/components/common/CustomerAutocomplete'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { DataTableFrame } from '@/components/common/DataTableFrame'
-import { ActionButton } from '@/components/common/ActionButton'
+import {
+  ActionButton,
+  TAB_CONTAINER_CLASSES,
+  TAB_BUTTON_BASE_CLASSES,
+  TAB_BUTTON_ACTIVE_CLASSES,
+  TAB_BUTTON_INACTIVE_CLASSES,
+} from '@/components/common/ActionButton'
 import { useToast } from '@/components/common/Toast'
 import { logger } from '@/lib/utils/logger'
 import { AddAppointmentModal, DEFAULT_APPOINTMENT_TYPES } from '@/components/appointments/AddAppointmentModal'
@@ -293,7 +299,7 @@ export default function AppointmentsPage() {
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* 1. Appointment Toolbar */}
         <div className="p-2 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-          <div className="flex min-w-0 flex-wrap items-center h-9 p-1 gap-1 rounded-xl bg-slate-100 dark:bg-slate-950 text-xs">
+          <div className={TAB_CONTAINER_CLASSES}>
             {[
               { value: 'APPOINTMENTS', label: 'ปฏิทิน' },
               { value: 'TODAY', label: 'งานวันนี้' },
@@ -303,10 +309,10 @@ export default function AppointmentsPage() {
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value as typeof activeTab)}
-                className={`shrink-0 rounded-lg h-7 px-3.5 py-0 font-bold transition-colors cursor-pointer flex items-center justify-center ${
+                className={`${TAB_BUTTON_BASE_CLASSES} ${
                   activeTab === tab.value
-                    ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    ? TAB_BUTTON_ACTIVE_CLASSES
+                    : TAB_BUTTON_INACTIVE_CLASSES
                 }`}
               >
                 {tab.label}
@@ -315,24 +321,21 @@ export default function AppointmentsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <ActionButton
               onClick={loadData}
+              variant="neutral"
+              className="w-9 px-0"
               title="รีเฟรชข้อมูล"
-              className="h-9 w-9 p-0 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
+              icon={<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />}
+            />
 
-            <button
-              onClick={() => {
-                setShowAddModal(true)
-              }}
-              className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] shrink-0 cursor-pointer"
+            <ActionButton
+              onClick={() => setShowAddModal(true)}
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>+ เพิ่มนัดหมายใหม่</span>
-            </button>
+              + เพิ่มนัดหมายใหม่
+            </ActionButton>
           </div>
         </div>
 

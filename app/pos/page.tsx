@@ -7,6 +7,12 @@ import { CartPanel, CartPanelQuotationData } from '@/components/pos/CartPanel'
 import { QuantityModal } from '@/components/pos/QuantityModal'
 import { Product, Customer, Quotation, QuotationItem } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
+import {
+  TAB_CONTAINER_CLASSES,
+  TAB_BUTTON_BASE_CLASSES,
+  TAB_BUTTON_ACTIVE_CLASSES,
+  TAB_BUTTON_INACTIVE_CLASSES,
+} from '@/components/common/ActionButton'
 import { ShoppingBag, Package, FileText, ArrowLeft } from 'lucide-react'
 import { loadProducts } from '@/lib/product-storage'
 import { loadCustomers, addCustomer as addStorageCustomer } from '@/lib/customer-storage'
@@ -319,13 +325,13 @@ function POSContent() {
       {/* Main Workspace */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
         {/* Small Mobile View Toggle (< 768px) */}
-        <div className="md:hidden flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+        <div className={`md:hidden ${TAB_CONTAINER_CLASSES} w-full`}>
           <button
             onClick={() => setMobileTab('PRODUCTS')}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 ${TAB_BUTTON_BASE_CLASSES} ${
               mobileTab === 'PRODUCTS'
-                ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300'
+                ? TAB_BUTTON_ACTIVE_CLASSES
+                : TAB_BUTTON_INACTIVE_CLASSES
             }`}
           >
             <Package className="w-4 h-4" />
@@ -333,10 +339,10 @@ function POSContent() {
           </button>
           <button
             onClick={() => setMobileTab('CART')}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 ${TAB_BUTTON_BASE_CLASSES} ${
               mobileTab === 'CART'
-                ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300'
+                ? TAB_BUTTON_ACTIVE_CLASSES
+                : TAB_BUTTON_INACTIVE_CLASSES
             }`}
           >
             <ShoppingBag className="w-4 h-4" />
