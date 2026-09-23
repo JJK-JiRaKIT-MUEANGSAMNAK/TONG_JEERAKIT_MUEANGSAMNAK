@@ -186,9 +186,10 @@ describe('Auth Profile Security Hardening Migration & Privileges', () => {
   })
 
   describe('11. Canonical Profile Schema convergence', () => {
-    it('5. ensures user_id column is added and backfilled from id', () => {
-      expect(migrationSql).toMatch(/ALTER\s+TABLE\s+public\.profiles\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+user_id\s+UUID/i)
-      expect(migrationSql).toMatch(/UPDATE\s+public\.profiles\s+SET\s+user_id\s*=\s*id\s+WHERE\s+user_id\s+IS\s+NULL/i)
+    it('5. ensures user_id column is defined as GENERATED ALWAYS AS (id) STORED and UNIQUE', () => {
+      expect(migrationSql).toMatch(/user_id\s+UUID\s+GENERATED\s+ALWAYS\s+AS\s*\(\s*id\s*\)\s*STORED/i)
+      expect(migrationSql).toMatch(/UNIQUE/i)
+      expect(migrationSql).not.toMatch(/UPDATE\s+public\.profiles\s+SET\s+user_id/i)
     })
 
     it('6. ensures status column is added with DEFAULT "ACTIVE"', () => {
@@ -221,10 +222,9 @@ describe('Auth Profile Security Hardening Migration & Privileges', () => {
           .filter(Boolean)
       : []
 
-    it('9. canonical insert uses user_id = NEW.id', () => {
-      expect(columns).toContain('user_id')
-      const userIdIdx = columns.indexOf('user_id')
-      expect(values[userIdIdx]).toBe('NEW.id')
+    it('9. canonical insert does NOT include user_id (relying on GENERATED ALWAYS AS id)', () => {
+      expect(columns).not.toContain('user_id')
+      expect(migrationSql).not.toMatch(/INSERT\s+INTO\s+public\.profiles[^;]*?\buser_id\b/i)
     })
 
     it('10. canonical insert sets role to USER', () => {
@@ -277,6 +277,32 @@ describe('Auth Profile Security Hardening Migration & Privileges', () => {
         return /FUNCTION\s+.*finance/i.test(trimmed) || /RPC/i.test(trimmed)
       })
       expect(activeRpcLines).toHaveLength(0)
+    })
+  })
+
+  describe('15. Remote Generated user_id Regression Prevention', () => {
+    it('17. strictly avoids user_id in INSERT INTO public.profiles', () => {
+      const insertProfileMatch = migrationSql.match(/INSERT\s+INTO\s+public\.profiles\s*\(([^)]+)\)/i)
+      expect(insertProfileMatch).not.toBeNull()
+      const cols = insertProfileMatch![1].split(',').map(s => s.trim().toLowerCase())
+      expect(cols).not.toContain('user_id')
+    })
+
+    it('18. strictly avoids user_id in ON CONFLICT DO UPDATE SET (no user_id = EXCLUDED.user_id)', () => {
+      expect(migrationSql).not.toMatch(/user_id\s*=\s*EXCLUDED\.user_id/i)
+    })
+
+    it('19. strictly avoids user_id = NEW.id', () => {
+      expect(migrationSql).not.toMatch(/user_id\s*=\s*NEW\.id/i)
+    })
+
+    it('20. strictly avoids any direct UPDATE of user_id in migration', () => {
+      expect(migrationSql).not.toMatch(/UPDATE\s+public\.profiles\s+SET[^;]*?\buser_id\s*=/i)
+    })
+
+    it('21. ensures user_id is declared as GENERATED ALWAYS AS (id) STORED with UNIQUE constraint', () => {
+      expect(migrationSql).toMatch(/user_id\s+UUID\s+GENERATED\s+ALWAYS\s+AS\s*\(\s*id\s*\)\s*STORED/i)
+      expect(migrationSql).toMatch(/profiles_user_id_key\s+UNIQUE\s*\(\s*user_id\s*\)|UNIQUE\s*\(\s*user_id\s*\)/i)
     })
   })
 })
