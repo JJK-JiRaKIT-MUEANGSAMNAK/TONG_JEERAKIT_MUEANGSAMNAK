@@ -158,4 +158,125 @@ describe('Auth Profile Security Hardening Migration & Privileges', () => {
       expect(userNoProfile.role).toBe('USER')
     })
   })
+
+  describe('10. Legacy Signup Trigger & Function neutralization', () => {
+    it('1. drops legacy trigger on_auth_user_created on auth.users', () => {
+      expect(migrationSql).toMatch(/DROP\s+TRIGGER\s+IF\s+EXISTS\s+on_auth_user_created\s+ON\s+auth\.users/i)
+    })
+
+    it('2. ensures no trigger calls legacy handle_new_user()', () => {
+      const lines = migrationSql.split('\n')
+      const callingLegacy = lines.filter(line => {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('--')) return false
+        return /EXECUTE\s+(FUNCTION|PROCEDURE)\s+.*handle_new_user\b/i.test(trimmed)
+      })
+      expect(callingLegacy).toHaveLength(0)
+    })
+
+    it('3. ensures canonical trigger on_auth_user_created_create_profile calls handle_new_auth_user_profile()', () => {
+      expect(migrationSql).toMatch(
+        /CREATE\s+TRIGGER\s+on_auth_user_created_create_profile\s+AFTER\s+INSERT\s+ON\s+auth\.users\s+FOR\s+EACH\s+ROW\s+EXECUTE\s+FUNCTION\s+public\.handle_new_auth_user_profile\(\)/i
+      )
+    })
+
+    it('4. ensures legacy handle_new_user function is dropped', () => {
+      expect(migrationSql).toMatch(/DROP\s+FUNCTION\s+IF\s+EXISTS\s+public\.handle_new_user\(\)/i)
+    })
+  })
+
+  describe('11. Canonical Profile Schema convergence', () => {
+    it('5. ensures user_id column is added and backfilled from id', () => {
+      expect(migrationSql).toMatch(/ALTER\s+TABLE\s+public\.profiles\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+user_id\s+UUID/i)
+      expect(migrationSql).toMatch(/UPDATE\s+public\.profiles\s+SET\s+user_id\s*=\s*id\s+WHERE\s+user_id\s+IS\s+NULL/i)
+    })
+
+    it('6. ensures status column is added with DEFAULT "ACTIVE"', () => {
+      expect(migrationSql).toMatch(/ALTER\s+TABLE\s+public\.profiles\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+status\s+TEXT\s+DEFAULT\s+'ACTIVE'/i)
+    })
+
+    it('7. ensures is_approved column is added with DEFAULT true', () => {
+      expect(migrationSql).toMatch(/ALTER\s+TABLE\s+public\.profiles\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+is_approved\s+BOOLEAN\s+DEFAULT\s+true/i)
+    })
+
+    it('8. ensures display_name column is added', () => {
+      expect(migrationSql).toMatch(/ALTER\s+TABLE\s+public\.profiles\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+display_name\s+TEXT/i)
+    })
+  })
+
+  describe('12. Canonical Profile Insert logic inside handle_new_auth_user_profile', () => {
+    const insertMatch = migrationSql.match(
+      /INSERT\s+INTO\s+public\.profiles\s*\(([\s\S]*?)\)\s*VALUES\s*\(([\s\S]*?)\)\s*ON\s+CONFLICT/i
+    )
+    const columns = insertMatch
+      ? insertMatch[1]
+          .split(',')
+          .map(c => c.trim().toLowerCase())
+          .filter(Boolean)
+      : []
+    const values = insertMatch
+      ? insertMatch[2]
+          .split(',')
+          .map(v => v.trim())
+          .filter(Boolean)
+      : []
+
+    it('9. canonical insert uses user_id = NEW.id', () => {
+      expect(columns).toContain('user_id')
+      const userIdIdx = columns.indexOf('user_id')
+      expect(values[userIdIdx]).toBe('NEW.id')
+    })
+
+    it('10. canonical insert sets role to USER', () => {
+      expect(columns).toContain('role')
+      const roleIdx = columns.indexOf('role')
+      expect(values[roleIdx]).toBe("'USER'")
+    })
+
+    it('11. canonical insert does NOT use full_name', () => {
+      expect(columns).not.toContain('full_name')
+    })
+
+    it('12. canonical insert does NOT use business_id', () => {
+      expect(columns).not.toContain('business_id')
+    })
+  })
+
+  describe('13. Updated-at trigger reconciliation & single canonical trigger', () => {
+    it('13. drops legacy trigger on_profile_updated', () => {
+      expect(migrationSql).toMatch(/DROP\s+TRIGGER\s+IF\s+EXISTS\s+on_profile_updated\s+ON\s+public\.profiles/i)
+    })
+
+    it('14. drops duplicate trigger set_profiles_updated_at', () => {
+      expect(migrationSql).toMatch(/DROP\s+TRIGGER\s+IF\s+EXISTS\s+set_profiles_updated_at\s+ON\s+public\.profiles/i)
+    })
+
+    it('15. creates single canonical trigger trg_profiles_updated_at on public.profiles', () => {
+      expect(migrationSql).toMatch(
+        /CREATE\s+TRIGGER\s+trg_profiles_updated_at\s+BEFORE\s+UPDATE\s+ON\s+public\.profiles\s+FOR\s+EACH\s+ROW\s+EXECUTE\s+FUNCTION\s+public\.set_profiles_updated_at\(\)/i
+      )
+
+      // Ensure only single canonical CREATE TRIGGER on public.profiles exists
+      const profileTriggerMatches = Array.from(
+        migrationSql.matchAll(/CREATE\s+TRIGGER\s+(\w+)\s+[^;]*?ON\s+public\.profiles/gi)
+      )
+      expect(profileTriggerMatches).toHaveLength(1)
+      expect(profileTriggerMatches[0][1]).toBe('trg_profiles_updated_at')
+    })
+  })
+
+  describe('14. Complete absence of Finance RPCs in migration', () => {
+    it('16. contains no Finance RPCs (process_split_payment_rpc, process_payment_refund_rpc, etc.)', () => {
+      expect(migrationSql).not.toContain('process_split_payment_rpc')
+      expect(migrationSql).not.toContain('process_payment_refund_rpc')
+      expect(migrationSql).not.toContain('create_finance_entry')
+      const lines = migrationSql.split('\n')
+      const activeRpcLines = lines.filter(line => {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('--')) return false
+        return /FUNCTION\s+.*finance/i.test(trimmed) || /RPC/i.test(trimmed)
+      })
+      expect(activeRpcLines).toHaveLength(0)
+    })
+  })
 })
