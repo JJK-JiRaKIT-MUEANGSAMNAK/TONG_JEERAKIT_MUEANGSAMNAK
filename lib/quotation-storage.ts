@@ -384,6 +384,10 @@ export function markQuotationConverted(
   const quote = current.find((q) => q.id === quotationId || q.quotationNo === quotationId)
   if (!quote) return null
 
+  if (quote.status === 'CONVERTED') {
+    throw new Error('Quotation is already converted')
+  }
+
   const updatedQuotation: Quotation = {
     ...quote,
     status: 'CONVERTED',
