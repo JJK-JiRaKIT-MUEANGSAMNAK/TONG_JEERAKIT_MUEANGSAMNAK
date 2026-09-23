@@ -12,21 +12,31 @@ import { createClient as createServerSupabase } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth'
 
 // Load environment variables from .env.local for testing if not already loaded
-beforeAll(() => {
-  const envPath = path.resolve(process.cwd(), '.env.local')
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, 'utf-8')
-    content.split('\n').forEach(line => {
-      const trimmed = line.trim()
-      if (trimmed && !trimmed.startsWith('#')) {
-        const [k, ...v] = trimmed.split('=')
-        if (k && v.length && !process.env[k.trim()]) {
-          process.env[k.trim()] = v.join('=').trim()
-        }
+const envPath = path.resolve(process.cwd(), '.env.local')
+if (fs.existsSync(envPath)) {
+  const content = fs.readFileSync(envPath, 'utf-8')
+  content.split('\n').forEach(line => {
+    const trimmed = line.trim()
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [k, ...v] = trimmed.split('=')
+      if (k && v.length && !process.env[k.trim()]) {
+        process.env[k.trim()] = v.join('=').trim()
       }
-    })
-  }
-})
+    }
+  })
+}
+
+// Live Supabase check: verifies URL, anon key, and service role key are present and non-placeholder
+const hasRealSupabaseEnv = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder') &&
+    (process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http://') ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('https://')) &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder') &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('placeholder')
+)
 
 describe('Supabase Username Auth Flow', () => {
   describe('1. Username normalization', () => {
@@ -39,31 +49,31 @@ describe('Supabase Username Auth Flow', () => {
   })
 
   describe('2. Username resolution to email via Server Admin Client', () => {
-    it('resolves "jeerakit_jjk" to the correct email from public.profiles in real Supabase', async () => {
+    it.runIf(hasRealSupabaseEnv)('resolves "jeerakit_jjk" to the correct email from public.profiles in real Supabase', async () => {
       const result = await resolveUsernameToEmail('jeerakit_jjk')
       expect(result.success).toBe(true)
       expect(result.email).toBe('jeerakitplasticformworkutt2024@gmail.com')
     })
 
-    it('resolves "@jeerakit_jjk" with leading @ to the correct email', async () => {
+    it.runIf(hasRealSupabaseEnv)('resolves "@jeerakit_jjk" with leading @ to the correct email', async () => {
       const result = await resolveUsernameToEmail('@jeerakit_jjk')
       expect(result.success).toBe(true)
       expect(result.email).toBe('jeerakitplasticformworkutt2024@gmail.com')
     })
 
-    it('resolves case-insensitively "JEERAKIT_JJK"', async () => {
+    it.runIf(hasRealSupabaseEnv)('resolves case-insensitively "JEERAKIT_JJK"', async () => {
       const result = await resolveUsernameToEmail('JEERAKIT_JJK')
       expect(result.success).toBe(true)
       expect(result.email).toBe('jeerakitplasticformworkutt2024@gmail.com')
     })
 
-    it('returns "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" if username does not exist', async () => {
+    it.runIf(hasRealSupabaseEnv)('returns "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" if username does not exist', async () => {
       const result = await resolveUsernameToEmail('non_existent_username_xyz999')
       expect(result.success).toBe(false)
       expect(result.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
     })
 
-    it('falls back to email if username is an email address', async () => {
+    it.runIf(hasRealSupabaseEnv)('falls back to email if username is an email address', async () => {
       const result = await resolveUsernameToEmail('direct_user@example.com')
       expect(result.success).toBe(true)
       expect(result.email).toBe('direct_user@example.com')
@@ -84,18 +94,23 @@ describe('Supabase Username Auth Flow', () => {
     })
 
     it('reports specific config error if Supabase service role key is missing or placeholder', () => {
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY
       try {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+          process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://valid-supabase.co'
+        }
         process.env.SUPABASE_SERVICE_ROLE_KEY = 'placeholder-service-key'
         const check = validateSupabaseAdminConfig()
         expect(check.isValid).toBe(false)
         expect(check.error).toContain('SUPABASE_SERVICE_ROLE_KEY')
       } finally {
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl
         process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey
       }
     })
 
-    it('loginWithUsername returns config error separately when config is broken', async () => {
+    it.runIf(hasRealSupabaseEnv)('loginWithUsername returns config error separately when config is broken', async () => {
       const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY
       try {
         delete process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -109,7 +124,7 @@ describe('Supabase Username Auth Flow', () => {
   })
 
   describe('4. Authentication with correct and incorrect passwords', () => {
-    it('fails login with incorrect password and reports "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"', async () => {
+    it.runIf(hasRealSupabaseEnv)('fails login with incorrect password and reports "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"', async () => {
       const res = await loginWithUsername({
         username: 'jeerakit_jjk',
         password: 'DefinitiveWrongPassword!123',
@@ -118,7 +133,7 @@ describe('Supabase Username Auth Flow', () => {
       expect(res.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
     })
 
-    it('fails login with non-existent username and reports "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"', async () => {
+    it.runIf(hasRealSupabaseEnv)('fails login with non-existent username and reports "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"', async () => {
       const res = await loginWithUsername({
         username: 'non_existent_username_xyz999',
         password: 'AnyPassword123!',
@@ -136,7 +151,7 @@ describe('Supabase Username Auth Flow', () => {
       expect(res.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
     })
 
-    it('authenticates successfully and creates session when valid credentials are provided', async () => {
+    it.runIf(hasRealSupabaseEnv)('authenticates successfully and creates session when valid credentials are provided', async () => {
       // Mock serverClient signInWithPassword to verify successful session creation flow
       const mockSignIn = vi.fn().mockResolvedValue({
         data: {
@@ -169,7 +184,7 @@ describe('Supabase Username Auth Flow', () => {
   })
 
   describe('5. Session persistence and refresh', () => {
-    it('retrieves user and retains session on refresh using getCurrentUser', async () => {
+    it.runIf(hasRealSupabaseEnv)('retrieves user and retains session on refresh using getCurrentUser', async () => {
       // Test server-side profiles lookup via admin client
       const admin = createAdminClient()
       const { data: profile, error } = await admin

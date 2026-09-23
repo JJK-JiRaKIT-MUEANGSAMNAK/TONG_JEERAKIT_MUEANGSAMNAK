@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Load .env.local manually if it exists
 const envPath = path.resolve(__dirname, '.env.local')
-const env = {}
+const localEnv = {}
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, 'utf8')
@@ -19,10 +19,13 @@ if (fs.existsSync(envPath)) {
     if (idx !== -1) {
       const key = trimmed.slice(0, idx).trim()
       const val = trimmed.slice(idx + 1).trim()
-      env[key] = val
+      localEnv[key] = val
     }
   }
 }
+
+// Resolution order: process.env (e.g. CI) > localEnv (.env.local) > ''
+const resolveEnv = (key) => process.env[key] || localEnv[key] || ''
 
 export default defineConfig({
   plugins: [react()],
@@ -34,12 +37,11 @@ export default defineConfig({
   test: {
     globals: true,
     env: {
-      NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || '',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY || '',
+      NEXT_PUBLIC_SUPABASE_URL: resolveEnv('NEXT_PUBLIC_SUPABASE_URL'),
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: resolveEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+      SUPABASE_SERVICE_ROLE_KEY: resolveEnv('SUPABASE_SERVICE_ROLE_KEY'),
     },
   },
-
 })
 
 
