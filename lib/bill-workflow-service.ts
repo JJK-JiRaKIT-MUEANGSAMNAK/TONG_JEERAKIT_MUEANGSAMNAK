@@ -52,7 +52,14 @@ import {
   loadProducts,
   getProductAvailability,
   syncProductReservedStock,
+  validateProductMode,
+  validateStockInvariants,
+  getProductType,
 } from '@/lib/product-storage'
+import {
+  recordStockMovement,
+  DomainStockMovement,
+} from '@/lib/stock-movement'
 import {
   createReservation,
   dispatchReservationsBySource,
@@ -161,6 +168,37 @@ export function createBillWorkflow(options: CreateBillOptions): {
   const reservations: ReservationRecord[] = []
   const backorders: BackorderRecord[] = []
 
+  const allProds = loadProducts()
+  incomingBill.items = incomingBill.items.map((item) => {
+    const prod = allProds.find((p) => p.id === item.productId)
+    const isSale = item.rentalType === 'SALE' || (item as any).itemType === 'SALE'
+    const itemMode: 'RENT' | 'SALE' = isSale ? 'SALE' : 'RENT'
+    if (prod) {
+      validateProductMode(prod, itemMode)
+    }
+    const requiresReturn = isSale ? false : (item.requiresReturn !== undefined ? item.requiresReturn : true)
+    return {
+      ...item,
+      itemType: itemMode,
+      rentalType: isSale ? 'SALE' : (item.rentalType || 'NORMAL'),
+      requiresReturn,
+      ...(isSale
+        ? {
+            orderedQty: item.orderedQty ?? item.quantity,
+            reservedQty: item.reservedQty ?? item.quantity,
+            deliveredQty: item.deliveredQty ?? 0,
+            remainingQty: item.remainingQty ?? item.quantity,
+            deliveryStatus: item.deliveryStatus ?? 'PENDING',
+          }
+        : {}),
+    }
+  })
+
+  const hasSaleItems = incomingBill.items.some((i) => i.rentalType === 'SALE' || i.itemType === 'SALE')
+  if (hasSaleItems && !incomingBill.deliveryStatus) {
+    incomingBill.deliveryStatus = 'PENDING'
+  }
+
   if (dispatchStatus === 'PENDING') {
     // 1. PENDING: Confirm ≠ Dispatch. Reserved ≠ Rented.
     // Do NOT increment rentedQuantity or permanently deduct SALE stock.
@@ -171,7 +209,7 @@ export function createBillWorkflow(options: CreateBillOptions): {
       : []
 
     incomingBill.items.forEach((item) => {
-      const isSale = item.rentalType === 'SALE'
+      const isSale = item.rentalType === 'SALE' || item.itemType === 'SALE'
       const startDate = item.rentalStartDate || incomingBill.rentalStartDate
       const endDate = item.scheduledReturnDate || incomingBill.scheduledReturnDate
 
@@ -253,6 +291,7 @@ export function createBillWorkflow(options: CreateBillOptions): {
             correlationId,
           })
           reservations.push(resv)
+          /* Reservation handled in db */
         } else {
           const fulfillableQty = Math.max(0, availableForRange)
           const shortageQty = neededQty - fulfillableQty
@@ -274,6 +313,7 @@ export function createBillWorkflow(options: CreateBillOptions): {
               correlationId,
             })
             reservations.push(resv)
+            /* Reservation handled in db */
           }
 
           if (shortageQty > 0) {
@@ -690,16 +730,22 @@ export interface DispatchBillOptions {
   billId: string
   actor: ActorInfo
   correlationId?: string
+  deliveries?: Array<{
+    rentalBillItemId: string
+    deliveredQty: number
+  }>
 }
 
 /**
  * Dispatch a bill (transitions PENDING -> DISPATCHED).
  * Invariants:
- * - Transitions all active reservations for this bill to DISPATCHED.
- * - If bill originated from Quotation, also dispatches Quotation reservations.
+ * - Idempotent: Repeat calls do not re-deduct physical stock.
+ * - Atomic validation: All items checked before any stock mutation.
+ * - Transitions active reservations to DISPATCHED.
  * - Deducts physical stock: RENT -> increments rentedQuantity, SALE -> deducts totalQuantity.
- * - Syncs product reservedQuantity.
- * - Audits DISPATCH, STOCK_RENT, STOCK_SALE with shared correlationId.
+ * - Syncs product reservedQuantity and checks non-negative stock invariants.
+ * - Supports Partial Sale Delivery.
+ * - Mixed bills: Keeps RENT and SALE statuses independent.
  */
 export function dispatchBillWorkflow(options: DispatchBillOptions): {
   bill: FullBill
@@ -715,62 +761,217 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
   if (!targetBill) {
     throw new Error(`Bill ${options.billId} not found`)
   }
-  if (targetBill.dispatchStatus === 'DISPATCHED') {
-    throw new Error(`Bill ${targetBill.billNo} is already dispatched`)
-  }
   if (targetBill.rentalStatus === 'CANCELLED' || targetBill.rentalStatus === 'VOID') {
     throw new Error(`Cannot dispatch cancelled or voided bill`)
   }
 
-  // Pre-validate stock availability across all items before mutating any state (Atomic validation)
-  const allProds = loadProducts()
+  const hasRentalItems = targetBill.items.some((i) => i.rentalType !== 'SALE' && i.itemType !== 'SALE' && i.requiresReturn !== false)
+  const hasSaleItems = targetBill.items.some((i) => i.rentalType === 'SALE' || i.itemType === 'SALE' || i.requiresReturn === false)
+
+  // Idempotency: If already fully dispatched and no partial delivery requested, return existing bill safely
+  if (targetBill.dispatchStatus === 'DISPATCHED') {
+    const allSaleDone = !hasSaleItems || targetBill.deliveryStatus === 'DELIVERED'
+    if (allSaleDone && !options.deliveries) {
+      return { bill: targetBill, correlationId, dispatchedReservations: [] }
+    }
+  }
+
+  // Pre-calculate needed quantities per item and validate before mutating ANY state (Atomic validation)
+  const neededByProduct = new Map<string, number>()
   for (const item of targetBill.items) {
-    const prod = allProds.find((p) => p.id === item.productId)
+    const isSale = item.rentalType === 'SALE' || item.itemType === 'SALE'
+    let toDeduct = 0
+    if (isSale) {
+      const deliv = options.deliveries?.find(
+        (d) => d.rentalBillItemId === item.rentalBillItemId || d.rentalBillItemId === (item as any).id
+      )
+      const ordered = item.orderedQty ?? item.quantity
+      const currentDelivered = item.deliveredQty ?? 0
+      const remaining = item.remainingQty !== undefined ? item.remainingQty : Math.max(0, ordered - currentDelivered)
+      toDeduct = deliv !== undefined ? deliv.deliveredQty : (targetBill.dispatchStatus === 'DISPATCHED' ? 0 : remaining)
+      if (deliv && deliv.deliveredQty > remaining) {
+        throw new Error(
+          `จำนวนส่งมอบ (${deliv.deliveredQty}) เกินจำนวนคงค้างที่ต้องส่ง (${remaining}) สำหรับสินค้า "${item.productName}"`
+        )
+      }
+    } else {
+      toDeduct = targetBill.dispatchStatus === 'DISPATCHED' ? 0 : item.quantity
+    }
+    if (toDeduct > 0) {
+      neededByProduct.set(item.productId, (neededByProduct.get(item.productId) || 0) + toDeduct)
+    }
+  }
+
+  const allProds = loadProducts()
+  for (const [prodId, neededQty] of neededByProduct.entries()) {
+    const prod = allProds.find((p) => p.id === prodId)
     if (!prod) {
-      throw new Error(`ไม่พบข้อมูลสินค้า ID "${item.productId}" ในระบบ`)
+      throw new Error(`ไม่พบข้อมูลสินค้า ID "${prodId}" ในระบบ`)
     }
     const avail = prod.availableQuantity ?? 0
-    if (avail < item.quantity) {
+    if (avail < neededQty) {
       throw new Error(
-        `สินค้า "${prod.name}" (รหัส: ${prod.code || prod.id}) สต็อกไม่เพียงพอสำหรับการส่งมอบ (ต้องการ ${item.quantity}, มีพร้อมใช้ ${avail})`
+        `สินค้า "${prod.name}" (รหัส: ${prod.code || prod.id}) สต็อกไม่เพียงพอสำหรับการส่งมอบ (ต้องการ ${neededQty}, มีพร้อมใช้ ${avail})`
       )
     }
   }
 
-  // 1. Transition reservations to DISPATCHED
+  // 1. Transition active reservations to DISPATCHED
   const dispatchedReservations = [
     ...dispatchReservationsBySource('BILL', targetBill.id, correlationId),
     ...(targetBill.quotationId ? dispatchReservationsBySource('QUOTATION', targetBill.quotationId, correlationId) : []),
   ]
 
-  // 2. Deduct physical stock (RENT -> rentedQuantity++, SALE -> totalQuantity--)
-  targetBill.items.forEach((item) => {
-    const isSale = item.rentalType === 'SALE'
-    rentProductStock(item.productId, item.quantity, isSale)
-    syncProductReservedStock(item.productId)
+  // 2. Deduct physical stock & log stock movements
+  const updatedItems: FullBillItem[] = targetBill.items.map((item) => {
+    const isSale = item.rentalType === 'SALE' || item.itemType === 'SALE'
+    if (isSale) {
+      const deliv = options.deliveries?.find(
+        (d) => d.rentalBillItemId === item.rentalBillItemId || d.rentalBillItemId === (item as any).id
+      )
+      const ordered = item.orderedQty ?? item.quantity
+      const currentDelivered = item.deliveredQty ?? 0
+      const remaining = item.remainingQty !== undefined ? item.remainingQty : Math.max(0, ordered - currentDelivered)
+      const deliverQty = deliv !== undefined ? deliv.deliveredQty : (targetBill.dispatchStatus === 'DISPATCHED' ? 0 : remaining)
 
-    recordAuditLog({
-      userId: actorUserId,
-      displayName: actorDisplayName,
-      action: isSale ? 'STOCK_SALE' : 'STOCK_RENT',
-      entityType: 'STOCK',
-      entityId: item.productId,
-      before: { productId: item.productId, dispatchStatus: 'PENDING' },
-      after: {
-        quantity: item.quantity,
-        billNo: targetBill.billNo,
-        dispatchStatus: 'DISPATCHED',
-      },
-      correlationId,
-    })
+      if (deliverQty > 0) {
+        const prodBefore = loadProducts().find((p) => p.id === item.productId)
+        rentProductStock(item.productId, deliverQty, true)
+        syncProductReservedStock(item.productId)
+        const prodAfter = loadProducts().find((p) => p.id === item.productId)
+        if (prodAfter) validateStockInvariants(prodAfter)
+
+        recordStockMovement({
+          type: 'SALE',
+          productId: item.productId,
+          billId: targetBill.id,
+          billLineId: item.rentalBillItemId || (item as any).id,
+          quantity: deliverQty,
+          beforeState: {
+            availableQuantity: prodBefore?.availableQuantity,
+            totalQuantity: prodBefore?.totalQuantity,
+          },
+          afterState: {
+            availableQuantity: prodAfter?.availableQuantity,
+            totalQuantity: prodAfter?.totalQuantity,
+          },
+          actor: { userId: actorUserId, displayName: actorDisplayName },
+          correlationId,
+          reason: 'ส่งมอบสินค้าขาย (Sale Delivery)',
+        })
+
+        recordAuditLog({
+          userId: actorUserId,
+          displayName: actorDisplayName,
+          action: 'STOCK_SALE',
+          entityType: 'STOCK',
+          entityId: item.productId,
+          before: { productId: item.productId, dispatchStatus: item.deliveryStatus || 'PENDING' },
+          after: {
+            quantity: deliverQty,
+            billNo: targetBill.billNo,
+            deliveryStatus: 'DELIVERED',
+          },
+          correlationId,
+        })
+
+        const newDelivered = currentDelivered + deliverQty
+        const newRemaining = Math.max(0, ordered - newDelivered)
+        const itemDeliveryStatus = newRemaining === 0 ? 'DELIVERED' : 'PARTIAL_DELIVERED'
+
+        return {
+          ...item,
+          orderedQty: ordered,
+          deliveredQty: newDelivered,
+          remainingQty: newRemaining,
+          deliveryStatus: itemDeliveryStatus,
+          status: itemDeliveryStatus === 'DELIVERED' ? 'DELIVERED' : 'PARTIAL_DELIVERED',
+        }
+      }
+      return item
+    } else {
+      // RENT item
+      if (targetBill.dispatchStatus !== 'DISPATCHED') {
+        const prodBefore = loadProducts().find((p) => p.id === item.productId)
+        rentProductStock(item.productId, item.quantity, false)
+        syncProductReservedStock(item.productId)
+        const prodAfter = loadProducts().find((p) => p.id === item.productId)
+        if (prodAfter) validateStockInvariants(prodAfter)
+
+        recordStockMovement({
+          type: 'RENT',
+          productId: item.productId,
+          billId: targetBill.id,
+          billLineId: item.rentalBillItemId || (item as any).id,
+          quantity: item.quantity,
+          beforeState: {
+            availableQuantity: prodBefore?.availableQuantity,
+            rentedQuantity: prodBefore?.rentedQuantity,
+            totalQuantity: prodBefore?.totalQuantity,
+          },
+          afterState: {
+            availableQuantity: prodAfter?.availableQuantity,
+            rentedQuantity: prodAfter?.rentedQuantity,
+            totalQuantity: prodAfter?.totalQuantity,
+          },
+          actor: { userId: actorUserId, displayName: actorDisplayName },
+          correlationId,
+          reason: 'ส่งมอบสินค้าเช่า (Rent Dispatch)',
+        })
+
+        recordAuditLog({
+          userId: actorUserId,
+          displayName: actorDisplayName,
+          action: 'STOCK_RENT',
+          entityType: 'STOCK',
+          entityId: item.productId,
+          before: { productId: item.productId, dispatchStatus: 'PENDING' },
+          after: {
+            quantity: item.quantity,
+            billNo: targetBill.billNo,
+            dispatchStatus: 'DISPATCHED',
+          },
+          correlationId,
+        })
+
+        return {
+          ...item,
+          status: 'RENTING',
+        }
+      }
+      return item
+    }
   })
 
-  // 3. Update Bill dispatchStatus to DISPATCHED & rentalStatus to RENTING (or CLOSED if only sale items)
-  const hasRentalItems = targetBill.items.some((i) => i.rentalType !== 'SALE' && i.requiresReturn !== false)
+  // 3. Reconcile statuses independently for Mixed Bills
+  const rentalItems = updatedItems.filter((i) => i.rentalType !== 'SALE' && i.itemType !== 'SALE' && i.requiresReturn !== false)
+  const saleItems = updatedItems.filter((i) => i.rentalType === 'SALE' || i.itemType === 'SALE' || i.requiresReturn === false)
+
+  const hasRental = rentalItems.length > 0
+  const hasSale = saleItems.length > 0
+
+  const allSaleDelivered = hasSale && saleItems.every((i) => (i.remainingQty ?? 0) === 0 && (i.deliveredQty ?? 0) >= (i.orderedQty ?? i.quantity))
+  const anySaleDelivered = hasSale && saleItems.some((i) => (i.deliveredQty ?? 0) > 0)
+  const saleDeliveryStatus = allSaleDelivered ? 'DELIVERED' : (anySaleDelivered ? 'PARTIAL_DELIVERED' : 'PENDING')
+
+  let nextRentalStatus: RentalStatus = targetBill.rentalStatus
+  let nextDispatchStatus = targetBill.dispatchStatus
+
+  if (hasRental) {
+    nextRentalStatus = 'RENTING'
+    nextDispatchStatus = 'DISPATCHED'
+  } else {
+    // Only SALE items in this bill
+    nextDispatchStatus = allSaleDelivered ? 'DISPATCHED' : (anySaleDelivered ? 'PARTIAL_DELIVERED' : 'PENDING')
+    nextRentalStatus = allSaleDelivered ? 'CLOSED' : 'CONFIRMED'
+  }
+
   const updatedBill: FullBill = {
     ...targetBill,
-    dispatchStatus: 'DISPATCHED',
-    rentalStatus: hasRentalItems ? 'RENTING' : 'CLOSED',
+    items: updatedItems,
+    dispatchStatus: nextDispatchStatus as any,
+    deliveryStatus: hasSale ? saleDeliveryStatus : undefined,
+    rentalStatus: nextRentalStatus,
   }
 
   updateBill(updatedBill)
@@ -782,7 +983,7 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
     entityType: 'BILL',
     entityId: updatedBill.id,
     before: { billNo: targetBill.billNo, dispatchStatus: targetBill.dispatchStatus, rentalStatus: targetBill.rentalStatus },
-    after: { billNo: updatedBill.billNo, dispatchStatus: 'DISPATCHED', rentalStatus: updatedBill.rentalStatus },
+    after: { billNo: updatedBill.billNo, dispatchStatus: updatedBill.dispatchStatus, rentalStatus: updatedBill.rentalStatus },
     correlationId,
   })
 
@@ -1001,13 +1202,37 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     throw new Error(`Bill ${options.billId} not found`)
   }
 
+  // Return MUST happen only after actual dispatch
+  if (targetBill.dispatchStatus === 'PENDING') {
+    throw new Error(`ไม่สามารถรับคืนสินค้าได้เนื่องจากบิล ${targetBill.billNo} ยังไม่ได้ทำการส่งมอบสินค้า (Dispatch)`)
+  }
+
   const returnItemsList = options.items || options.returnItems || options.returnLines || []
   const inspectionMap = new Map(returnItemsList.map((it) => [it.rentalBillItemId, it]))
   const allMasterProducts = loadProducts()
 
+  // Pre-validate return quantities against outstandingQty before mutating ANY stock
+  for (const it of returnItemsList) {
+    const billItem = targetBill.items.find(
+      (bi) => bi.rentalBillItemId === it.rentalBillItemId || (bi as any).id === it.rentalBillItemId
+    )
+    if (!billItem) {
+      throw new Error(`ไม่พบรายการสินค้า ID "${it.rentalBillItemId}" ในบิล ${targetBill.billNo}`)
+    }
+    const normal = Math.max(0, it.normalQty || 0)
+    const damaged = Math.max(0, it.damagedQty || 0)
+    const lost = Math.max(0, it.lostQty || 0)
+    const totalReturned = normal + damaged + lost
+    if (totalReturned > billItem.outstandingQty) {
+      throw new Error(
+        `จำนวนรับคืน (${totalReturned}) เกินจำนวนคงค้างที่ต้องคืน (${billItem.outstandingQty}) สำหรับสินค้า "${billItem.productName}"`
+      )
+    }
+  }
+
   // 1. Process Stock Return for each item
   for (const it of returnItemsList) {
-    const billItem = targetBill.items.find((bi) => bi.rentalBillItemId === it.rentalBillItemId)
+    const billItem = targetBill.items.find((bi) => bi.rentalBillItemId === it.rentalBillItemId || (bi as any).id === it.rentalBillItemId)
     const prodId = it.productId || billItem?.productId
     if (!it.productId && prodId) {
       it.productId = prodId
@@ -1026,6 +1251,52 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
 
       const allProdsAfter = loadProducts()
       const pAfter = allProdsAfter.find((p) => p.id === it.productId)
+      if (pAfter) validateStockInvariants(pAfter)
+
+      if (normal > 0) {
+        recordStockMovement({
+          type: 'RETURN',
+          productId: it.productId,
+          billId: targetBill.id,
+          billLineId: it.rentalBillItemId,
+          quantity: normal,
+          beforeState: { availableQuantity: pBefore?.availableQuantity, rentedQuantity: pBefore?.rentedQuantity },
+          afterState: { availableQuantity: pAfter?.availableQuantity, rentedQuantity: pAfter?.rentedQuantity },
+          actor: { userId: actorUserId, displayName: actorDisplayName },
+          correlationId,
+          reason: 'รับคืนสินค้าสภาพปกติ (Return Normal)',
+        })
+      }
+
+      if (damaged > 0) {
+        recordStockMovement({
+          type: 'DAMAGE',
+          productId: it.productId,
+          billId: targetBill.id,
+          billLineId: it.rentalBillItemId,
+          quantity: damaged,
+          beforeState: { damagedQuantity: pBefore?.damagedQuantity, rentedQuantity: pBefore?.rentedQuantity },
+          afterState: { damagedQuantity: pAfter?.damagedQuantity, rentedQuantity: pAfter?.rentedQuantity },
+          actor: { userId: actorUserId, displayName: actorDisplayName },
+          correlationId,
+          reason: 'รับคืนสินค้าสภาพชำรุด (Return Damaged)',
+        })
+      }
+
+      if (lost > 0) {
+        recordStockMovement({
+          type: 'LOST',
+          productId: it.productId,
+          billId: targetBill.id,
+          billLineId: it.rentalBillItemId,
+          quantity: lost,
+          beforeState: { lostQuantity: pBefore?.lostQuantity, totalQuantity: pBefore?.totalQuantity },
+          afterState: { lostQuantity: pAfter?.lostQuantity, totalQuantity: pAfter?.totalQuantity },
+          actor: { userId: actorUserId, displayName: actorDisplayName },
+          correlationId,
+          reason: 'ตัดจำหน่ายสินค้าสูญหาย (Lost Write-off)',
+        })
+      }
 
       recordAuditLog({
         userId: actorUserId,
@@ -1055,11 +1326,9 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
   }
 
   // 2. Update Bill Items Status and Quantities
-  let totalRemainingOutstanding = 0
   const updatedItems: FullBillItem[] = targetBill.items.map((billItem) => {
-    const insp = inspectionMap.get(billItem.rentalBillItemId)
+    const insp = inspectionMap.get(billItem.rentalBillItemId) || inspectionMap.get((billItem as any).id)
     if (!insp) {
-      totalRemainingOutstanding += billItem.outstandingQty || 0
       return billItem
     }
 
@@ -1068,12 +1337,11 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     const lost = Math.max(0, insp.lostQty || 0)
     const sessionReturned = normal + damaged + lost
 
-    const newReturnedQty = (billItem.returnedQty || 0) + normal
+    // Cumulative returnedQty maintains invariant: returnedQty + outstandingQty = dispatched quantity
+    const newReturnedQty = (billItem.returnedQty || 0) + sessionReturned
     const newDamagedQty = (billItem.damagedQuantity || 0) + damaged
     const newLostQty = (billItem.lostQuantity || 0) + lost
     const newOutstandingQty = Math.max(0, (billItem.outstandingQty || 0) - sessionReturned)
-
-    totalRemainingOutstanding += newOutstandingQty
 
     let itemStatus = billItem.status
     if (newOutstandingQty === 0) {
@@ -1092,9 +1360,12 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
     }
   })
 
-  // 3. Determine Overall Bill Status
-  const isFullyReturned = totalRemainingOutstanding === 0
-  const nextRentalStatus = isFullyReturned ? 'RETURNED' : 'PARTIAL_RETURNED'
+  // 3. Determine Overall Bill Status (Evaluate rental items only)
+  const rentalItems = updatedItems.filter((i) => i.rentalType !== 'SALE' && i.itemType !== 'SALE' && i.requiresReturn !== false)
+  const totalRemainingOutstanding = rentalItems.reduce((sum, i) => sum + (i.outstandingQty || 0), 0)
+  const isFullyReturned = rentalItems.every((i) => (i.outstandingQty || 0) === 0)
+  const anyReturned = rentalItems.some((i) => (i.returnedQty || 0) > 0)
+  const nextRentalStatus = isFullyReturned ? 'RETURNED' : (anyReturned ? 'PARTIAL_RETURNED' : targetBill.rentalStatus)
 
   // 4. Calculate Damage / Loss Fees using Money Core in Satang
   let totalDamageSatang = 0
@@ -1849,6 +2120,8 @@ export function cancelOrVoidBillWorkflow(options: CancelBillOptions): {
     targetBill.items.forEach((item) => {
       syncProductReservedStock(item.productId)
 
+      /* Reservation release handled in db */
+
       recordAuditLog({
         userId: actorUserId,
         displayName: actorDisplayName,
@@ -2499,3 +2772,4 @@ export function checkAndExpireReservations(
 
   return { expiredReservations: expired, correlationId: corrId }
 }
+

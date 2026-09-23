@@ -8,7 +8,14 @@ import {
 import {
   loadProducts,
   saveProducts,
+  getProductType,
+  validateProductMode,
+  getProductAvailability,
 } from '../lib/product-storage'
+import {
+  getStockMovements,
+  clearStockMovements,
+} from '../lib/stock-movement'
 import {
   loadTransactions,
   saveTransactions,
@@ -38,6 +45,7 @@ import {
   processBillRevisionWorkflow,
   processDepositRefundWorkflow,
   processPaymentRefundWorkflow,
+  cancelOrVoidBillWorkflow,
 } from '../lib/bill-workflow-service'
 import {
   calculateBillTotals,
@@ -202,6 +210,7 @@ describe('Core Business Logic Consolidation - 18 Required Test Cases', () => {
     saveReservations([])
     saveBackorders([])
     saveQuotations([])
+    clearStockMovements()
   })
 
   // ==========================================
@@ -1233,8 +1242,35 @@ describe('Workset 1 Financial Core & Integrity Suite (20 Mandated Requirements)'
     defaultLossFee: 8000,
   }
 
+  const sampleProductB: Product = {
+    id: 'prod-chair-02',
+    code: 'CHR-002',
+    name: 'เก้าอี้พลาสติกขาว',
+    category: 'เฟอร์นิเจอร์',
+    unit: 'ตัว',
+    rentalType: 'DAILY',
+    dailyPrice: 20,
+    normalPrice: 20,
+    salePrice: 250,
+    totalQuantity: 100,
+    availableQuantity: 100,
+    rentedQuantity: 0,
+    reservedQuantity: 0,
+    damagedQuantity: 0,
+    lostQuantity: 0,
+    minimumStock: 10,
+    status: 'ACTIVE',
+    defaultDamageFee: 50,
+    defaultLossFee: 200,
+  }
+
   beforeEach(() => {
     localStorageMock.clear()
+    saveProducts([
+      JSON.parse(JSON.stringify(sampleProductA)),
+      JSON.parse(JSON.stringify(sampleProductB)),
+    ])
+    clearStockMovements()
   })
 
   // 1. 0.29 บาทไม่เพี้ยน
@@ -1646,4 +1682,939 @@ describe('Workset 1 Financial Core & Integrity Suite (20 Mandated Requirements)'
     expect(refundTxs.length).toBe(1)
     expect(refundTxs[0].id).toBe(refundRes.refundTx.id)
   })
+
+  // =========================================================================
+  // WORKSET 2: PRODUCT / POS / RENTAL / STOCK / DISPATCH / RETURN (28 CASES)
+  // =========================================================================
+
+  // 1. RENT product ใช้โหมดขายไม่ได้
+  it('Workset 2 - Test 1: RENT product ใช้โหมดขายไม่ได้', () => {
+    const rentProd: Product = {
+      ...sampleProductA,
+      id: 'prod-rent-only',
+      productType: 'RENT',
+      rentalType: 'NORMAL',
+    }
+    saveProducts([...loadProducts(), rentProd])
+    expect(() => validateProductMode(rentProd, 'SALE')).toThrow(/ไม่สามารถใช้ในโหมดขายได้/)
+
+    expect(() =>
+      createBillWorkflow({
+        bill: buildFullBill({
+          id: 'bill-test1',
+          billNo: 'B-TEST-1',
+          items: [
+            buildFullBillItem({
+              productId: rentProd.id,
+              quantity: 2,
+              rentalType: 'SALE',
+            }),
+          ],
+        }),
+        actor,
+      })
+    ).toThrow(/ไม่สามารถใช้ในโหมดขายได้/)
+  })
+
+  // 2. SALE product ใช้โหมดเช่าไม่ได้
+  it('Workset 2 - Test 2: SALE product ใช้โหมดเช่าไม่ได้', () => {
+    const saleProd: Product = {
+      ...sampleProductB,
+      id: 'prod-sale-only',
+      productType: 'SALE',
+      rentalType: 'SALE',
+    }
+    saveProducts([...loadProducts(), saleProd])
+    expect(() => validateProductMode(saleProd, 'RENT')).toThrow(/ไม่สามารถใช้ในโหมดเช่าได้/)
+
+    expect(() =>
+      createBillWorkflow({
+        bill: buildFullBill({
+          id: 'bill-test2',
+          billNo: 'B-TEST-2',
+          items: [
+            buildFullBillItem({
+              productId: saleProd.id,
+              quantity: 2,
+              rentalType: 'DAILY',
+            }),
+          ],
+        }),
+        actor,
+      })
+    ).toThrow(/ไม่สามารถใช้ในโหมดเช่าได้/)
+  })
+
+  // 3. BOTH ใช้ได้ทั้งสองโหมด
+  it('Workset 2 - Test 3: BOTH ใช้ได้ทั้งสองโหมด', () => {
+    const bothProd: Product = {
+      ...sampleProductA,
+      id: 'prod-both-mode',
+      name: 'เต็นท์อเนกประสงค์',
+      productType: 'BOTH',
+      rentalType: 'BOTH' as any,
+      rentPrice: 500,
+      salePrice: 5000,
+      availableQuantity: 20,
+      totalQuantity: 20,
+    }
+    saveProducts([...loadProducts(), bothProd])
+    expect(() => validateProductMode(bothProd, 'RENT')).not.toThrow()
+    expect(() => validateProductMode(bothProd, 'SALE')).not.toThrow()
+
+    // Can create bill as RENT
+    const rentBill = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-both-rent',
+        billNo: 'B-BOTH-R',
+        items: [buildFullBillItem({ productId: bothProd.id, quantity: 2, rentalType: 'DAILY' })],
+      }),
+      actor,
+    })
+    expect(rentBill.bill.items[0].itemType).toBe('RENT')
+
+    // Can create bill as SALE
+    const saleBill = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-both-sale',
+        billNo: 'B-BOTH-S',
+        items: [buildFullBillItem({ productId: bothProd.id, quantity: 1, rentalType: 'SALE' })],
+      }),
+      actor,
+    })
+    expect(saleBill.bill.items[0].itemType).toBe('SALE')
+  })
+
+  // 4. Mixed Bill RENT + SALE
+  it('Workset 2 - Test 4: Mixed Bill RENT + SALE ในบิลเดียวกัน', () => {
+    const bothProd: Product = {
+      ...sampleProductA,
+      id: 'prod-mixed-both',
+      productType: 'BOTH',
+      availableQuantity: 20,
+      totalQuantity: 20,
+    }
+    saveProducts([...loadProducts(), bothProd])
+
+    const mixedBill = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-mixed-01',
+        billNo: 'B-MIXED-001',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-rent-1',
+            productId: sampleProductA.id,
+            productName: sampleProductA.name,
+            quantity: 3,
+            rentalType: 'DAILY',
+          }),
+          buildFullBillItem({
+            rentalBillItemId: 'item-sale-2',
+            productId: bothProd.id,
+            productName: bothProd.name,
+            quantity: 2,
+            rentalType: 'SALE',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    expect(mixedBill.bill.items.length).toBe(2)
+    expect(mixedBill.bill.items[0].itemType).toBe('RENT')
+    expect(mixedBill.bill.items[1].itemType).toBe('SALE')
+    expect(mixedBill.bill.deliveryStatus).toBe('PENDING')
+    expect(mixedBill.bill.rentalStatus).toBe('CONFIRMED')
+  })
+
+  // 5. Confirm Quotation → Reservation = 0
+  it('Workset 2 - Test 5: Confirm Quotation -> Reservation = 0', () => {
+    const q: Quotation = {
+      id: 'quote-test-5',
+      quotationNo: 'QT-TEST-05',
+      quotationDate: '2026-09-22',
+      expiryDate: '2026-10-05',
+      customerId: 'cust-5',
+      customerName: 'คุณสมศักดิ์',
+      rentalStartDate: '2026-10-01',
+      rentalEndDate: '2026-10-05',
+      items: [
+        {
+          productId: sampleProductA.id,
+          productName: sampleProductA.name,
+          rentalType: 'DAILY',
+          quantity: 5,
+          unitPrice: 1000,
+          usageCountOrDays: 5,
+          lineTotal: 5000,
+        },
+      ],
+      subtotal: 5000,
+      discountAmount: 0,
+      shippingFee: 0,
+      depositAmount: 1000,
+      taxAmount: 0,
+      grandTotal: 5000,
+      status: 'WAITING',
+    }
+    addQuotation(q)
+    const confirmed = confirmQuotationWorkflow('quote-test-5', actor)
+    expect(confirmed.quotation.status).toBe('ACCEPTED')
+    expect(loadReservations().length).toBe(0)
+  })
+
+  // 6. Confirm Bill → Reservation ถูกสร้าง
+  it('Workset 2 - Test 6: Confirm Bill -> Reservation ถูกสร้าง', () => {
+    const bill = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-6',
+        billNo: 'B-TEST-06',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 4,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+    const resvs = loadReservations().filter((r) => r.sourceId === bill.bill.id)
+    expect(resvs.length).toBe(1)
+    expect(resvs[0].quantity).toBe(4)
+    expect(resvs[0].status).toBe('ACTIVE')
+  })
+
+  // 7. Confirm Bill → Rented = 0
+  it('Workset 2 - Test 7: Confirm Bill -> Rented = 0 (ยังไม่เพิ่ม rentedQuantity)', () => {
+    createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-7',
+        billNo: 'B-TEST-07',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+    const prod = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prod?.rentedQuantity).toBe(0)
+  })
+
+  // 8. Dispatch RENT → Available ลด / Rented เพิ่ม
+  it('Workset 2 - Test 8: Dispatch RENT -> Available ลด / Rented เพิ่ม', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-8',
+        billNo: 'B-TEST-08',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'rbi-test-8',
+            productId: sampleProductA.id,
+            quantity: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+    const dispRes = dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    expect(dispRes.bill.dispatchStatus).toBe('DISPATCHED')
+    expect(dispRes.bill.rentalStatus).toBe('RENTING')
+
+    const prod = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prod?.availableQuantity).toBe(15) // 20 - 5
+    expect(prod?.rentedQuantity).toBe(5)    // 0 + 5
+    expect(prod?.totalQuantity).toBe(20)     // total unchanged
+  })
+
+  // 9. Dispatch RENT ซ้ำ → Stock ไม่ถูกตัดซ้ำ (Idempotent)
+  it('Workset 2 - Test 9: Dispatch RENT ซ้ำ -> Stock ไม่ถูกตัดซ้ำ', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-9',
+        billNo: 'B-TEST-09',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'rbi-test-9',
+            productId: sampleProductA.id,
+            quantity: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    const prodFirst = loadProducts().find((p) => p.id === sampleProductA.id)
+
+    // Call dispatch second time
+    const repeatDisp = dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    expect(repeatDisp.bill.dispatchStatus).toBe('DISPATCHED')
+    const prodSecond = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prodSecond?.availableQuantity).toBe(prodFirst?.availableQuantity)
+    expect(prodSecond?.rentedQuantity).toBe(prodFirst?.rentedQuantity)
+  })
+
+  // 10. Dispatch Stock ไม่พอ → Reject ทั้ง Operation
+  it('Workset 2 - Test 10: Dispatch Stock ไม่พอ -> Reject ทั้ง Operation (Atomic)', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-10',
+        billNo: 'B-TEST-10',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'rbi-10-a',
+            productId: sampleProductA.id,
+            quantity: 2,
+            rentalType: 'DAILY',
+          }),
+          buildFullBillItem({
+            rentalBillItemId: 'rbi-10-b',
+            productId: sampleProductB.id,
+            quantity: 9999, // Insufficient stock
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const prodABefore = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(() => dispatchBillWorkflow({ billId: createRes.bill.id, actor })).toThrow(/สต็อกไม่เพียงพอสำหรับการส่งมอบ/)
+
+    // Atomic validation guarantees Item A stock was NOT mutated
+    const prodAAfter = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prodAAfter?.availableQuantity).toBe(prodABefore?.availableQuantity)
+    expect(prodAAfter?.rentedQuantity).toBe(prodABefore?.rentedQuantity)
+  })
+
+  // 11. SALE Confirm → On-Hand ยังไม่ลด
+  it('Workset 2 - Test 11: SALE Confirm -> On-Hand ยังไม่ลด', () => {
+    const saleProd: Product = {
+      ...sampleProductB,
+      id: 'prod-sale-11',
+      productType: 'SALE',
+      rentalType: 'SALE',
+      totalQuantity: 50,
+      availableQuantity: 50,
+    }
+    saveProducts([...loadProducts(), saleProd])
+
+    createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-11',
+        billNo: 'B-TEST-11',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-sale-11',
+            productId: saleProd.id,
+            quantity: 10,
+            rentalType: 'SALE',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const prod = loadProducts().find((p) => p.id === saleProd.id)
+    expect(prod?.totalQuantity).toBe(50) // On-hand NOT reduced before delivery
+    expect(prod?.rentedQuantity).toBe(0)
+  })
+
+  // 12. SALE Partial Delivery
+  it('Workset 2 - Test 12: SALE Partial Delivery', () => {
+    const saleProd: Product = {
+      ...sampleProductB,
+      id: 'prod-sale-12',
+      productType: 'SALE',
+      rentalType: 'SALE',
+      totalQuantity: 50,
+      availableQuantity: 50,
+    }
+    saveProducts([...loadProducts(), saleProd])
+
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-12',
+        billNo: 'B-TEST-12',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-sale-12',
+            productId: saleProd.id,
+            quantity: 10,
+            rentalType: 'SALE',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // Deliver partial: 4 out of 10
+    const dispRes = dispatchBillWorkflow({
+      billId: createRes.bill.id,
+      deliveries: [{ rentalBillItemId: 'item-sale-12', deliveredQty: 4 }],
+      actor,
+    })
+
+    const item = dispRes.bill.items[0]
+    expect(item.deliveredQty).toBe(4)
+    expect(item.remainingQty).toBe(6)
+    expect(item.deliveryStatus).toBe('PARTIAL_DELIVERED')
+    expect(dispRes.bill.deliveryStatus).toBe('PARTIAL_DELIVERED')
+
+    const prod = loadProducts().find((p) => p.id === saleProd.id)
+    expect(prod?.totalQuantity).toBe(46) // 50 - 4
+  })
+
+  // 13. SALE Full Delivery
+  it('Workset 2 - Test 13: SALE Full Delivery', () => {
+    const saleProd: Product = {
+      ...sampleProductB,
+      id: 'prod-sale-13',
+      productType: 'SALE',
+      rentalType: 'SALE',
+      totalQuantity: 50,
+      availableQuantity: 50,
+    }
+    saveProducts([...loadProducts(), saleProd])
+
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-13',
+        billNo: 'B-TEST-13',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-sale-13',
+            productId: saleProd.id,
+            quantity: 10,
+            rentalType: 'SALE',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const dispRes = dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    const item = dispRes.bill.items[0]
+    expect(item.deliveredQty).toBe(10)
+    expect(item.remainingQty).toBe(0)
+    expect(item.deliveryStatus).toBe('DELIVERED')
+    expect(dispRes.bill.deliveryStatus).toBe('DELIVERED')
+    expect(dispRes.bill.dispatchStatus).toBe('DISPATCHED')
+
+    const prod = loadProducts().find((p) => p.id === saleProd.id)
+    expect(prod?.totalQuantity).toBe(40) // 50 - 10
+  })
+
+  // 14. Cancel ก่อน Dispatch → Release Reservation
+  it('Workset 2 - Test 14: Cancel ก่อน Dispatch -> Release Reservation', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-14',
+        billNo: 'B-TEST-14',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const cancelRes = cancelOrVoidBillWorkflow({
+      billId: createRes.bill.id,
+      reason: 'ลูกค้ายกเลิกก่อนส่งของ',
+      actor,
+    })
+
+    expect(cancelRes.bill.rentalStatus).toBe('CANCELLED')
+    const activeResvs = loadReservations().filter((r) => r.sourceId === createRes.bill.id && r.status === 'ACTIVE')
+    expect(activeResvs.length).toBe(0)
+  })
+
+  // 15. Partial Rental Return
+  it('Workset 2 - Test 15: Partial Rental Return', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-15',
+        billNo: 'B-TEST-15',
+        dispatchStatus: 'DISPATCHED',
+        rentalStatus: 'RENTING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-15',
+            productId: sampleProductA.id,
+            quantity: 10,
+            returnedQty: 0,
+            outstandingQty: 10,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // Return 4 items normally
+    const retRes = processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [
+        {
+          rentalBillItemId: 'item-15',
+          productId: sampleProductA.id,
+          normalQty: 4,
+          damagedQty: 0,
+          lostQty: 0,
+        },
+      ],
+      actor,
+    })
+
+    expect(retRes.bill.rentalStatus).toBe('PARTIAL_RETURNED')
+    expect(retRes.bill.items[0].returnedQty).toBe(4)
+    expect(retRes.bill.items[0].outstandingQty).toBe(6)
+  })
+
+  // 16. Return หลายครั้งจนครบ
+  it('Workset 2 - Test 16: Return หลายครั้งจนครบ', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-16',
+        billNo: 'B-TEST-16',
+        dispatchStatus: 'DISPATCHED',
+        rentalStatus: 'RENTING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-16',
+            productId: sampleProductA.id,
+            quantity: 10,
+            returnedQty: 0,
+            outstandingQty: 10,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // First session: return 4
+    processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [{ rentalBillItemId: 'item-16', productId: sampleProductA.id, normalQty: 4, damagedQty: 0, lostQty: 0 }],
+      actor,
+    })
+
+    // Second session: return remaining 6
+    const ret2 = processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [{ rentalBillItemId: 'item-16', productId: sampleProductA.id, normalQty: 6, damagedQty: 0, lostQty: 0 }],
+      actor,
+    })
+
+    expect(ret2.bill.rentalStatus).toBe('RETURNED')
+    expect(ret2.bill.items[0].returnedQty).toBe(10)
+    expect(ret2.bill.items[0].outstandingQty).toBe(0)
+  })
+
+  // 17. Return เกิน Outstanding → Reject
+  it('Workset 2 - Test 17: Return เกิน Outstanding -> Reject', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-17',
+        billNo: 'B-TEST-17',
+        dispatchStatus: 'DISPATCHED',
+        rentalStatus: 'RENTING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-17',
+            productId: sampleProductA.id,
+            quantity: 5,
+            returnedQty: 0,
+            outstandingQty: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // Return 6 when outstanding is 5
+    expect(() =>
+      processReturnWorkflow({
+        billId: createRes.bill.id,
+        items: [{ rentalBillItemId: 'item-17', productId: sampleProductA.id, normalQty: 6, damagedQty: 0, lostQty: 0 }],
+        actor,
+      })
+    ).toThrow(/เกินจำนวนคงค้างที่ต้องคืน/)
+  })
+
+  // 18. Return ก่อน Dispatch → Reject
+  it('Workset 2 - Test 18: Return ก่อน Dispatch -> Reject', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-18',
+        billNo: 'B-TEST-18',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-18',
+            productId: sampleProductA.id,
+            quantity: 5,
+            returnedQty: 0,
+            outstandingQty: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    expect(() =>
+      processReturnWorkflow({
+        billId: createRes.bill.id,
+        items: [{ rentalBillItemId: 'item-18', productId: sampleProductA.id, normalQty: 5, damagedQty: 0, lostQty: 0 }],
+        actor,
+      })
+    ).toThrow(/ยังไม่ได้ทำการส่งมอบสินค้า/)
+  })
+
+  // 19. Normal → Available เพิ่ม
+  it('Workset 2 - Test 19: Normal -> Available เพิ่ม', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-19',
+        billNo: 'B-TEST-19',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-19',
+            productId: sampleProductA.id,
+            quantity: 5,
+            returnedQty: 0,
+            outstandingQty: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+
+    processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [{ rentalBillItemId: 'item-19', productId: sampleProductA.id, normalQty: 5, damagedQty: 0, lostQty: 0 }],
+      actor,
+    })
+
+    const prodAfter = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prodAfter?.availableQuantity).toBe(20) // 15 + 5
+    expect(prodAfter?.rentedQuantity).toBe(0)    // 5 - 5
+  })
+
+  // 20. Damaged → Available ไม่เพิ่ม
+  it('Workset 2 - Test 20: Damaged -> Available ไม่เพิ่ม', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-20',
+        billNo: 'B-TEST-20',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-20',
+            productId: sampleProductA.id,
+            quantity: 5,
+            returnedQty: 0,
+            outstandingQty: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+
+    processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [{ rentalBillItemId: 'item-20', productId: sampleProductA.id, normalQty: 0, damagedQty: 5, lostQty: 0 }],
+      actor,
+    })
+
+    const prodAfter = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prodAfter?.availableQuantity).toBe(15) // Does NOT increase
+    expect(prodAfter?.rentedQuantity).toBe(0)     // Rented reduced
+    expect(prodAfter?.damagedQuantity).toBe(5)    // Damaged increased
+  })
+
+  // 21. Lost → On-Hand ลด
+  it('Workset 2 - Test 21: Lost -> On-Hand ลด', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-21',
+        billNo: 'B-TEST-21',
+        dispatchStatus: 'PENDING',
+        rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-21',
+            productId: sampleProductA.id,
+            quantity: 5,
+            returnedQty: 0,
+            outstandingQty: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+
+    processReturnWorkflow({
+      billId: createRes.bill.id,
+      items: [{ rentalBillItemId: 'item-21', productId: sampleProductA.id, normalQty: 0, damagedQty: 0, lostQty: 5 }],
+      actor,
+    })
+
+    const prodAfter = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prodAfter?.totalQuantity).toBe(15)     // 20 - 5 (On-hand reduced)
+    expect(prodAfter?.availableQuantity).toBe(15) // Available unchanged
+    expect(prodAfter?.rentedQuantity).toBe(0)     // Rented reduced
+    expect(prodAfter?.lostQuantity).toBe(5)       // Lost increased
+  })
+
+  // 22. Mixed Bill: Sale จบ แต่ Rental ยัง RENTING
+  it('Workset 2 - Test 22: Mixed Bill: Sale จบ แต่ Rental ยัง RENTING', () => {
+    const saleProd: Product = {
+      ...sampleProductB,
+      id: 'prod-sale-22',
+      productType: 'SALE',
+      rentalType: 'SALE',
+      totalQuantity: 50,
+      availableQuantity: 50,
+    }
+    saveProducts([...loadProducts(), saleProd])
+
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-test-22',
+        billNo: 'B-TEST-22',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'rent-22',
+            productId: sampleProductA.id,
+            quantity: 2,
+            rentalType: 'DAILY',
+          }),
+          buildFullBillItem({
+            rentalBillItemId: 'sale-22',
+            productId: saleProd.id,
+            quantity: 5,
+            rentalType: 'SALE',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // Dispatch full bill
+    const dispRes = dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    expect(dispRes.bill.deliveryStatus).toBe('DELIVERED')
+    expect(dispRes.bill.rentalStatus).toBe('RENTING') // Rental is strictly RENTING, not closed/returned!
+  })
+
+  // 23. Date-overlap Reservation
+  it('Workset 2 - Test 23: Date-overlap Reservation', () => {
+    createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-date-1',
+        billNo: 'B-DATE-1',
+        rentalStartDate: '2026-10-01',
+        scheduledReturnDate: '2026-10-05',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 12,
+            rentalStartDate: '2026-10-01',
+            scheduledReturnDate: '2026-10-05',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // Second bill overlapping: 2026-10-03 to 2026-10-07
+    const avail = getProductAvailability(sampleProductA.id, '2026-10-03', '2026-10-07')
+    expect(avail.reserved).toBe(12)
+    expect(avail.availableForRange).toBe(8) // 20 - 12
+  })
+
+  // 24. Non-overlap Rental ใช้ Stock เดียวกันได้
+  it('Workset 2 - Test 24: Non-overlap Rental ใช้ Stock เดียวกันได้', () => {
+    createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-non-1',
+        billNo: 'B-NON-1',
+        rentalStartDate: '2026-10-01',
+        scheduledReturnDate: '2026-10-05',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 18,
+            rentalStartDate: '2026-10-01',
+            scheduledReturnDate: '2026-10-05',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const availNonOverlap = getProductAvailability(sampleProductA.id, '2026-10-10', '2026-10-15')
+    expect(availNonOverlap.reserved).toBe(0)
+    expect(availNonOverlap.availableForRange).toBe(20) // Full 20 available!
+  })
+
+  // 25. Backorder ไม่ทำ Stock ติดลบ
+  it('Workset 2 - Test 25: Backorder ไม่ทำ Stock ติดลบ', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-bo-25',
+        billNo: 'B-BO-25',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 25,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const prod = loadProducts().find((p) => p.id === sampleProductA.id)
+    expect(prod?.availableQuantity).toBeGreaterThanOrEqual(0)
+    expect(createRes.backorders?.length).toBe(1)
+    expect(createRes.backorders?.[0]?.outstandingQty).toBe(5) // Deficit is 5
+  })
+
+  // 26. Extension ไม่สร้าง Fake Return/Dispatch
+  it('Workset 2 - Test 26: Extension ไม่สร้าง Fake Return/Dispatch', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-ext-orig',
+        billNo: 'B-EXT-ORIG',
+        dispatchStatus: 'DISPATCHED',
+        rentalStatus: 'RENTING',
+        items: [
+          buildFullBillItem({
+            productId: sampleProductA.id,
+            quantity: 5,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    const prodBefore = loadProducts().find((p) => p.id === sampleProductA.id)!
+    const extRes = processBillRevisionWorkflow({
+      billId: createRes.bill.id,
+      mode: 'EXTENSION',
+      reason: 'ขอเช่าต่อ 5 วัน',
+      headerReturnDate: '2026-10-10',
+      actor,
+    })
+
+    expect(extRes.originalBill?.rentalStatus).toBe('EXTENDED')
+    expect(extRes.extensionBill?.rentalStatus).toBe('RENTING')
+
+    // Stock stays with customer, no fake return or double increment
+    const prodAfter = loadProducts().find((p) => p.id === sampleProductA.id)!
+    expect(prodAfter.rentedQuantity).toBe(prodBefore.rentedQuantity)
+  })
+
+  // 27. Stock Movement ถูกสร้าง 1 ครั้งต่อ Action
+  it('Workset 2 - Test 27: Stock Movement ถูกสร้าง 1 ครั้งต่อ Action', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-sm-27',
+        billNo: 'B-SM-27',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-sm-27',
+            productId: sampleProductA.id,
+            quantity: 3,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    const movements = getStockMovements({ billId: createRes.bill.id, type: 'RENT' })
+    expect(movements.length).toBe(1)
+    expect(movements[0].quantity).toBe(3)
+    expect(movements[0].type).toBe('RENT')
+  })
+
+  // 28. Retry/duplicate operation ไม่สร้าง Movement ซ้ำ
+  it('Workset 2 - Test 28: Retry/duplicate operation ไม่สร้าง Movement ซ้ำ', () => {
+    const createRes = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'bill-sm-28',
+        billNo: 'B-SM-28',
+        dispatchStatus: 'PENDING',
+        items: [
+          buildFullBillItem({
+            rentalBillItemId: 'item-sm-28',
+            productId: sampleProductA.id,
+            quantity: 3,
+            rentalType: 'DAILY',
+          }),
+        ],
+      }),
+      actor,
+    })
+
+    // First dispatch
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    const countFirst = getStockMovements({ billId: createRes.bill.id, type: 'RENT' }).length
+    expect(countFirst).toBe(1)
+
+    // Repeat dispatch
+    dispatchBillWorkflow({ billId: createRes.bill.id, actor })
+    const countSecond = getStockMovements({ billId: createRes.bill.id, type: 'RENT' }).length
+    expect(countSecond).toBe(1) // Not duplicated
+  })
 })
+

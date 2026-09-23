@@ -1,6 +1,9 @@
 // TypeScript Definitions for Rental POS Database & Domain Models
 
 export type RentalType = 'NORMAL' | 'DAILY' | 'SALE'
+export type ProductMasterType = 'RENT' | 'SALE' | 'BOTH'
+export type ProductType = ProductMasterType
+export type DeliveryStatus = 'PENDING' | 'PARTIAL_DELIVERED' | 'DELIVERED'
 export type CustomerType = 'INDIVIDUAL' | 'CORPORATE'
 export type CustomerStatus = 'ACTIVE' | 'INACTIVE'
 export type AppointmentType = 'DELIVERY' | 'RETURN' | 'PAYMENT' | 'CONTRACT' | 'QUOTATION' | 'INSPECTION' | 'GENERAL'
@@ -11,7 +14,7 @@ export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | '
 export type PaymentMethod = 'CASH' | 'TRANSFER' | 'QR' | 'CHEQUE' | 'OTHER'
 export type DepositStatus = 'HELD' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
 export type TransactionType = 'INCOME' | 'EXPENSE'
-export type StockMovementType = 'RENTAL_OUT' | 'SALE' | 'RETURN_NORMAL' | 'RETURN_DAMAGED' | 'RETURN_LOST' | 'ADJUSTMENT' | 'INITIAL'
+export type StockMovementType = 'RECEIVE' | 'RENT' | 'SALE' | 'RETURN' | 'DAMAGE' | 'LOST' | 'ADJUSTMENT'
 export type StockAdjustmentType = 'NEW_STOCK' | 'DISPOSAL' | 'DAMAGE_TRANSFER' | 'REPAIR_RETURN' | 'LOSS_WRITE_OFF' | 'LOSS_RECOVERY' | 'COUNT_RECONCILE' | 'MAINTENANCE_IN' | 'MAINTENANCE_OUT'
 
 export interface StockAdjustment {
@@ -134,6 +137,8 @@ export interface Product {
   unitId?: string
   rentalType: RentalType
   rentalTypeId?: string
+  productType?: ProductType
+  product_type?: ProductType
   normalPrice: number
   dailyPrice: number
   rentPrice?: number | null
@@ -331,6 +336,7 @@ export interface RentalBillItem {
   productId: string
   productName: string
   rentalType: RentalType
+  itemType?: 'RENT' | 'SALE'
   quantity: number
   unitName?: string
   unitPrice: number
@@ -343,6 +349,11 @@ export interface RentalBillItem {
   damagedQuantity: number
   lostQuantity: number
   outstandingQuantity: number
+  orderedQty?: number
+  reservedQty?: number
+  deliveredQty?: number
+  remainingQty?: number
+  deliveryStatus?: DeliveryStatus
   isAccessory?: boolean
   isChargeable?: boolean
   requiresReturn?: boolean
@@ -374,6 +385,7 @@ export interface RentalBill {
   outstandingAmount: number
   rentalStatus: RentalStatus
   paymentStatus: PaymentStatus
+  deliveryStatus?: DeliveryStatus
   remark?: string
   siteName?: string
   siteAddress?: string
@@ -390,7 +402,7 @@ export interface RentalBill {
   closedAt?: string
   cancelledAt?: string
   cancelReason?: string
-  dispatchStatus?: 'PENDING' | 'DISPATCHED'
+  dispatchStatus?: 'PENDING' | 'DISPATCHED' | 'PARTIAL_DELIVERED' | 'DELIVERED'
   refundDueAmount?: number
   revisions?: BillRevisionRecord[]
 }

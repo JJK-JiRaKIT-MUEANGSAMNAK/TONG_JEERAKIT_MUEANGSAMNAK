@@ -115,10 +115,16 @@ export interface FullBillItem {
   rentalStartDate: string
   scheduledReturnDate: string
   actualReturnDate?: string
-  rentalType?: 'NORMAL' | 'DAILY' | 'SALE'
+  rentalType?: 'NORMAL' | 'DAILY' | 'SALE' | 'RENT' | 'BOTH'
+  itemType?: 'RENT' | 'SALE'
   usageCount?: number
   lineTotal?: number
-  status: 'PENDING' | 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST' | 'COMPLETED'
+  status: 'PENDING' | 'RENTING' | 'RETURNED' | 'PARTIAL_RETURNED' | 'IN_REPAIR' | 'LOST' | 'COMPLETED' | 'DELIVERED' | 'PARTIAL_DELIVERED'
+  orderedQty?: number
+  reservedQty?: number
+  deliveredQty?: number
+  remainingQty?: number
+  deliveryStatus?: 'PENDING' | 'PARTIAL_DELIVERED' | 'DELIVERED'
 }
 
 export interface FullBillDeposit {
@@ -164,7 +170,8 @@ export interface FullBill {
   outstandingAmount: number
   rentalStatus: RentalStatus
   paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUND_PARTIAL' | 'REFUNDED'
-  dispatchStatus?: 'PENDING' | 'DISPATCHED'
+  dispatchStatus?: 'PENDING' | 'DISPATCHED' | 'PARTIAL_DELIVERED' | 'DELIVERED'
+  deliveryStatus?: 'PENDING' | 'PARTIAL_DELIVERED' | 'DELIVERED'
   refundDue?: number
   refundDueAmount?: number
   revisions?: BillRevisionRecord[]

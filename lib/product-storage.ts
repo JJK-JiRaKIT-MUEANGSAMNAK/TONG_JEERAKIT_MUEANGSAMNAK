@@ -7,11 +7,55 @@
  * - Both /products and /pos must import from here.
  */
 
-import { Product, RentalType } from '@/lib/types/rental-pos'
+import { Product, RentalType, ProductType } from '@/lib/types/rental-pos'
 import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
 import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
 import { DEFAULT_PRODUCT_STOCK_SETTINGS } from '@/lib/settings-storage'
+
+export type { ProductType }
+
+/**
+ * Determine the master product type (RENT, SALE, or BOTH).
+ */
+export function getProductType(p: Product): ProductType {
+  if (p.productType) return p.productType
+  if ((p as any).product_type) return (p as any).product_type
+  if (p.rentalType === 'SALE') return 'SALE'
+  if ((p.rentalType as any) === 'BOTH') return 'BOTH'
+  return 'RENT'
+}
+
+/**
+ * Validate that product is allowed for the chosen POS mode (RENT or SALE).
+ */
+export function validateProductMode(p: Product, mode: 'RENT' | 'SALE'): void {
+  const pType = getProductType(p)
+  if (mode === 'RENT' && pType === 'SALE') {
+    throw new Error(`สินค้า "${p.name}" (รหัส: ${p.code || p.id}) เป็นประเภท SALE ไม่สามารถใช้ในโหมดเช่าได้`)
+  }
+  if (mode === 'SALE' && pType === 'RENT') {
+    throw new Error(`สินค้า "${p.name}" (รหัส: ${p.code || p.id}) เป็นประเภท RENT ไม่สามารถใช้ในโหมดขายได้`)
+  }
+}
+
+/**
+ * Validate non-negative stock invariants.
+ */
+export function validateStockInvariants(p: Product): void {
+  if (
+    (p.availableQuantity ?? 0) < 0 ||
+    (p.rentedQuantity ?? 0) < 0 ||
+    (p.damagedQuantity ?? 0) < 0 ||
+    (p.lostQuantity ?? 0) < 0 ||
+    (p.totalQuantity ?? 0) < 0 ||
+    (p.reservedQuantity ?? 0) < 0
+  ) {
+    throw new Error(
+      `Stock Invariant violation for product "${p.name}": Available=${p.availableQuantity}, Rented=${p.rentedQuantity}, Damaged=${p.damagedQuantity}, Lost=${p.lostQuantity}, Total=${p.totalQuantity}`
+    )
+  }
+}
 
 const STORAGE_KEY = 'app_product_storage'
 

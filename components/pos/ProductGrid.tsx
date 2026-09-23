@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { ProductCard } from './ProductCard'
 import { Product } from '@/lib/types/rental-pos'
+import { getProductType } from '@/lib/product-storage'
 import { CustomSelect } from '@/components/common/CustomSelect'
 import { Search, PackageX, RefreshCw, ShoppingCart } from 'lucide-react'
 
@@ -30,19 +31,20 @@ export function ProductGrid({
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
 
-  // Filter products by mode first
+  // Filter products by mode: RENT shows RENT + BOTH; SALE shows SALE + BOTH
   const modeProducts = useMemo(() => {
     return products.filter((p) => {
+      const pType = getProductType(p)
       if (posMode === 'RENT') {
-        if (p.rentPrice !== undefined && p.rentPrice !== null) {
-          return p.rentPrice > 0
-        }
-        return (p.normalPrice > 0 || p.dailyPrice > 0) && p.rentalType !== 'SALE'
+        if (pType === 'SALE') return false
+        // RENT + BOTH: supports 0-baht items with requiresReturn or rental pricing
+        const hasRentPrice = (p.rentPrice !== undefined && p.rentPrice !== null) || p.normalPrice !== undefined || p.dailyPrice !== undefined
+        return hasRentPrice || p.requiresReturn !== false
       } else {
-        if (p.salePrice !== undefined && p.salePrice !== null) {
-          return p.salePrice > 0
-        }
-        return p.rentalType === 'SALE'
+        if (pType === 'RENT') return false
+        // SALE + BOTH: supports sale pricing
+        const hasSalePrice = (p.salePrice !== undefined && p.salePrice !== null) || p.rentalType === 'SALE'
+        return hasSalePrice
       }
     })
   }, [products, posMode])
