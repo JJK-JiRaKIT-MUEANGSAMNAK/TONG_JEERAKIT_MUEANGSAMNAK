@@ -87,4 +87,13 @@ describe('Security Migrations Static Analysis', () => {
     const lines = m6.split('\n').filter(l => l.includes('ON public.ai_social_drafts') && l.includes('FOR ALL'));
     expect(lines.length).toBe(0);
   });
+  it('SPLIT RPC COMPAT: runtime 8-arg wrapper ignores client actor and blocks anon', () => {
+    const m7 = getMigration('20260924000007_split_payment_rpc_compat_security.sql');
+    expect(m7).toMatch(/SECURITY DEFINER/i);
+    expect(m7).toMatch(/SET search_path = public, pg_temp/i);
+    expect(m7).toMatch(/p_actor_user_id and p_actor_display_name are intentionally ignored/i);
+    expect(m7).toMatch(/REVOKE ALL ON FUNCTION public\.process_split_payment_rpc\(TEXT, TEXT, TEXT, JSONB, TIMESTAMPTZ, TEXT, TEXT, TEXT\) FROM anon;/i);
+    expect(m7).toMatch(/GRANT EXECUTE ON FUNCTION public\.process_split_payment_rpc\(TEXT, TEXT, TEXT, JSONB, TIMESTAMPTZ, TEXT, TEXT, TEXT\) TO authenticated, service_role;/i);
+    expect(m7).toMatch(/process_split_payment_rpc_secure/i);
+  });
 });
