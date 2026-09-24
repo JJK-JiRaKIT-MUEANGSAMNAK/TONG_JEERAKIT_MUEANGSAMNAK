@@ -53,6 +53,8 @@ export default function CheckoutPage() {
     dailyStartDate?: Date | string | null
     dailyEndDate?: Date | string | null
     lineTotal: number
+    itemType?: 'RENT' | 'SALE'
+    requiresReturn?: boolean
   }>>([])
   const [billDate, setBillDate] = useState<Date | null>(new Date())
   const [headerRentalDate, setHeaderRentalDate] = useState<Date | null>(new Date())
@@ -210,7 +212,7 @@ export default function CheckoutPage() {
       const paid = isUnpaid ? 0 : grandTotal
       const outstanding = isUnpaid ? grandTotal : 0
 
-      const allItemsAreSale = items.length > 0 && items.every((it) => it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
+      const allItemsAreSale = items.length > 0 && items.every((it) => it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
 
       const newFullBill: FullBill = {
         id: billId,
@@ -248,7 +250,7 @@ export default function CheckoutPage() {
         quotationId: quotationId || undefined,
         quotationNo: quotationNo || undefined,
         items: items.map((it, idx) => {
-          const isSale = it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          const isSale = it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
           return {
             rentalBillItemId: `item-${Date.now()}-${idx}`,
             productId: it.product.id,
@@ -261,7 +263,7 @@ export default function CheckoutPage() {
             unit: it.product.unit || 'ชิ้น',
             defaultRepairFee: it.product.defaultDamageFee || 0,
             defaultReplacementFee: it.product.defaultLossFee || 0,
-            requiresReturn: isSale ? false : (it.product.requiresReturn ?? true),
+            requiresReturn: it.requiresReturn !== undefined ? it.requiresReturn : (isSale ? false : (it.product.requiresReturn ?? true)),
             rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
             scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
             rentalType: it.rentalType,
@@ -382,7 +384,7 @@ export default function CheckoutPage() {
         quotationId: quotationId || undefined,
         quotationNo: quotationNo || undefined,
         items: items.map((it, idx) => {
-          const isSale = it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          const isSale = it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
           return {
             rentalBillItemId: `item-${Date.now()}-${idx}`,
             productId: it.product.id,
@@ -390,18 +392,18 @@ export default function CheckoutPage() {
             productName: it.product.name,
             quantity: it.quantity,
             returnedQty: 0,
-            outstandingQty: it.quantity,
+            outstandingQty: isSale ? 0 : it.quantity,
             dailyRate: it.unitPrice,
             unit: it.product.unit || 'ชิ้น',
             defaultRepairFee: it.product.defaultDamageFee || 0,
             defaultReplacementFee: it.product.defaultLossFee || 0,
-            requiresReturn: !isSale,
+            requiresReturn: it.requiresReturn !== undefined ? it.requiresReturn : (isSale ? false : (it.product.requiresReturn ?? true)),
             rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
             scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
             rentalType: it.rentalType,
             usageCount: it.usageCount,
             lineTotal: it.lineTotal,
-            status: 'RENTING' as const,
+            status: isSale ? ('COMPLETED' as const) : ('RENTING' as const),
           }
         }),
       }

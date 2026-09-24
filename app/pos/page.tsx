@@ -182,11 +182,25 @@ function POSContent() {
     usageCount: number
     dailyStartDate?: Date
     dailyEndDate?: Date
+    billableDays?: number
   }) => {
+    // STOCK VALIDATION
+    const available = data.product.available_qty ?? data.product.availableQuantity ?? data.product.totalQuantity ?? 0
+    const currentCartQty = cartItems
+      .filter((item) => item.productId === data.product.id)
+      .reduce((sum, item) => sum + item.quantity, 0)
+
+    if (currentCartQty + data.quantity > available) {
+      showToast(
+        'สินค้าไม่เพียงพอ',
+        `มีสินค้าในตะกร้าแล้ว ${currentCartQty} และต้องการเพิ่มอีก ${data.quantity} แต่สต็อกพร้อมใช้มีเพียง ${available}`,
+        'ERROR'
+      )
+      return
+    }
+
     const isSale = data.rentalType === 'SALE'
-    const days = !isSale && data.dailyStartDate && data.dailyEndDate
-      ? Math.max(1, Math.round((data.dailyEndDate.getTime() - data.dailyStartDate.getTime()) / (1000 * 60 * 60 * 24)))
-      : Math.max(1, data.usageCount)
+    const days = data.billableDays || 1
 
     const multiplier = isSale ? 1 : data.rentalType === 'DAILY' ? days : Math.max(1, data.usageCount)
     const lineTotal = data.quantity * data.unitPrice * multiplier
@@ -208,6 +222,7 @@ function POSContent() {
       dailyStartDate: !isSale && data.dailyStartDate ? data.dailyStartDate.toISOString().slice(0, 10) : undefined,
       dailyEndDate: !isSale && data.dailyEndDate ? data.dailyEndDate.toISOString().slice(0, 10) : undefined,
       lineTotal,
+      requiresReturn: !isSale, // Adding this per MASTER rule C
     }
 
     setCartItems((prev) => [...prev, newItem])

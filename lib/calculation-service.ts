@@ -84,13 +84,17 @@ export function calculateLineTotal(item: LineItemInput, settings?: SystemConfig)
   let multiplier = 1
   if (!isSale) {
     if (item.rentalType === 'DAILY' && item.dailyStartDate && item.dailyEndDate) {
-      const start = new Date(item.dailyStartDate).getTime()
-      const end = new Date(item.dailyEndDate).getTime()
-      if (!isNaN(start) && !isNaN(end)) {
-        const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)))
-        multiplier = days
+      if (item.billableDays !== undefined) {
+        multiplier = Math.max(1, item.billableDays)
       } else {
-        multiplier = Math.max(1, item.billableDays || item.usageCount || 1)
+        const start = new Date(item.dailyStartDate).getTime()
+        const end = new Date(item.dailyEndDate).getTime()
+        if (!isNaN(start) && !isNaN(end)) {
+          const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)))
+          multiplier = days
+        } else {
+          multiplier = Math.max(1, item.usageCount || 1)
+        }
       }
     } else {
       multiplier = Math.max(1, item.billableDays || item.usageCount || 1)

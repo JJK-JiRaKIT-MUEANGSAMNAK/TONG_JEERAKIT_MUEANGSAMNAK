@@ -16,6 +16,7 @@ export interface CartItem {
   productName?: string
   rentalType: 'NORMAL' | 'DAILY' | 'SALE'
   itemType?: 'RENT' | 'SALE'
+  requiresReturn?: boolean
   unitName?: string
   calculationType?: string
   calculationLabel?: string

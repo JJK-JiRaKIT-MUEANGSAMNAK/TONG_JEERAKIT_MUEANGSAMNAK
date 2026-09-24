@@ -32,6 +32,7 @@ interface QuantityModalProps {
     usageCount: number
     dailyStartDate?: Date
     dailyEndDate?: Date
+    billableDays?: number
   }) => void
   onClose: () => void
 }
@@ -112,6 +113,7 @@ export function QuantityModal({ product, mode = 'RENT', onAdd, onClose }: Quanti
       usageCount: rentalType === 'NORMAL' ? finalUsage : 1,
       dailyStartDate: rentalType === 'DAILY' ? new Date(startDate) : undefined,
       dailyEndDate: rentalType === 'DAILY' ? new Date(endDate) : undefined,
+      billableDays: rentalType === 'DAILY' ? billableDays : 1,
     })
     onClose()
   }

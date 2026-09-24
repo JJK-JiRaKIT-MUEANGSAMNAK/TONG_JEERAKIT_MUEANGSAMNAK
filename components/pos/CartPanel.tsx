@@ -94,7 +94,6 @@ export function CartPanel({
   const [discount, setDiscount] = useState<number>(0)
   const [shippingFee, setShippingFee] = useState<number>(0)
   const [depositAmount, setDepositAmount] = useState<number>(0)
-  const [taxRate, setTaxRate] = useState<number>(0)
   const [shippingAddress, setShippingAddress] = useState<string>('')
   const [headerRentalDate, setHeaderRentalDate] = useState<Date | null>(new Date())
   const [headerReturnDate, setHeaderReturnDate] = useState<Date | null>(new Date())
@@ -114,10 +113,11 @@ export function CartPanel({
     discount: Number(discount) || 0,
     shippingFee: Number(shippingFee) || 0,
     depositAmount: Number(depositAmount) || 0,
-    taxRate: Number(taxRate) || 0,
+    taxRate: undefined, // Always use system setting
   })
   const subtotal = totals.subtotal
   const tax = totals.vatAmount
+  const taxRate = totals.vatRate
   const grandTotal = totals.grandTotal
 
   const [customerList, setCustomerList] = useState<Customer[]>(customers)
@@ -149,10 +149,6 @@ export function CartPanel({
   }, [initialDepositAmount])
 
   useEffect(() => {
-    if (initialTaxRate !== undefined) setTaxRate(initialTaxRate)
-  }, [initialTaxRate])
-
-  useEffect(() => {
     if (initialShippingAddress !== undefined) setShippingAddress(initialShippingAddress)
   }, [initialShippingAddress])
 
@@ -168,26 +164,6 @@ export function CartPanel({
     setShowAddCustomerModal(true)
   }
 
-  const defaultVatPercent = React.useMemo(() => {
-    try {
-      return loadSystemSettings().financePayment?.defaultVatPercent ?? 7
-    } catch {
-      return 7
-    }
-  }, [])
-
-  const vatOptions: SelectOption[] = React.useMemo(() => {
-    const defaultRate = defaultVatPercent / 100
-    const opts: SelectOption[] = [
-      { value: 0, label: 'ไม่มี VAT (0%)' },
-      { value: defaultRate, label: `VAT ${defaultVatPercent}%` },
-    ]
-    if (taxRate > 0 && taxRate !== defaultRate) {
-      opts.push({ value: taxRate, label: `VAT ${(taxRate * 100).toFixed(0)}%` })
-    }
-    return opts
-  }, [defaultVatPercent, taxRate])
-
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
       
@@ -201,7 +177,7 @@ export function CartPanel({
               <ShoppingBag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             )}
             <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-              {isQuotationMode ? 'รายการใบเสนอราคา' : 'ตะกร้าเช่าสินค้า'}
+              {isQuotationMode ? 'รายการใบเสนอราคา' : 'ตะกร้าสินค้า'}
             </h3>
           </div>
           {items.length > 0 && (
@@ -223,7 +199,7 @@ export function CartPanel({
               customers={customerList}
               onSelectCustomer={(cust) => {
                 if (cust?.isSuspended) {
-                  showToast('ลูกค้าถูกระงับสิทธิ์', `ลูกค้า ${cust.customerName} ถูกระงับสิทธิ์ ไม่สามารถทำรายการเช่าได้`, 'ERROR')
+                  showToast('ลูกค้าถูกระงับสิทธิ์', `ลูกค้า ${cust.customerName} ถูกระงับสิทธิ์ ไม่สามารถทำรายการได้`, 'ERROR')
                   setCustomer(null)
                   return
                 }
@@ -251,7 +227,7 @@ export function CartPanel({
                 value={documentType}
                 onChange={setDocumentType}
                 options={[
-                  { value: 'บิลเช่า', label: 'บิลเช่า' },
+                  { value: 'บิลเช่า/ขาย', label: 'บิลเช่า/ขาย' },
                   { value: 'ใบเสนอราคา', label: 'ใบเสนอราคา' },
                   { value: 'ใบแจ้งหนี้', label: 'ใบแจ้งหนี้' },
                   { value: 'ใบเสร็จรับเงิน', label: 'ใบเสร็จรับเงิน' },
@@ -351,8 +327,8 @@ export function CartPanel({
       {items.length > 0 && (
         <div className="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 space-y-2">
           
-          {/* Quick Adjustments: Discount, Shipping, Deposit, VAT */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Quick Adjustments: Discount, Shipping, Deposit */}
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <div>
               <span className="text-slate-500 block mb-0.5">ส่วนลด (บาท)</span>
               <NumericInput
@@ -392,19 +368,6 @@ export function CartPanel({
                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-emerald-500"
               />
             </div>
-
-            {/* Central CustomSelect for VAT */}
-            <div>
-              <span className="text-slate-500 block mb-0.5">ภาษี VAT</span>
-              <CustomSelect
-                value={taxRate}
-                onChange={(val) => setTaxRate(Number(val))}
-                options={vatOptions}
-                align="right"
-                direction="up"
-              />
-            </div>
-
           </div>
 
           {/* Breakdown summary */}
@@ -427,7 +390,7 @@ export function CartPanel({
             )}
             {taxRate > 0 && (
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>ภาษี VAT (7%)</span>
+                <span>ภาษี VAT ({(taxRate * 100).toFixed(0)}%)</span>
                 <span>+฿{tax.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
               </div>
             )}
@@ -458,7 +421,7 @@ export function CartPanel({
                     discount: Number(discount) || 0,
                     shippingFee: Number(shippingFee) || 0,
                     depositAmount: Number(depositAmount) || 0,
-                    taxRate: Number(taxRate) || 0,
+                    taxRate: taxRate,
                     tax,
                     subtotal,
                     grandTotal,
@@ -479,13 +442,19 @@ export function CartPanel({
               <button
                 type="button"
                 onClick={() => {
+                  const hasRent = items.some(item => item.itemType === 'RENT')
+                  if (hasRent && !customer) {
+                    showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
+                    return
+                  }
+                  
                   saveActiveCart({
                     customer,
                     items,
                     discount: Number(discount) || 0,
                     shippingFee: Number(shippingFee) || 0,
                     depositAmount: Number(depositAmount) || 0,
-                    taxRate: Number(taxRate) || 0,
+                    taxRate: taxRate,
                     shippingAddress,
                     headerRentalDate: headerRentalDate ? headerRentalDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
                     headerReturnDate: headerReturnDate ? headerReturnDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
