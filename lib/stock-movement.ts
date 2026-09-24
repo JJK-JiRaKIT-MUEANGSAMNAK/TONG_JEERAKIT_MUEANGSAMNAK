@@ -1,4 +1,5 @@
-import { insertStockMovementToSupabase } from '@/lib/repositories/product-repository'
+import { insertStockMovementToSupabase, generateUUID, isValidUUID } from '@/lib/repositories/product-repository'
+
 /**
  * Stock Movement Domain Model & In-Memory Event Ledger
  *
@@ -11,9 +12,8 @@ import { insertStockMovementToSupabase } from '@/lib/repositories/product-reposi
  * - RETURN_DAMAGED
  * - LOST_WRITEOFF
  *
- * NOTE: Does NOT create a new localStorage source of truth.
- * Holds in-memory events and returns them from domain workflows
- * ready for Supabase persistence in Workset 3.
+ * Append-only ledger mapped to Supabase stock_movements table.
+ * No UPDATE/DELETE permitted.
  */
 
 export type DomainStockMovementType =
@@ -76,6 +76,8 @@ let inMemoryStockMovements: DomainStockMovement[] = []
  * Generate and record an immutable Stock Movement event.
  * Idempotent: If an event with the exact same correlationId + type + productId + billLineId exists,
  * returns the existing record without duplicating.
+ *
+ * Uses real UUID for all movement records.
  */
 export function recordStockMovement(input: CreateStockMovementInput): DomainStockMovement {
   if (input.correlationId && input.billLineId) {
@@ -91,8 +93,10 @@ export function recordStockMovement(input: CreateStockMovementInput): DomainStoc
     }
   }
 
+  const recordId = isValidUUID(input.id) ? input.id! : generateUUID()
+
   const record: DomainStockMovement = {
-    id: input.id || `sm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: recordId,
     type: input.type,
     productId: input.productId,
     billId: input.billId,
@@ -106,9 +110,15 @@ export function recordStockMovement(input: CreateStockMovementInput): DomainStoc
     reason: input.reason,
   }
 
-  inMemoryStockMovements.push(record);
-  insertStockMovementToSupabase(record).catch(console.error);
-  return record;
+  inMemoryStockMovements.push(record)
+
+  insertStockMovementToSupabase(record).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Failed to append stock movement to Supabase', err)
+    }
+  })
+
+  return record
 }
 
 /**

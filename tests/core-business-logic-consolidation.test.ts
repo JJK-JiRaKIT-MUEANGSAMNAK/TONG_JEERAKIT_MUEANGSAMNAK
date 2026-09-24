@@ -1,4 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+vi.mock('@/lib/repositories/product-repository', () => ({
+  fetchProductsFromSupabase: vi.fn(async () => []),
+  saveProductToSupabase: vi.fn(async () => {}),
+  deleteProductFromSupabase: vi.fn(async () => {}),
+  fetchCategoriesFromSupabase: vi.fn(async () => []),
+  saveCategoryToSupabase: vi.fn(async () => {}),
+  deleteCategoryFromSupabase: vi.fn(async () => {}),
+  fetchUnitsFromSupabase: vi.fn(async () => []),
+  saveUnitToSupabase: vi.fn(async () => {}),
+  deleteUnitFromSupabase: vi.fn(async () => {}),
+  insertStockMovementToSupabase: vi.fn(async () => {}),
+  isValidUUID: (val?: string | null) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val),
+  generateUUID: () => '11111111-1111-4111-8111-111111111111',
+}))
 import {
   loadBills,
   saveBills,

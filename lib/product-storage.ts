@@ -9,7 +9,7 @@
 
 import { Product, ProductType, RentalType } from '@/lib/types/rental-pos'
 import { ProductCategoryItem, ProductCategoryRule, CategoryCompositeRule, CalculationType } from '@/lib/category-rules-storage'
-import { fetchProductsFromSupabase, saveProductToSupabase } from '@/lib/repositories/product-repository'
+import { fetchProductsFromSupabase, saveProductToSupabase, deleteProductFromSupabase } from '@/lib/repositories/product-repository'
 import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
 import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
@@ -168,60 +168,126 @@ const SEED_PRODUCTS: Product[] = [
 // ─── Storage helpers ──────────────────────────────────────────────────
 
 /**
- * Load products from localStorage, seeding 43 items if key is absent.
+ * Load products from Supabase / localStorage cache.
+ * Supabase is authoritative runtime source of truth.
  * Safe to call on the server (returns [] when `window` is undefined).
  */
+let _cachedProducts: Product[] | null = null
+let _isFetchingProducts = false
+
 export function loadProducts(): Product[] {
   if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        // Normalize backward-compatible prices without destroying existing data
-        return parsed.map((p: Product) => {
-          let rentPrice = p.rentPrice
-          let salePrice = p.salePrice
 
-          if (rentPrice === undefined && salePrice === undefined) {
-            if (p.rentalType === 'SALE') {
-              salePrice = p.salePrice ?? p.sale_price ?? (p.normalPrice || 0)
-              rentPrice = null
-            } else {
-              rentPrice = p.normalPrice || p.dailyPrice || p.normal_price || p.daily_price || 0
-              salePrice = p.salePrice ?? p.sale_price ?? null
-            }
+  if (_cachedProducts === null) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw !== null) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          _cachedProducts = parsed
+        }
+      } else {
+        // Fallback for dev / offline compatibility (ONLY if no remote/storage yet)
+        // NOTE: We NEVER upload SEED_PRODUCTS to Remote!
+        _cachedProducts = [...SEED_PRODUCTS]
+      }
+    } catch {
+      _cachedProducts = []
+    }
+  }
+
+  // Trigger background fetch from Supabase
+  if (!_isFetchingProducts) {
+    _isFetchingProducts = true
+    fetchProductsFromSupabase()
+      .then((remoteProducts) => {
+        if (Array.isArray(remoteProducts) && remoteProducts.length > 0) {
+          _cachedProducts = remoteProducts
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts))
+              window.dispatchEvent(new Event('products_updated'))
+            } catch {}
           }
+        }
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to sync products from Supabase', err)
+        }
+      })
+      .finally(() => {
+        _isFetchingProducts = false
+      })
+  }
 
-          const totalQty = p.totalQuantity ?? (p as any).stock_qty ?? (p as any).stock ?? 0
-          const availQty = p.availableQuantity ?? (p as any).available_stock ?? totalQty
+  return (_cachedProducts || []).map((p: Product) => {
+    let rentPrice = p.rentPrice
+    let salePrice = p.salePrice
 
-          return {
-            ...p,
-            totalQuantity: totalQty,
-            availableQuantity: availQty,
-            rentPrice: rentPrice !== undefined ? rentPrice : null,
-            salePrice: salePrice !== undefined ? salePrice : null,
-          }
-        })
+    if (rentPrice === undefined && salePrice === undefined) {
+      if (p.rentalType === 'SALE') {
+        salePrice = p.salePrice ?? p.sale_price ?? (p.normalPrice || 0)
+        rentPrice = null
+      } else {
+        rentPrice = p.normalPrice || p.dailyPrice || p.normal_price || p.daily_price || 0
+        salePrice = p.salePrice ?? p.sale_price ?? null
       }
     }
-    // First launch → seed
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PRODUCTS))
-    return [...SEED_PRODUCTS]
-  } catch {
-    return []
+
+    const totalQty = p.totalQuantity ?? (p as any).stock_qty ?? (p as any).stock_quantity ?? (p as any).stock ?? 0
+    const availQty = p.availableQuantity ?? (p as any).available_stock ?? totalQty
+
+    return {
+      ...p,
+      totalQuantity: totalQty,
+      availableQuantity: availQty,
+      rentPrice: rentPrice !== undefined ? rentPrice : null,
+      salePrice: salePrice !== undefined ? salePrice : null,
+    }
+  })
+}
+
+/** Explicitly sync products from Supabase (authoritative source of truth). */
+export async function syncProductsFromSupabase(): Promise<Product[]> {
+  try {
+    const remoteProducts = await fetchProductsFromSupabase()
+    _cachedProducts = remoteProducts
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts))
+        window.dispatchEvent(new Event('products_updated'))
+      } catch {}
+    }
+    return remoteProducts
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Failed to sync products from Supabase', err)
+    }
+    return _cachedProducts || []
   }
 }
 
-/** Persist an entire product array (replaces all data). */
+/** Persist an entire product array (replaces all data in local cache and syncs non-seed to Remote). */
 export function saveProducts(products: Product[]): void {
   if (typeof window === 'undefined') return
+  _cachedProducts = products
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
   } catch {
     // quota exceeded – silently ignore
   }
+
+  // Sync real products to Supabase (never auto-seed SEED_PRODUCTS)
+  products.forEach((p) => {
+    if (!p.id.startsWith('seed-')) {
+      saveProductToSupabase(p).catch((err) => {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to save product to Supabase', p.id, err)
+        }
+      })
+    }
+  })
 }
 
 /** Add one or more products, persists immediately, returns the new full list. */
@@ -231,6 +297,13 @@ export function addProducts(incoming: Product | Product[]): Product[] {
   const incomingIds = new Set(arr.map((p) => p.id))
   const merged = [...arr, ...current.filter((p) => !incomingIds.has(p.id))]
   saveProducts(merged)
+  arr.forEach((p) => {
+    if (!p.id.startsWith('seed-')) {
+      saveProductToSupabase(p).catch((err) => {
+        if (process.env.NODE_ENV !== 'test') console.error('Failed to save product to Supabase', err)
+      })
+    }
+  })
   return merged
 }
 
@@ -239,6 +312,11 @@ export function updateProduct(updated: Product): Product[] {
   const current = loadProducts()
   const next = current.map((p) => (p.id === updated.id ? updated : p))
   saveProducts(next)
+  if (!updated.id.startsWith('seed-')) {
+    saveProductToSupabase(updated).catch((err) => {
+      if (process.env.NODE_ENV !== 'test') console.error('Failed to update product in Supabase', err)
+    })
+  }
   return next
 }
 
@@ -247,6 +325,11 @@ export function deleteProduct(id: string): Product[] {
   const current = loadProducts()
   const next = current.filter((p) => p.id !== id)
   saveProducts(next)
+  if (!id.startsWith('seed-')) {
+    deleteProductFromSupabase(id).catch((err) => {
+      if (process.env.NODE_ENV !== 'test') console.error('Failed to delete product from Supabase', err)
+    })
+  }
   return next
 }
 

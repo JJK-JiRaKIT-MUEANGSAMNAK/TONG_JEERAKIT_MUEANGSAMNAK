@@ -1,15 +1,16 @@
-import { fetchUnitsFromSupabase, saveUnitToSupabase } from '@/lib/repositories/product-repository'
+import { fetchUnitsFromSupabase, saveUnitToSupabase, deleteUnitFromSupabase, generateUUID } from '@/lib/repositories/product-repository'
+import { Unit } from '@/lib/types/rental-pos'
+export type { Unit }
+
 /**
  * Master Units Storage
  *
- * Single source of truth for Master Units, backed by localStorage pos_master_units.
+ * Single source of truth for Master Units, backed by Supabase remote schema,
+ * with localStorage cache for offline/dev compatibility.
  * - Migrates from existing category rules & legacy units without destroying existing data.
  * - Provides safe add, update, and delete/toggle operations.
  * - Prevents damaging references when a unit is in use by category rules or products.
  */
-
-import { Unit } from '@/lib/types/rental-pos'
-export type { Unit }
 
 const STORAGE_KEY = 'pos_master_units'
 
@@ -24,37 +25,57 @@ export const DEFAULT_UNITS: Unit[] = [
 ]
 
 /**
- * Load all units from localStorage with safe non-destructive migration.
+ * Load all units from Supabase / localStorage with safe non-destructive fallback.
  */
+let _cachedUnits: Unit[] | null = null
+let _isFetchingUnits = false
 
-let _cachedUnits: Unit[] | null = null;
-let _isFetchingUnits = false;
 export function loadUnits(): Unit[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return []
   if (_cachedUnits === null) {
-    const raw = localStorage.getItem('RENTAL_POS_UNITS');
-    _cachedUnits = raw ? JSON.parse(raw) : [...DEFAULT_UNITS];
+    const raw = localStorage.getItem(STORAGE_KEY)
+    _cachedUnits = raw ? JSON.parse(raw) : [...DEFAULT_UNITS]
   }
   if (!_isFetchingUnits) {
-    _isFetchingUnits = true;
-    fetchUnitsFromSupabase().then(units => {
-      _cachedUnits = units.map(u => ({ id: u.id, name: u.name, isActive: u.isActive !== undefined ? u.isActive : true }));
-      localStorage.setItem('RENTAL_POS_UNITS', JSON.stringify(_cachedUnits));
-      window.dispatchEvent(new Event('app_settings_changed'));
-      _isFetchingUnits = false;
-    }).catch(() => { _isFetchingUnits = false; });
+    _isFetchingUnits = true
+    fetchUnitsFromSupabase()
+      .then((units) => {
+        if (Array.isArray(units) && units.length > 0) {
+          _cachedUnits = units.map((u) => ({
+            id: u.id,
+            name: u.name,
+            isActive: (u as any).isActive !== undefined ? (u as any).isActive : true,
+          }))
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(_cachedUnits))
+              window.dispatchEvent(new Event('app_settings_changed'))
+            } catch {}
+          }
+        }
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to sync units from Supabase', err)
+        }
+      })
+      .finally(() => {
+        _isFetchingUnits = false
+      })
   }
-  return _cachedUnits || [];
+  return _cachedUnits || []
 }
 
 /**
- * Save units to localStorage.
+ * Save units to localStorage cache.
+ * Note: Does not auto-seed all defaults to Remote.
  */
 export function saveUnits(units: Unit[]): void {
-  if (typeof window === 'undefined') return;
-  _cachedUnits = units;
-  localStorage.setItem('RENTAL_POS_UNITS', JSON.stringify(units));
-  units.forEach(u => saveUnitToSupabase(u).catch(console.error));
+  if (typeof window === 'undefined') return
+  _cachedUnits = units
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(units))
+  } catch {}
 }
 
 /**
@@ -73,13 +94,16 @@ export function addUnit(name: string): Unit[] {
   }
 
   const newUnit: Unit = {
-    id: `unit-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    id: generateUUID(),
     name: trimmed,
     isActive: true,
   }
 
   const updated = [...current, newUnit]
   saveUnits(updated)
+  saveUnitToSupabase(newUnit).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') console.error('Failed to save unit to Supabase', err)
+  })
   return updated
 }
 
@@ -100,6 +124,12 @@ export function updateUnit(id: string, name: string): Unit[] {
 
   const updated = current.map((u) => (u.id === id ? { ...u, name: trimmed } : u))
   saveUnits(updated)
+  const target = updated.find((u) => u.id === id)
+  if (target) {
+    saveUnitToSupabase(target).catch((err) => {
+      if (process.env.NODE_ENV !== 'test') console.error('Failed to update unit in Supabase', err)
+    })
+  }
   return updated
 }
 
@@ -110,6 +140,12 @@ export function toggleUnitStatus(id: string): Unit[] {
   const current = loadUnits()
   const updated = current.map((u) => (u.id === id ? { ...u, isActive: !u.isActive } : u))
   saveUnits(updated)
+  const target = updated.find((u) => u.id === id)
+  if (target) {
+    saveUnitToSupabase(target).catch((err) => {
+      if (process.env.NODE_ENV !== 'test') console.error('Failed to toggle unit status in Supabase', err)
+    })
+  }
   return updated
 }
 
@@ -127,6 +163,9 @@ export function deleteUnit(id: string, inUseCheck?: (unit: Unit) => boolean): Un
 
   const updated = current.filter((u) => u.id !== id)
   saveUnits(updated)
+  deleteUnitFromSupabase(id).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') console.error('Failed to delete unit from Supabase', err)
+  })
   return updated
 }
 
@@ -139,12 +178,6 @@ export function getOrCreateUnitByName(name: string): Unit {
   const found = current.find((u) => u.name.toLowerCase() === trimmed.toLowerCase())
   if (found) return found
 
-  const newUnit: Unit = {
-    id: `unit-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    name: trimmed,
-    isActive: true,
-  }
-  const updated = [...current, newUnit]
-  saveUnits(updated)
-  return newUnit
+  const [created] = addUnit(trimmed).slice(-1)
+  return created
 }

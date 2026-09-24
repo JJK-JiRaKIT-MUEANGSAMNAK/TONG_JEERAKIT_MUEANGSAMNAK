@@ -25,6 +25,22 @@ Object.defineProperty(globalThis, 'window', {
   writable: true,
 })
 
+let mockUUIDSeq = 1
+vi.mock('@/lib/repositories/product-repository', () => ({
+  fetchProductsFromSupabase: vi.fn(async () => []),
+  saveProductToSupabase: vi.fn(async () => {}),
+  deleteProductFromSupabase: vi.fn(async () => {}),
+  fetchCategoriesFromSupabase: vi.fn(async () => []),
+  saveCategoryToSupabase: vi.fn(async () => {}),
+  deleteCategoryFromSupabase: vi.fn(async () => {}),
+  fetchUnitsFromSupabase: vi.fn(async () => []),
+  saveUnitToSupabase: vi.fn(async () => {}),
+  deleteUnitFromSupabase: vi.fn(async () => {}),
+  insertStockMovementToSupabase: vi.fn(async () => {}),
+  isValidUUID: (val?: string | null) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val),
+  generateUUID: () => '11111111-1111-4111-8111-' + String(mockUUIDSeq++).padStart(12, '0'),
+}))
+
 import { loadUnits, addUnit, updateUnit, deleteUnit, toggleUnitStatus, DEFAULT_UNITS } from '@/lib/unit-storage'
 import { loadCategoryRules, addCategoryRule, DEFAULT_CATEGORY_RULES } from '@/lib/category-rules-storage'
 import { loadProducts, applyStockCountAdjustment } from '@/lib/product-storage'

@@ -1,4 +1,4 @@
-import { fetchCategoriesFromSupabase, saveCategoryToSupabase } from '@/lib/repositories/product-repository'
+import { fetchCategoriesFromSupabase, saveCategoryToSupabase, deleteCategoryFromSupabase, generateUUID } from '@/lib/repositories/product-repository'
 /**
  * Shared Product Category Rules & Composite Lookup Storage
  *
@@ -123,32 +123,47 @@ const LEGACY_RULES_KEY = 'pos_category_rules'
 
 // ─── Categories Management (ตาราง 1) ───────────────────────
 
+let _cachedCategories: ProductCategoryItem[] | null = null
+let _isFetchingCategories = false
 
-let _cachedCategories: ProductCategoryItem[] | null = null;
-let _isFetchingCategories = false;
 export function loadCategories(): ProductCategoryItem[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return []
   if (_cachedCategories === null) {
-    const raw = localStorage.getItem(CATEGORIES_KEY);
-    _cachedCategories = raw ? JSON.parse(raw) : [...DEFAULT_CATEGORIES];
+    const raw = localStorage.getItem(CATEGORIES_KEY)
+    _cachedCategories = raw ? JSON.parse(raw) : [...DEFAULT_CATEGORIES]
   }
   if (!_isFetchingCategories) {
-    _isFetchingCategories = true;
-    fetchCategoriesFromSupabase().then(cats => {
-      _cachedCategories = cats.map(c => ({ id: c.id, name: c.name }));
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(_cachedCategories));
-      window.dispatchEvent(new Event('app_settings_changed'));
-      _isFetchingCategories = false;
-    }).catch(() => { _isFetchingCategories = false; });
+    _isFetchingCategories = true
+    fetchCategoriesFromSupabase()
+      .then((cats) => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          _cachedCategories = cats.map((c) => ({ id: c.id, name: c.name }))
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(CATEGORIES_KEY, JSON.stringify(_cachedCategories))
+              window.dispatchEvent(new Event('app_settings_changed'))
+            } catch {}
+          }
+        }
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to sync categories from Supabase', err)
+        }
+      })
+      .finally(() => {
+        _isFetchingCategories = false
+      })
   }
-  return _cachedCategories || [];
+  return _cachedCategories || []
 }
 
 export function saveCategories(categories: ProductCategoryItem[]): void {
-  if (typeof window === 'undefined') return;
-  _cachedCategories = categories;
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-  categories.forEach(c => saveCategoryToSupabase(c).catch(console.error));
+  if (typeof window === 'undefined') return
+  _cachedCategories = categories
+  try {
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
+  } catch {}
 }
 
 export function addCategory(name: string): ProductCategoryItem[] {
@@ -164,12 +179,15 @@ export function addCategory(name: string): ProductCategoryItem[] {
   }
 
   const newCat: ProductCategoryItem = {
-    id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: generateUUID(),
     name: trimmed,
   }
 
   const updated = [...current, newCat]
   saveCategories(updated)
+  saveCategoryToSupabase(newCat).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') console.error('Failed to save category to Supabase', err)
+  })
   return updated
 }
 
@@ -187,6 +205,9 @@ export function updateCategory(id: string, name: string): ProductCategoryItem[] 
 
   const updated = current.map((c) => (c.id === id ? { ...c, name: trimmed } : c))
   saveCategories(updated)
+  saveCategoryToSupabase({ id, name: trimmed }).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') console.error('Failed to update category in Supabase', err)
+  })
   return updated
 }
 
@@ -201,6 +222,9 @@ export function deleteCategory(id: string, inUseCheck?: (cat: ProductCategoryIte
 
   const updated = current.filter((c) => c.id !== id)
   saveCategories(updated)
+  deleteCategoryFromSupabase(id).catch((err) => {
+    if (process.env.NODE_ENV !== 'test') console.error('Failed to delete category from Supabase', err)
+  })
   return updated
 }
 
