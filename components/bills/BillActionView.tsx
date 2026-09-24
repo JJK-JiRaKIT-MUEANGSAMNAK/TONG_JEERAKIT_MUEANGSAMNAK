@@ -878,7 +878,7 @@ export function BillActionView({
       const actorDisplayName = user?.displayName || 'ระบบ'
       setReturnRequestId(generateUUID())
 
-      const { bill: updatedBill, returnNo } = processReturnWorkflow({
+      const { bill: updatedBill, returnNo } = await processReturnWorkflow({
         billId: activeBill.id,
         items: returnedItems.map((item) => ({
           rentalBillItemId: item.rentalBillItemId,
