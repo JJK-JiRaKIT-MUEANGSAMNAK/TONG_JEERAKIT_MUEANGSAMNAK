@@ -37,18 +37,56 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
     return []
   }
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url, created_at, updated_at')
-    .order('created_at', { ascending: false })
+  const [{ data, error }, { data: movementsData }] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url, created_at, updated_at')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('stock_movements')
+      .select('product_id, type, quantity, created_at')
+      .order('created_at', { ascending: true })
+  ])
 
   if (error) throw error
+
+  const movements = movementsData || []
+  
+  // Group movements by product_id
+  const movementsByProduct: Record<string, any[]> = {}
+  for (const m of movements) {
+    if (!movementsByProduct[m.product_id]) {
+      movementsByProduct[m.product_id] = []
+    }
+    movementsByProduct[m.product_id].push(m)
+  }
 
   return (data || []).map((p: any) => {
     const type: 'RENT' | 'SALE' | 'BOTH' = p.type || (p.rental_type === 'SALE' ? 'SALE' : 'RENT')
     const rentPrice = p.rent_price !== null && p.rent_price !== undefined ? Number(p.rent_price) : null
     const salePrice = p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : null
     const stockQty = Number(p.stock_quantity ?? 0)
+
+    let rented = 0
+    let damaged = 0
+    let lost = 0
+
+    const prodMovements = movementsByProduct[p.id] || []
+    for (const m of prodMovements) {
+      if (m.type === 'RENT') {
+        rented += m.quantity
+      } else if (m.type === 'RETURN') {
+        rented = Math.max(0, rented - m.quantity)
+      } else if (m.type === 'DAMAGE') {
+        damaged += m.quantity
+        rented = Math.max(0, rented - m.quantity)
+      } else if (m.type === 'LOST') {
+        lost += m.quantity
+        rented = Math.max(0, rented - m.quantity)
+      }
+    }
+
+    const available = Math.max(0, stockQty - rented - damaged - lost)
 
     return {
       id: p.id,
@@ -65,10 +103,10 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       normalPrice: rentPrice ?? 0,
       dailyPrice: 0,
       totalQuantity: stockQty,
-      availableQuantity: stockQty,
-      rentedQuantity: 0,
-      damagedQuantity: 0,
-      lostQuantity: 0,
+      availableQuantity: available,
+      rentedQuantity: rented,
+      damagedQuantity: damaged,
+      lostQuantity: lost,
       minimumStock: 0,
       status: 'ACTIVE',
       requiresReturn: type !== 'SALE',
@@ -215,6 +253,19 @@ export async function deleteUnitFromSupabase(id: string): Promise<void> {
  * id (UUID), product_id, type, quantity, reference_id, reference_type, remark, actor_user_id, actor_display_name, created_at
  * Append-only. No update/delete.
  */
+
+export async function fetchStockMovementsFromSupabase(): Promise<any[]> {
+  if (isPlaceholderConfig()) return []
+
+  const { data, error } = await supabase
+    .from('stock_movements')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
 export async function insertStockMovementToSupabase(movement: any): Promise<void> {
   if (isPlaceholderConfig()) return
 

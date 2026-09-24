@@ -46,18 +46,18 @@ describe('Master #4 - Product Repository Schema & Mapping Tests', () => {
   let capturedUpsertPayload: any = null
   let capturedInsertPayload: any = null
   let capturedDeleteFilter: any = null
-  let capturedSelectFields: any = null
+  let capturedSelectFieldsByTable: Record<string, string> = {}
 
   beforeEach(() => {
     vi.clearAllMocks()
     capturedUpsertPayload = null
     capturedInsertPayload = null
     capturedDeleteFilter = null
-    capturedSelectFields = null
+    capturedSelectFieldsByTable = {}
 
     mockFrom.mockImplementation((table: string) => ({
       select: vi.fn((fields: string) => {
-        capturedSelectFields = fields
+        capturedSelectFieldsByTable[table] = fields
         return {
           order: vi.fn(async () => {
             if (table === 'products') {
@@ -313,7 +313,7 @@ describe('Master #4 - Product Repository Schema & Mapping Tests', () => {
     expect(p.availableQuantity).toBe(25)
     expect(p.categoryId).toBe('cat-1')
     expect(p.unitId).toBe('unit-1')
-    expect(capturedSelectFields).toContain('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url')
+    expect(capturedSelectFieldsByTable['products']).toContain('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url')
   })
 
   it('5. deleteProductFromSupabase deletes product by id', async () => {

@@ -134,9 +134,9 @@ export function loadCategories(): ProductCategoryItem[] {
   }
   if (!_isFetchingCategories) {
     _isFetchingCategories = true
-    fetchCategoriesFromSupabase()
+      fetchCategoriesFromSupabase()
       .then((cats) => {
-        if (Array.isArray(cats) && cats.length > 0) {
+        if (Array.isArray(cats)) {
           _cachedCategories = cats.map((c) => ({ id: c.id, name: c.name }))
           if (typeof window !== 'undefined') {
             try {

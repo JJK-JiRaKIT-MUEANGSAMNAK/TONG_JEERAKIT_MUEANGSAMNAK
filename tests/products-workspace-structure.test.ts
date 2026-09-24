@@ -26,20 +26,57 @@ Object.defineProperty(globalThis, 'window', {
 })
 
 let mockUUIDSeq = 1
-vi.mock('@/lib/repositories/product-repository', () => ({
-  fetchProductsFromSupabase: vi.fn(async () => []),
-  saveProductToSupabase: vi.fn(async () => {}),
-  deleteProductFromSupabase: vi.fn(async () => {}),
-  fetchCategoriesFromSupabase: vi.fn(async () => []),
-  saveCategoryToSupabase: vi.fn(async () => {}),
-  deleteCategoryFromSupabase: vi.fn(async () => {}),
-  fetchUnitsFromSupabase: vi.fn(async () => []),
-  saveUnitToSupabase: vi.fn(async () => {}),
-  deleteUnitFromSupabase: vi.fn(async () => {}),
-  insertStockMovementToSupabase: vi.fn(async () => {}),
-  isValidUUID: (val?: string | null) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val),
-  generateUUID: () => '11111111-1111-4111-8111-' + String(mockUUIDSeq++).padStart(12, '0'),
-}))
+vi.mock('@/lib/repositories/product-repository', () => {
+  return {
+    fetchProductsFromSupabase: vi.fn(async () => [
+      {
+        id: 'prod-1',
+        code: 'PROD-01',
+        name: 'แบบคาน',
+        category: 'แบบคาน',
+        categoryId: 'cat-1',
+        rentalType: 'RENT',
+        rentalTypeId: 'rent-1',
+        unit: 'แผ่น',
+        unitId: 'unit-1',
+        normalPrice: 35,
+        dailyPrice: 0,
+        salePrice: 0,
+        totalQuantity: 20,
+        availableQuantity: 20,
+        rentedQuantity: 0,
+        damagedQuantity: 0,
+        lostQuantity: 0,
+        minimumStock: 0,
+        status: 'ACTIVE'
+      }
+    ]),
+    saveProductToSupabase: vi.fn(async () => {}),
+    deleteProductFromSupabase: vi.fn(async () => {}),
+    fetchCategoriesFromSupabase: vi.fn(async () => [
+      { id: 'cat-1', name: 'แบบคาน' },
+      { id: 'cat-2', name: 'แบบเสา' },
+      { id: 'cat-3', name: 'นั่งร้าน' },
+      { id: 'cat-4', name: 'อุปกรณ์เสริม' },
+      { id: 'cat-5', name: 'ทั่วไป' }
+    ]),
+    saveCategoryToSupabase: vi.fn(async () => {}),
+    deleteCategoryFromSupabase: vi.fn(async () => {}),
+    fetchUnitsFromSupabase: vi.fn(async () => [
+      { id: 'unit-1', name: 'แผ่น', isActive: true },
+      { id: 'unit-2', name: 'ต้น', isActive: true },
+      { id: 'unit-3', name: 'ชุด', isActive: true },
+      { id: 'unit-4', name: 'ชิ้น', isActive: true },
+      { id: 'unit-5', name: 'อัน', isActive: true }
+    ]),
+    saveUnitToSupabase: vi.fn(async () => {}),
+    deleteUnitFromSupabase: vi.fn(async () => {}),
+    insertStockMovementToSupabase: vi.fn(async () => {}),
+    fetchStockMovementsFromSupabase: vi.fn(async () => []),
+    isValidUUID: (val?: string | null) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val),
+    generateUUID: () => '11111111-1111-4111-8111-' + String(mockUUIDSeq++).padStart(12, '0'),
+  }
+})
 
 import { loadUnits, addUnit, updateUnit, deleteUnit, toggleUnitStatus, DEFAULT_UNITS } from '@/lib/unit-storage'
 import { loadCategoryRules, addCategoryRule, DEFAULT_CATEGORY_RULES } from '@/lib/category-rules-storage'

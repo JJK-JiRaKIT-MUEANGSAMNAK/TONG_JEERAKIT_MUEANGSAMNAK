@@ -9,7 +9,7 @@
 
 import { Product, ProductType, RentalType } from '@/lib/types/rental-pos'
 import { ProductCategoryItem, ProductCategoryRule, CategoryCompositeRule, CalculationType } from '@/lib/category-rules-storage'
-import { fetchProductsFromSupabase, saveProductToSupabase, deleteProductFromSupabase } from '@/lib/repositories/product-repository'
+import { fetchProductsFromSupabase, saveProductToSupabase, deleteProductFromSupabase, fetchStockMovementsFromSupabase } from '@/lib/repositories/product-repository'
 import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
 import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
@@ -201,7 +201,9 @@ export function loadProducts(): Product[] {
     _isFetchingProducts = true
     fetchProductsFromSupabase()
       .then((remoteProducts) => {
-        if (Array.isArray(remoteProducts) && remoteProducts.length > 0) {
+        if (Array.isArray(remoteProducts)) {
+          // Reconstruct stock dynamically from stock movements before caching
+          // (Wait, we need to do that here or in the repo? We will add the logic later)
           _cachedProducts = remoteProducts
           if (typeof window !== 'undefined') {
             try {

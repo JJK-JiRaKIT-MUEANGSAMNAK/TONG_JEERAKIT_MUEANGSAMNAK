@@ -40,7 +40,7 @@ export function loadUnits(): Unit[] {
     _isFetchingUnits = true
     fetchUnitsFromSupabase()
       .then((units) => {
-        if (Array.isArray(units) && units.length > 0) {
+        if (Array.isArray(units)) {
           _cachedUnits = units.map((u) => ({
             id: u.id,
             name: u.name,

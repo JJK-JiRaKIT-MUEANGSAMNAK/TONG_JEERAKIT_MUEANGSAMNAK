@@ -79,7 +79,7 @@ let inMemoryStockMovements: DomainStockMovement[] = []
  *
  * Uses real UUID for all movement records.
  */
-export function recordStockMovement(input: CreateStockMovementInput): DomainStockMovement {
+export async function recordStockMovement(input: CreateStockMovementInput): Promise<DomainStockMovement> {
   if (input.correlationId && input.billLineId) {
     const existing = inMemoryStockMovements.find(
       (m) =>
@@ -112,11 +112,8 @@ export function recordStockMovement(input: CreateStockMovementInput): DomainStoc
 
   inMemoryStockMovements.push(record)
 
-  insertStockMovementToSupabase(record).catch((err) => {
-    if (process.env.NODE_ENV !== 'test') {
-      console.error('Failed to append stock movement to Supabase', err)
-    }
-  })
+  // Await insert so it's not fire-and-forget. Failure throws back to caller.
+  await insertStockMovementToSupabase(record)
 
   return record
 }
