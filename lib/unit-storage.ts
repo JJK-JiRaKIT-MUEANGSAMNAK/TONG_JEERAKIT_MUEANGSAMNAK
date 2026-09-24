@@ -1,3 +1,4 @@
+import { fetchUnitsFromSupabase, saveUnitToSupabase } from '@/lib/repositories/product-repository'
 /**
  * Master Units Storage
  *
@@ -25,56 +26,35 @@ export const DEFAULT_UNITS: Unit[] = [
 /**
  * Load all units from localStorage with safe non-destructive migration.
  */
+
+let _cachedUnits: Unit[] | null = null;
+let _isFetchingUnits = false;
 export function loadUnits(): Unit[] {
-  if (typeof window === 'undefined') return DEFAULT_UNITS
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const normalized: Unit[] = parsed.map((item: any, idx: number) => {
-          const unitName = (item.name || item.label || '').trim()
-          return {
-            id: item.id || `unit-${idx + 1}`,
-            name: unitName,
-            isActive: item.isActive !== undefined ? Boolean(item.isActive) : true,
-          }
-        }).filter((u) => u.name.length > 0)
-
-        const seenNames = new Set<string>()
-        const uniqueUnits: Unit[] = []
-        for (const u of normalized) {
-          const lower = u.name.toLowerCase()
-          if (!seenNames.has(lower)) {
-            seenNames.add(lower)
-            uniqueUnits.push(u)
-          }
-        }
-
-        if (uniqueUnits.length > 0) {
-          return uniqueUnits
-        }
-      }
-    }
-
-    saveUnits(DEFAULT_UNITS)
-    return [...DEFAULT_UNITS]
-  } catch {
-    return [...DEFAULT_UNITS]
+  if (typeof window === 'undefined') return [];
+  if (_cachedUnits === null) {
+    const raw = localStorage.getItem('RENTAL_POS_UNITS');
+    _cachedUnits = raw ? JSON.parse(raw) : [...DEFAULT_UNITS];
   }
+  if (!_isFetchingUnits) {
+    _isFetchingUnits = true;
+    fetchUnitsFromSupabase().then(units => {
+      _cachedUnits = units.map(u => ({ id: u.id, name: u.name, isActive: u.isActive !== undefined ? u.isActive : true }));
+      localStorage.setItem('RENTAL_POS_UNITS', JSON.stringify(_cachedUnits));
+      window.dispatchEvent(new Event('app_settings_changed'));
+      _isFetchingUnits = false;
+    }).catch(() => { _isFetchingUnits = false; });
+  }
+  return _cachedUnits || [];
 }
 
 /**
  * Save units to localStorage.
  */
 export function saveUnits(units: Unit[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(units))
-  } catch {
-    // quota exceeded - silently ignore
-  }
+  if (typeof window === 'undefined') return;
+  _cachedUnits = units;
+  localStorage.setItem('RENTAL_POS_UNITS', JSON.stringify(units));
+  units.forEach(u => saveUnitToSupabase(u).catch(console.error));
 }
 
 /**

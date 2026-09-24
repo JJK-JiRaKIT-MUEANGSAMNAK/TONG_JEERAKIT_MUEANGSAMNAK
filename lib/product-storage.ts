@@ -7,7 +7,9 @@
  * - Both /products and /pos must import from here.
  */
 
-import { Product, RentalType, ProductType } from '@/lib/types/rental-pos'
+import { Product, ProductType, RentalType } from '@/lib/types/rental-pos'
+import { ProductCategoryItem, ProductCategoryRule, CategoryCompositeRule, CalculationType } from '@/lib/category-rules-storage'
+import { fetchProductsFromSupabase, saveProductToSupabase } from '@/lib/repositories/product-repository'
 import { getPeakReservedQuantity, getActiveReservationsForProduct } from '@/lib/reservation-storage'
 import { checkBackordersOnStockIncrease } from '@/lib/notification-storage'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'

@@ -1,3 +1,4 @@
+import { insertStockMovementToSupabase } from '@/lib/repositories/product-repository'
 /**
  * Stock Movement Domain Model & In-Memory Event Ledger
  *
@@ -105,8 +106,9 @@ export function recordStockMovement(input: CreateStockMovementInput): DomainStoc
     reason: input.reason,
   }
 
-  inMemoryStockMovements.push(record)
-  return record
+  inMemoryStockMovements.push(record);
+  insertStockMovementToSupabase(record).catch(console.error);
+  return record;
 }
 
 /**

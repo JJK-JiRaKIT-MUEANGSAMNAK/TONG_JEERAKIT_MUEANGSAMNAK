@@ -63,3 +63,51 @@ export async function saveProductToSupabase(product: Product): Promise<void> {
   
   if (error) throw error
 }
+
+
+export async function fetchCategoriesFromSupabase(): Promise<any[]> {
+  const { data, error } = await supabase.from('product_categories').select('*')
+  if (error) throw error
+  return data
+}
+
+export async function saveCategoryToSupabase(category: any): Promise<void> {
+  const { error } = await supabase.from('product_categories').upsert({
+    id: category.id,
+    name: category.name
+  })
+  if (error) throw error
+}
+
+export async function fetchUnitsFromSupabase(): Promise<any[]> {
+  const { data, error } = await supabase.from('units').select('*')
+  if (error) throw error
+  return data
+}
+
+export async function saveUnitToSupabase(unit: any): Promise<void> {
+  const { error } = await supabase.from('units').upsert({
+    id: unit.id,
+    name: unit.name
+  })
+  if (error) throw error
+}
+
+export async function insertStockMovementToSupabase(movement: any): Promise<void> {
+  const { error } = await supabase.from('stock_movements').insert({
+    id: movement.id,
+    type: movement.type,
+    product_id: movement.productId,
+    bill_id: movement.billId || null,
+    bill_line_id: movement.billLineId || null,
+    quantity: movement.quantity,
+    before_state: movement.beforeState,
+    after_state: movement.afterState,
+    actor_user_id: movement.actor?.userId || 'system',
+    actor_display_name: movement.actor?.displayName || 'System',
+    correlation_id: movement.correlationId || null,
+    reason: movement.reason || null,
+    created_at: movement.timestamp || new Date().toISOString()
+  })
+  if (error) throw error
+}

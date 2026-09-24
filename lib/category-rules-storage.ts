@@ -1,3 +1,4 @@
+import { fetchCategoriesFromSupabase, saveCategoryToSupabase } from '@/lib/repositories/product-repository'
 /**
  * Shared Product Category Rules & Composite Lookup Storage
  *
@@ -122,51 +123,32 @@ const LEGACY_RULES_KEY = 'pos_category_rules'
 
 // ─── Categories Management (ตาราง 1) ───────────────────────
 
+
+let _cachedCategories: ProductCategoryItem[] | null = null;
+let _isFetchingCategories = false;
 export function loadCategories(): ProductCategoryItem[] {
-  if (typeof window === 'undefined') return DEFAULT_CATEGORIES
-
-  try {
-    const raw = localStorage.getItem(CATEGORIES_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((item: any, idx: number) => ({
-          id: item.id || `cat-${idx + 1}`,
-          name: (item.name || item.label || '').trim(),
-        })).filter((c) => c.name.length > 0)
-      }
-    }
-
-    // Try legacy rules migration
-    const legacyRaw = localStorage.getItem(LEGACY_RULES_KEY)
-    if (legacyRaw) {
-      const legacyRules = JSON.parse(legacyRaw)
-      if (Array.isArray(legacyRules) && legacyRules.length > 0) {
-        const migrated: ProductCategoryItem[] = legacyRules.map((r: any, idx: number) => ({
-          id: r.id || `cat-${idx + 1}`,
-          name: (r.name || r.label || '').trim(),
-        })).filter((c) => c.name.length > 0)
-        if (migrated.length > 0) {
-          saveCategories(migrated)
-          return migrated
-        }
-      }
-    }
-
-    saveCategories(DEFAULT_CATEGORIES)
-    return [...DEFAULT_CATEGORIES]
-  } catch {
-    return [...DEFAULT_CATEGORIES]
+  if (typeof window === 'undefined') return [];
+  if (_cachedCategories === null) {
+    const raw = localStorage.getItem(CATEGORIES_KEY);
+    _cachedCategories = raw ? JSON.parse(raw) : [...DEFAULT_CATEGORIES];
   }
+  if (!_isFetchingCategories) {
+    _isFetchingCategories = true;
+    fetchCategoriesFromSupabase().then(cats => {
+      _cachedCategories = cats.map(c => ({ id: c.id, name: c.name }));
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(_cachedCategories));
+      window.dispatchEvent(new Event('app_settings_changed'));
+      _isFetchingCategories = false;
+    }).catch(() => { _isFetchingCategories = false; });
+  }
+  return _cachedCategories || [];
 }
 
 export function saveCategories(categories: ProductCategoryItem[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
-  } catch {
-    // ignore
-  }
+  if (typeof window === 'undefined') return;
+  _cachedCategories = categories;
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  categories.forEach(c => saveCategoryToSupabase(c).catch(console.error));
 }
 
 export function addCategory(name: string): ProductCategoryItem[] {
