@@ -86,7 +86,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       }
     }
 
-    const available = Math.max(0, stockQty - rented - damaged - lost)
+    const available = Math.max(0, stockQty - rented - damaged)
 
     return {
       id: p.id,

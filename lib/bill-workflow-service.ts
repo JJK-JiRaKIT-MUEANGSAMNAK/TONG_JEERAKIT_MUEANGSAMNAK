@@ -747,11 +747,11 @@ export interface DispatchBillOptions {
  * - Supports Partial Sale Delivery.
  * - Mixed bills: Keeps RENT and SALE statuses independent.
  */
-export function dispatchBillWorkflow(options: DispatchBillOptions): {
+export async function dispatchBillWorkflow(options: DispatchBillOptions): Promise<{
   bill: FullBill
   correlationId: string
   dispatchedReservations: ReservationRecord[]
-} {
+}> {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
   const actorDisplayName = options.actor.displayName || 'ระบบ'
@@ -823,7 +823,8 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
   ]
 
   // 2. Deduct physical stock & log stock movements
-  const updatedItems: FullBillItem[] = targetBill.items.map((item) => {
+  const updatedItems: FullBillItem[] = []
+  for (const item of targetBill.items) {
     const isSale = item.rentalType === 'SALE' || item.itemType === 'SALE'
     if (isSale) {
       const deliv = options.deliveries?.find(
@@ -841,7 +842,7 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
         const prodAfter = loadProducts().find((p) => p.id === item.productId)
         if (prodAfter) validateStockInvariants(prodAfter)
 
-        recordStockMovement({
+        await recordStockMovement({
           type: 'SALE',
           productId: item.productId,
           billId: targetBill.id,
@@ -879,16 +880,18 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
         const newRemaining = Math.max(0, ordered - newDelivered)
         const itemDeliveryStatus = newRemaining === 0 ? 'DELIVERED' : 'PARTIAL_DELIVERED'
 
-        return {
+        updatedItems.push({
           ...item,
           orderedQty: ordered,
           deliveredQty: newDelivered,
           remainingQty: newRemaining,
           deliveryStatus: itemDeliveryStatus,
           status: itemDeliveryStatus === 'DELIVERED' ? 'DELIVERED' : 'PARTIAL_DELIVERED',
-        }
+        })
+        continue
       }
-      return item
+      updatedItems.push(item)
+      continue
     } else {
       // RENT item
       if (targetBill.dispatchStatus !== 'DISPATCHED') {
@@ -898,7 +901,7 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
         const prodAfter = loadProducts().find((p) => p.id === item.productId)
         if (prodAfter) validateStockInvariants(prodAfter)
 
-        recordStockMovement({
+        await recordStockMovement({
           type: 'RENT',
           productId: item.productId,
           billId: targetBill.id,
@@ -934,14 +937,16 @@ export function dispatchBillWorkflow(options: DispatchBillOptions): {
           correlationId,
         })
 
-        return {
+        updatedItems.push({
           ...item,
           status: 'RENTING',
-        }
+        })
+        continue
       }
-      return item
+      updatedItems.push(item)
+      continue
     }
-  })
+  }
 
   // 3. Reconcile statuses independently for Mixed Bills
   const rentalItems = updatedItems.filter((i) => i.rentalType !== 'SALE' && i.itemType !== 'SALE' && i.requiresReturn !== false)
@@ -1180,7 +1185,7 @@ export interface ProcessReturnOptions {
   correlationId?: string
 }
 
-export function processReturnWorkflow(options: ProcessReturnOptions): {
+export async function processReturnWorkflow(options: ProcessReturnOptions): Promise<{
   bill: FullBill
   correlationId: string
   returnNo: string
@@ -1190,7 +1195,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
   depositRefund: number
   depositRefundDue: number
   additionalAmountDue: number
-} {
+}> {
   const correlationId = options.correlationId || generateCorrelationId()
   const actorUserId = options.actor.userId || 'system'
   const actorDisplayName = options.actor.displayName || 'ระบบ'
@@ -1254,7 +1259,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       if (pAfter) validateStockInvariants(pAfter)
 
       if (normal > 0) {
-        recordStockMovement({
+        await recordStockMovement({
           type: 'RETURN',
           productId: it.productId,
           billId: targetBill.id,
@@ -1269,7 +1274,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       }
 
       if (damaged > 0) {
-        recordStockMovement({
+        await recordStockMovement({
           type: 'DAMAGE',
           productId: it.productId,
           billId: targetBill.id,
@@ -1284,7 +1289,7 @@ export function processReturnWorkflow(options: ProcessReturnOptions): {
       }
 
       if (lost > 0) {
-        recordStockMovement({
+        await recordStockMovement({
           type: 'LOST',
           productId: it.productId,
           billId: targetBill.id,

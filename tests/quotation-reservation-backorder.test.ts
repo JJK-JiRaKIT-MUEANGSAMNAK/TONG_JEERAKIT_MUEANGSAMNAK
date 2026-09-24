@@ -1,3 +1,8 @@
+import { insertStockMovementToSupabase } from '@/lib/repositories/product-repository'
+vi.mock('@/lib/repositories/product-repository', async (importOriginal) => {
+  const actual = await importOriginal() as any
+  return { ...actual, insertStockMovementToSupabase: vi.fn(async () => {}), fetchProductsFromSupabase: vi.fn(() => new Promise(() => {})) }
+})
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   loadProducts,
@@ -185,7 +190,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 1. Save Quotation -> Refresh -> still present
-  it('1. Save Quotation -> Refresh -> still present in persistence without data loss', () => {
+  it('1. Save Quotation -> Refresh -> still present in persistence without data loss', async () => {
     const quotation: Quotation = {
       id: 'qt-2026-001',
       quotationNo: 'QT-20260912-0001',
@@ -231,7 +236,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 2. Quotation before Confirm -> Stock does not change
-  it('2. Quotation before Confirm (DRAFT/WAITING) -> Stock does NOT change, no reservations or finance', () => {
+  it('2. Quotation before Confirm (DRAFT/WAITING) -> Stock does NOT change, no reservations or finance', async () => {
     const quote: Quotation = {
       id: 'qt-2026-002',
       quotationNo: 'QT-20260912-0002',
@@ -278,7 +283,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 3. Confirm RENT -> Reserved increases, Rented does NOT increase
-  it('3. Confirm RENT Quotation (0 reservations) -> Bill Creation reserves stock (Confirm ≠ Dispatch)', () => {
+  it('3. Confirm RENT Quotation (0 reservations) -> Bill Creation reserves stock (Confirm ≠ Dispatch)', async () => {
     const quote: Quotation = {
       id: 'qt-2026-003',
       quotationNo: 'QT-20260912-0003',
@@ -361,7 +366,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 4. Dispatch RENT -> Reserved decreases, Rented increases
-  it('4. Dispatch RENT -> Reserved decreases, Rented increases', () => {
+  it('4. Dispatch RENT -> Reserved decreases, Rented increases', async () => {
     // Create bill with dispatchStatus = PENDING
     const bill: FullBill = buildFullBill({
       id: 'bill-rent-004',
@@ -401,7 +406,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     expect(prod.rentedQuantity).toBe(0)
 
     // Now Dispatch the bill
-    const dispatchRes = dispatchBillWorkflow({ billId: bill.id, actor })
+    const dispatchRes = await dispatchBillWorkflow({ billId: bill.id, actor })
     expect(dispatchRes.bill.dispatchStatus).toBe('DISPATCHED')
 
     prod = loadProducts().find((p) => p.id === testProductRent.id)!
@@ -411,7 +416,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 5. Confirm SALE -> Reserved increases, Stock not permanently sold yet
-  it('5. Confirm SALE -> Stock is reserved, totalQuantity NOT permanently deducted before dispatch', () => {
+  it('5. Confirm SALE -> Stock is reserved, totalQuantity NOT permanently deducted before dispatch', async () => {
     const bill: FullBill = buildFullBill({
       id: 'bill-sale-005',
       billNo: 'BILL-20260912-0005',
@@ -452,7 +457,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 6. Dispatch SALE -> Reserved decreases, Stock permanently deducted
-  it('6. Dispatch SALE -> Reserved decreases, totalQuantity permanently deducted', () => {
+  it('6. Dispatch SALE -> Reserved decreases, totalQuantity permanently deducted', async () => {
     const bill: FullBill = buildFullBill({
       id: 'bill-sale-006',
       billNo: 'BILL-20260912-0006',
@@ -485,7 +490,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     })
     createBillWorkflow({ bill, actor })
 
-    dispatchBillWorkflow({ billId: bill.id, actor })
+    await dispatchBillWorkflow({ billId: bill.id, actor })
 
     const prod = loadProducts().find((p) => p.id === testProductSale.id)!
     expect(prod.reservedQuantity).toBe(0)
@@ -494,7 +499,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 7. RENT non-overlapping dates -> both can reserve
-  it('7. RENT non-overlapping dates -> both orders can reserve full physical stock', () => {
+  it('7. RENT non-overlapping dates -> both orders can reserve full physical stock', async () => {
     // Total physical stock is 10
     // Order 1: 10 units for 2026-10-01 to 2026-10-05
     const b1: FullBill = buildFullBill({
@@ -549,7 +554,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 8. RENT overlapping dates with insufficient stock -> Backorder
-  it('8. RENT overlapping dates with insufficient stock -> splits into Reservation and Backorder', () => {
+  it('8. RENT overlapping dates with insufficient stock -> splits into Reservation and Backorder', async () => {
     // Total stock = 10
     // Order 1: 8 units from 2026-10-01 to 2026-10-06
     const b1: FullBill = buildFullBill({
@@ -605,7 +610,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 9. Request 8 have 5 -> Reserve 5, Backorder 3, Stock not negative
-  it('9. Request 8 have 5 -> Reserve 5, Backorder 3, available stock is never negative', () => {
+  it('9. Request 8 have 5 -> Reserve 5, Backorder 3, available stock is never negative', async () => {
     // Set initial stock to 5
     saveProducts([
       {
@@ -646,7 +651,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 10. Stock in -> Backorder detected and Actionable Notification created
-  it('10. Stock increase -> FIFO pending Backorder detected and Actionable Notification created without auto-allocation', () => {
+  it('10. Stock increase -> FIFO pending Backorder detected and Actionable Notification created without auto-allocation', async () => {
     // Setup pending backorder of 3 units
     saveProducts([
       {
@@ -703,7 +708,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 11. User confirms Fulfill -> Backorder decreases, Reservation increases
-  it('11. User explicitly confirms Fulfill -> Backorder decreases, Reservation increases, notification ACTIONED', () => {
+  it('11. User explicitly confirms Fulfill -> Backorder decreases, Reservation increases, notification ACTIONED', async () => {
     saveProducts([
       {
         ...testProductRent,
@@ -764,7 +769,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 12. Cancel before Dispatch -> Reservation released
-  it('12. Cancel before Dispatch -> Reservation released, history preserved', () => {
+  it('12. Cancel before Dispatch -> Reservation released, history preserved', async () => {
     const bill: FullBill = buildFullBill({
       id: 'bill-cancel-12',
       billNo: 'BILL-CANCEL-012',
@@ -805,7 +810,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 13. Void after Dispatch -> Stock not returned to available
-  it('13. Void after Dispatch -> Stock is NOT returned to available (must go through return inspection)', () => {
+  it('13. Void after Dispatch -> Stock is NOT returned to available (must go through return inspection)', async () => {
     const bill: FullBill = buildFullBill({
       id: 'bill-void-13',
       billNo: 'BILL-20260912-0013',
@@ -857,7 +862,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 14. Edit Product name/price -> Stock quantities unchanged
-  it('14. Edit Product name, price, category, unit -> Stock quantities are strictly preserved', () => {
+  it('14. Edit Product name, price, category, unit -> Stock quantities are strictly preserved', async () => {
     // Current stock: total 10, available 6, rented 4, reserved 2
     saveProducts([
       {
@@ -898,7 +903,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 15. Stock Count -> Persists with before/after/reason/Audit
-  it('15. Stock Count -> Persists actual counts, calculates totals, and logs before/after audit with reason', () => {
+  it('15. Stock Count -> Persists actual counts, calculates totals, and logs before/after audit with reason', async () => {
     applyStockCountAdjustment(
       testProductRent.id,
       {
@@ -927,7 +932,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 16. Refresh -> Bill, Reservation, Backorder, Notification, Stock consistent
-  it('16. Reload simulation: Bill, Reservation, Backorder, Notification, Stock are consistent', () => {
+  it('16. Reload simulation: Bill, Reservation, Backorder, Notification, Stock are consistent', async () => {
     // Available = 3
     saveProducts([{ ...testProductRent, totalQuantity: 3, availableQuantity: 3 }])
 
@@ -967,7 +972,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
   })
 
   // 17. Audit correlation across Confirm -> Reserve -> Dispatch
-  it('17. Shared correlationId links Confirm, Reservation, Dispatch, and Stock audit entries', () => {
+  it('17. Shared correlationId links Confirm, Reservation, Dispatch, and Stock audit entries', async () => {
     const bill: FullBill = buildFullBill({
       id: 'bill-audit-17',
       billNo: 'BILL-20260912-0017',
@@ -1004,7 +1009,7 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     const sharedCorrelationId = createRes.correlationId
 
     // Dispatch bill
-    dispatchBillWorkflow({
+    await dispatchBillWorkflow({
       billId: bill.id,
       actor,
       correlationId: sharedCorrelationId,
@@ -1020,3 +1025,5 @@ describe('Quotation -> POS/Bill -> Reservation -> Dispatch -> Backorder -> Notif
     expect(actions).toContain('STOCK_RENT')
   })
 })
+
+

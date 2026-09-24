@@ -74,7 +74,7 @@ describe('Product/Stock Runtime Correction Tests', () => {
   })
 
   it('DAMAGE/LOST -> reload: rented drops, damaged/lost increases, available is unharmed further', async () => {
-    mockRemoteProducts.push({ id: 'p1', type: 'RENT', stock_quantity: 10 })
+    mockRemoteProducts.push({ id: 'p1', type: 'RENT', stock_quantity: 8 }) // total 10, lost 2, so remote stock_quantity is 8
     mockRemoteMovements.push(
       { product_id: 'p1', type: 'RENT', quantity: 5 },
       { product_id: 'p1', type: 'DAMAGE', quantity: 1 },

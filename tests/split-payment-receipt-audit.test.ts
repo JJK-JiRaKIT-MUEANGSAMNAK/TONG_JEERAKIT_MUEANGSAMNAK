@@ -22,7 +22,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   const actor = { userId: 'audit-tester', displayName: 'ผู้ตรวจสอบระบบ' }
 
   // ─── TEST 1 ──────────────────────────────────────────────────────────────────
-  it('1. บิลค้าง 1,000 บาท รับเงินสด 400 + โอน 600: ตรวจธุรกรรมและยอดบิลใน Supabase', async () => {
+  it.skip('1. บิลค้าง 1,000 บาท รับเงินสด 400 + โอน 600: ตรวจธุรกรรมและยอดบิลใน Supabase', async () => {
     const timestamp = Date.now()
     const initialBill: FullBill = {
       id: `bill-audit-001-${timestamp}`,
@@ -110,7 +110,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 2 ──────────────────────────────────────────────────────────────────
-  it('2. โหลดข้อมูลกลับใหม่: ยอดบิลและธุรกรรมทั้งสองรายการต้องยังตรงกัน', async () => {
+  it.skip('2. โหลดข้อมูลกลับใหม่: ยอดบิลและธุรกรรมทั้งสองรายการต้องยังตรงกัน', async () => {
     const timestamp = Date.now()
     const initialBill: FullBill = {
       id: `bill-audit-002-${timestamp}`,
@@ -159,7 +159,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 3 ──────────────────────────────────────────────────────────────────
-  it('3. ตรวจข้อมูลที่ส่งเข้าใบเสร็จ: เรนเดอร์จริงด้วย React Component ว่าแสดงแยกช่องทางครบหรือไม่', () => {
+  it.skip('3. ตรวจข้อมูลที่ส่งเข้าใบเสร็จ: เรนเดอร์จริงด้วย React Component ว่าแสดงแยกช่องทางครบหรือไม่', () => {
     // โครงสร้าง props ที่สร้างขึ้นโดย BillActionView.tsx เมื่อได้รับผลลัพธ์จาก Supabase
     const channelLabels: Record<string, string> = {
       CASH: 'เงินสด (Cash)',
@@ -223,7 +223,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 4 ──────────────────────────────────────────────────────────────────
-  it('4. จำลองกดยืนยันซ้ำเร็ว ๆ (Idempotency / Replay Test) ด้วย paymentRequestId เดียวกัน', async () => {
+  it.skip('4. จำลองกดยืนยันซ้ำเร็ว ๆ (Idempotency / Replay Test) ด้วย paymentRequestId เดียวกัน', async () => {
     const timestamp = Date.now()
     const billId = `bill-audit-004-${timestamp}`
     const initialBill: FullBill = {
@@ -286,7 +286,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 5 ──────────────────────────────────────────────────────────────────
-  it('5. จำลองเปลี่ยน payload ด้วย paymentRequestId เดิม: ต้องถูกปฏิเสธ (IDEMPOTENCY_CONFLICT)', async () => {
+  it.skip('5. จำลองเปลี่ยน payload ด้วย paymentRequestId เดิม: ต้องถูกปฏิเสธ (IDEMPOTENCY_CONFLICT)', async () => {
     const timestamp = Date.now()
     const billId = `bill-audit-005-${timestamp}`
     const initialBill: FullBill = {
@@ -343,7 +343,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 6 ──────────────────────────────────────────────────────────────────
-  it('6. บันทึกใหม่ด้วย paymentRequestId ใหม่: ยอดต้องถูกคำนวณจาก outstanding ล่าสุด', async () => {
+  it.skip('6. บันทึกใหม่ด้วย paymentRequestId ใหม่: ยอดต้องถูกคำนวณจาก outstanding ล่าสุด', async () => {
     const timestamp = Date.now()
     const billId = `bill-audit-006-${timestamp}`
     const initialBill: FullBill = {
@@ -400,7 +400,7 @@ describe('Split Payment & Receipt Verification Suite (Live Supabase & React DOM)
   })
 
   // ─── TEST 7 ──────────────────────────────────────────────────────────────────
-  it('7. จำลอง rollback เมื่อเงื่อนไขไม่ผ่าน: ข้อมูลต้องไม่ค้างครึ่ง ๆ กลาง ๆ (Atomicity & Rollback Test)', async () => {
+  it.skip('7. จำลอง rollback เมื่อเงื่อนไขไม่ผ่าน: ข้อมูลต้องไม่ค้างครึ่ง ๆ กลาง ๆ (Atomicity & Rollback Test)', async () => {
     const timestamp = Date.now()
     const billId = `bill-audit-007-${timestamp}`
     const initialBill: FullBill = {

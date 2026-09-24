@@ -110,10 +110,11 @@ export async function recordStockMovement(input: CreateStockMovementInput): Prom
     reason: input.reason,
   }
 
-  inMemoryStockMovements.push(record)
-
   // Await insert so it's not fire-and-forget. Failure throws back to caller.
   await insertStockMovementToSupabase(record)
+
+  // Push to memory only if insert succeeds (no phantom movement)
+  inMemoryStockMovements.push(record)
 
   return record
 }
