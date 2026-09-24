@@ -17,9 +17,11 @@ import { CalendarPanel } from '@/components/common/CustomDatePicker'
 import { CustomSelect, SelectOption } from '@/components/common/CustomSelect'
 import { NumericInput } from '@/components/common/NumericInput'
 import { CustomerUnifiedSelector } from '@/components/pos/CustomerUnifiedSelector'
-import { CartItem, saveActiveCart } from '@/lib/cart-storage'
+import { CartItem, saveActiveCart, validateCartCustomer } from '@/lib/cart-storage'
 import { calculateBillTotals } from '@/lib/calculation-service'
 import { loadSystemSettings } from '@/lib/settings-storage'
+import { useSystemSettings } from '@/lib/contexts/SystemSettingsContext'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export type { CartItem }
 
@@ -81,6 +83,8 @@ export function CartPanel({
   initialRentalEndDate,
 }: CartPanelProps) {
   const { showToast } = useToast()
+  const { settings, updateSettings } = useSystemSettings()
+  const { user } = useAuth()
   
   const [internalCustomer, setInternalCustomer] = useState<Customer | null>(null)
   const [internalItems, setInternalItems] = useState<CartItem[]>([])
@@ -109,6 +113,7 @@ export function CartPanel({
   }
 
   const totals = calculateBillTotals({
+    settings,
     items,
     discount: Number(discount) || 0,
     shippingFee: Number(shippingFee) || 0,
@@ -369,6 +374,31 @@ export function CartPanel({
             </div>
           </div>
 
+          <label className="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+            <span>VAT {settings.financePayment.vatEnabled ? 'เปิด' : 'ปิด'}</span>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="เปิดใช้งาน VAT"
+              checked={settings.financePayment.vatEnabled}
+              onChange={async (e) => {
+                const current = loadSystemSettings()
+                try {
+                  await updateSettings({
+                    ...current,
+                    financePayment: { ...current.financePayment, vatEnabled: e.target.checked },
+                  }, {
+                    userId: user?.id || 'system',
+                    displayName: user?.fullName || user?.username || 'ผู้ใช้งาน',
+                  }, 'เปลี่ยนการเปิดใช้งาน VAT จาก POS')
+                } catch (error) {
+                  showToast('บันทึก VAT ไม่สำเร็จ', (error as Error).message, 'ERROR')
+                }
+              }}
+              className="w-4 h-4 text-emerald-600 rounded"
+            />
+          </label>
+
           {/* Breakdown summary */}
           <div className="space-y-1.5 text-xs pt-2 border-t border-slate-200 dark:border-slate-700">
             <div className="flex justify-between text-slate-600 dark:text-slate-400">
@@ -441,18 +471,13 @@ export function CartPanel({
               <button
                 type="button"
                 onClick={() => {
-                  const hasRent = items.some(item => item.itemType === 'RENT')
-                  if (hasRent) {
-                    if (!customer) {
-                      showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
-                      return
-                    }
-                    if (!customer.customerName || !customer.phone || !customer.address) {
-                      showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
-                      return
-                    }
+                  try {
+                    validateCartCustomer(items, customer)
+                  } catch (error) {
+                    showToast('ข้อมูลลูกค้าไม่ครบถ้วน', (error as Error).message, 'ERROR')
+                    return
                   }
-                  
+
                   saveActiveCart({
                     customer,
                     items,

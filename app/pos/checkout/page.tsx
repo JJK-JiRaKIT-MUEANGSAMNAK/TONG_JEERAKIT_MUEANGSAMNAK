@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { RentalBillTemplate, BillTemplateData } from '@/templates/rental-bill/RentalBillTemplate'
@@ -16,7 +16,7 @@ import { PaymentDynamicContent } from '@/components/pos/payment/PaymentDynamicCo
 import { RentalBill, Customer, Product } from '@/lib/types/rental-pos'
 import { useToast } from '@/components/common/Toast'
 import { PostSavePrintModal } from '@/components/common/PostSavePrintModal'
-import { loadActiveCart, clearActiveCart } from '@/lib/cart-storage'
+import { loadActiveCart, clearActiveCart, isSaleCartItem, validateCartCustomer } from '@/lib/cart-storage'
 import { FullBill } from '@/lib/types/rental-return'
 import { updateQuotationConverted } from '@/lib/quotation-storage'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -24,7 +24,7 @@ import { generateCorrelationId } from '@/lib/audit-storage'
 import { createBillWorkflow, saveDraftBillWorkflow, confirmDraftBillWorkflow } from '@/lib/bill-workflow-service'
 import { loadBillById } from '@/lib/bill-storage'
 import { calculateBillTotals } from '@/lib/calculation-service'
-import { loadSystemSettings } from '@/lib/settings-storage'
+import { useSystemSettings } from '@/lib/contexts/SystemSettingsContext'
 
 const safeFormatDateStr = (d?: Date | string | null): string => {
   if (!d) return '-'
@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { showToast } = useToast()
   const { user } = useAuth()
+  const { settings } = useSystemSettings()
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [items, setItems] = useState<Array<{
@@ -65,11 +66,9 @@ export default function CheckoutPage() {
   const [documentType, setDocumentType] = useState<string>('บิลเช่า')
   const [shippingAddress, setShippingAddress] = useState<string>('')
   const [remark, setRemark] = useState<string>('')
-  const [tax, setTax] = useState<number>(0)
   const [quotationId, setQuotationId] = useState<string | null>(null)
   const [quotationNo, setQuotationNo] = useState<string | null>(null)
   const [draftBillId, setDraftBillId] = useState<string | null>(null)
-  const [cartTaxRate, setCartTaxRate] = useState<number | null>(null)
 
   useEffect(() => {
     const cart = loadActiveCart()
@@ -84,28 +83,20 @@ export default function CheckoutPage() {
       if (cart.remark) setRemark(cart.remark)
       if (cart.headerRentalDate) setHeaderRentalDate(new Date(cart.headerRentalDate))
       if (cart.headerReturnDate) setHeaderReturnDate(new Date(cart.headerReturnDate))
-      if (cart.tax !== undefined) setTax(cart.tax)
-      if (cart.taxRate !== undefined) setCartTaxRate(cart.taxRate)
       if (cart.quotationId) setQuotationId(cart.quotationId)
       if (cart.quotationNo) setQuotationNo(cart.quotationNo)
       if (cart.draftBillId) setDraftBillId(cart.draftBillId)
     }
   }, [])
 
-  const defaultVat = useMemo(() => {
-    try {
-      return (loadSystemSettings().financePayment?.defaultVatPercent ?? 7) / 100
-    } catch {
-      return 0.07
-    }
-  }, [])
-
   const totals = calculateBillTotals({
+    settings,
     items,
     discount,
     shippingFee,
     depositAmount,
   })
+  const tax = totals.vatAmount
   const subtotal = totals.subtotal
   const grandTotal = totals.grandTotal
 
@@ -195,16 +186,11 @@ export default function CheckoutPage() {
       return
     }
 
-    const hasRent = items.some(item => item.itemType === 'RENT')
-    if (hasRent) {
-      if (!customer) {
-        showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
-        return
-      }
-      if (!customer.customerName || !customer.phone || !customer.address) {
-        showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
-        return
-      }
+    try {
+      validateCartCustomer(items, customer)
+    } catch (error) {
+      showToast('ข้อมูลลูกค้าไม่ครบถ้วน', (error as Error).message, 'ERROR')
+      return
     }
 
     setIsSubmitting(true)
@@ -221,7 +207,7 @@ export default function CheckoutPage() {
       const paid = isUnpaid ? 0 : grandTotal
       const outstanding = isUnpaid ? grandTotal : 0
 
-      const allItemsAreSale = items.length > 0 && items.every((it) => it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE')
+      const allItemsAreSale = items.length > 0 && items.every((it) => isSaleCartItem(it))
 
       const newFullBill: FullBill = {
         id: billId,
@@ -260,7 +246,7 @@ export default function CheckoutPage() {
         quotationId: quotationId || undefined,
         quotationNo: quotationNo || undefined,
         items: items.map((it, idx) => {
-          const isSale = it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          const isSale = isSaleCartItem(it)
           return {
             rentalBillItemId: `item-${Date.now()}-${idx}`,
             productId: it.product.id,
@@ -361,16 +347,11 @@ export default function CheckoutPage() {
       return
     }
 
-    const hasRent = items.some(item => item.itemType === 'RENT')
-    if (hasRent) {
-      if (!customer) {
-        showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
-        return
-      }
-      if (!customer.customerName || !customer.phone || !customer.address) {
-        showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
-        return
-      }
+    try {
+      validateCartCustomer(items, customer)
+    } catch (error) {
+      showToast('ข้อมูลลูกค้าไม่ครบถ้วน', (error as Error).message, 'ERROR')
+      return
     }
 
     try {
@@ -411,7 +392,7 @@ export default function CheckoutPage() {
         quotationId: quotationId || undefined,
         quotationNo: quotationNo || undefined,
         items: items.map((it, idx) => {
-          const isSale = it.itemType === 'SALE' || it.rentalType === 'SALE' || it.product.rentalType === 'SALE'
+          const isSale = isSaleCartItem(it)
           return {
             rentalBillItemId: `item-${Date.now()}-${idx}`,
             productId: it.product.id,

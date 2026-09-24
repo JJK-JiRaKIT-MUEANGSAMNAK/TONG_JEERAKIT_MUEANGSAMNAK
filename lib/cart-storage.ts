@@ -78,3 +78,19 @@ export function clearActiveCart(): void {
     // silently ignore
   }
 }
+
+/** Explicit line mode wins; older carts fall back to rentalType/product type. */
+export function isSaleCartItem(item: { itemType?: 'RENT' | 'SALE'; rentalType?: string; product?: { rentalType?: string } }): boolean {
+  return item.itemType ? item.itemType === 'SALE' : (item.rentalType || item.product?.rentalType) === 'SALE'
+}
+
+export function validateCartCustomer(
+  items: Parameters<typeof isSaleCartItem>[0][],
+  customer: Pick<Customer, 'customerName' | 'phone' | 'address'> | null,
+): void {
+  if (!items.some((item) => !isSaleCartItem(item))) return
+  if (!customer) throw new Error('บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า')
+  if (!customer.customerName?.trim() || !customer.phone?.trim() || !customer.address?.trim()) {
+    throw new Error('ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่')
+  }
+}

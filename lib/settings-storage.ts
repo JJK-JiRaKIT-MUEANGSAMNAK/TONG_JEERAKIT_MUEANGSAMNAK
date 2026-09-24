@@ -102,7 +102,7 @@ export interface FinancePaymentSettings {
     credit: boolean
   }
   defaultVatPercent: number
-  vatEnabled?: boolean
+  vatEnabled: boolean
   vatCalculationMode: VatCalculationMode
   defaultWithholdingPercent: number
   maximumDiscountPercent: number
@@ -369,6 +369,7 @@ export function saveSystemSettings(
 
   // Check if financial, stock, or workflow parameters changed
   const financeChanged =
+    previous.financePayment.vatEnabled !== merged.financePayment.vatEnabled ||
     previous.financePayment.defaultVatPercent !== merged.financePayment.defaultVatPercent ||
     previous.financePayment.vatCalculationMode !== merged.financePayment.vatCalculationMode ||
     previous.financePayment.maximumDiscountPercent !== merged.financePayment.maximumDiscountPercent ||

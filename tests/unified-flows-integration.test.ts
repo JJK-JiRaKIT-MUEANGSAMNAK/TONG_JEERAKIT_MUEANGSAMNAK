@@ -960,3 +960,40 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
     expect(actions).toContain('BILL_CONFIRM')
   })
 })
+
+describe('MASTER #5 shared VAT settings', () => {
+  beforeEach(() => localStorageMock.clear())
+
+  it('persists OFF/ON, preserves percent, overrides stale cart rate and audits switch', () => {
+    const initial = loadSystemSettings()
+    saveSystemSettings({ ...initial, financePayment: {
+      ...initial.financePayment, vatEnabled: true, defaultVatPercent: 7,
+    } })
+    const before = loadAuditLogs().length
+    const disabled = saveSystemSettings({ ...loadSystemSettings(), financePayment: {
+      ...loadSystemSettings().financePayment, vatEnabled: false,
+    } })
+    expect(disabled.financePayment.defaultVatPercent).toBe(7)
+    expect(loadAuditLogs().length).toBe(before + 1)
+    const staleCart = { items: [{ quantity: 1, unitPrice: 100 }], taxRate: 0.07 }
+    expect(calculateBillTotals(staleCart)).toMatchObject({ vatRate: 0, vatAmount: 0, grandTotal: 100 })
+    saveSystemSettings({ ...disabled, financePayment: { ...disabled.financePayment, vatEnabled: true } })
+    expect(calculateBillTotals({ ...staleCart, taxRate: 0 })).toMatchObject({ vatRate: 0.07, vatAmount: 7, grandTotal: 107 })
+  })
+
+  it('legacy settings without vatEnabled retain enabled default', () => {
+    localStorageMock.setItem('app_system_settings', JSON.stringify({ financePayment: { defaultVatPercent: 7 } }))
+    expect(loadSystemSettings().financePayment.vatEnabled).toBe(true)
+  })
+
+  it('inclusive VAT uses production totals and switches off cleanly', () => {
+    const initial = loadSystemSettings()
+    const enabled = saveSystemSettings({ ...initial, financePayment: {
+      ...initial.financePayment, vatEnabled: true, defaultVatPercent: 7, vatCalculationMode: 'INCLUSIVE',
+    } })
+    const cart = { items: [{ quantity: 1, unitPrice: 107 }] }
+    expect(calculateBillTotals(cart)).toMatchObject({ vatAmount: 7, grandTotal: 107 })
+    saveSystemSettings({ ...enabled, financePayment: { ...enabled.financePayment, vatEnabled: false } })
+    expect(calculateBillTotals(cart)).toMatchObject({ vatAmount: 0, grandTotal: 107 })
+  })
+})

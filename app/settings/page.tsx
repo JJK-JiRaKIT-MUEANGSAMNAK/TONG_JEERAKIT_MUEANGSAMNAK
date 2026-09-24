@@ -182,6 +182,7 @@ export interface FinancePaymentSettings {
     credit: boolean
   }
   defaultVatPercent: number
+  vatEnabled: boolean
   vatCalculationMode: 'EXCLUSIVE' | 'INCLUSIVE'
   defaultWithholdingPercent: number
   maximumDiscountPercent: number
@@ -263,6 +264,19 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setConfig(loadSystemSettings())
+    const syncVat = () => {
+      const saved = loadSystemSettings()
+      setConfig((prev) => ({
+        ...prev,
+        financePayment: { ...prev.financePayment, vatEnabled: saved.financePayment.vatEnabled },
+      }))
+    }
+    window.addEventListener('app_settings_changed', syncVat)
+    window.addEventListener('storage', syncVat)
+    return () => {
+      window.removeEventListener('app_settings_changed', syncVat)
+      window.removeEventListener('storage', syncVat)
+    }
   }, [])
 
   const saveConfig = async (cfg: SystemConfig, _businessId?: string, reason?: string) => {
@@ -3236,6 +3250,19 @@ export default function SettingsPage() {
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           ภาษีมูลค่าเพิ่มเริ่มต้น (VAT %)
+                        </label>
+                        <label className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            role="switch"
+                            checked={config.financePayment.vatEnabled}
+                            onChange={(e) => setConfig((prev) => ({
+                              ...prev,
+                              financePayment: { ...prev.financePayment, vatEnabled: e.target.checked },
+                            }))}
+                            className="w-4 h-4 text-violet-600 rounded"
+                          />
+                          เปิดใช้งาน VAT
                         </label>
                         <NumericInput
                           value={config.financePayment.defaultVatPercent}

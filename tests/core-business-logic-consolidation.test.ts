@@ -1,3 +1,4 @@
+import { isSaleCartItem, validateCartCustomer } from '../lib/cart-storage'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 vi.mock('@/lib/bill-storage', async (importOriginal) => {
@@ -2629,133 +2630,101 @@ describe('Workset 1 Financial Core & Integrity Suite (20 Mandated Requirements)'
 
 
 
-describe('MASTER #5 - POS RENT/SALE/BOTH (15 Tests)', () => {
-  it('1. Rent mode filters out SALE items.', () => {
-    const saleProduct = { id: 'p1', rentalType: 'SALE' } as any;
-    const rentProduct = { id: 'p2', rentalType: 'NORMAL' } as any;
-    expect(() => validateProductMode(saleProduct, 'RENT')).toThrow(/ไม่สามารถใช้ในโหมดเช่าได้/);
-    expect(() => validateProductMode(rentProduct, 'RENT')).not.toThrow();
-  });
+describe('MASTER #5 - production POS RENT/SALE and VAT', () => {
+  beforeEach(() => {
+    localStorageMock.clear()
+    saveProducts([])
+    saveBills([])
+    saveTransactions([])
+    saveReservations([])
+    saveBackorders([])
+  })
 
-  it('2. Sale mode filters out RENT items.', () => {
-    const saleProduct = { id: 'p1', rentalType: 'SALE' } as any;
-    const rentProduct = { id: 'p2', rentalType: 'NORMAL' } as any;
-    expect(() => validateProductMode(rentProduct, 'SALE')).toThrow(/ไม่สามารถใช้ในโหมดขายได้/);
-    expect(() => validateProductMode(saleProduct, 'SALE')).not.toThrow();
-  });
+  it.each(['RENT', 'SALE'] as const)('%s creates CONFIRMED/PENDING bill and pending lines', (mode) => {
+    const result = createBillWorkflow({
+      bill: buildFullBill({
+        id: `master5-${mode}`, billNo: `MASTER5-${mode}`,
+        rentalStatus: 'CONFIRMED', dispatchStatus: 'PENDING',
+        paidAmount: 0, paymentStatus: 'UNPAID',
+        items: [buildFullBillItem({
+          productId: `p-${mode}`, quantity: 2,
+          rentalType: mode === 'SALE' ? 'SALE' : 'NORMAL',
+          status: 'PENDING',
+        })],
+      }),
+      actor: { userId: 'test', displayName: 'Tester' },
+    })
+    const saved = loadBillById(result.bill.id)!
+    expect(saved).toMatchObject({ rentalStatus: 'CONFIRMED', dispatchStatus: 'PENDING' })
+    expect(saved.items[0]).toMatchObject({ itemType: mode, status: 'PENDING', requiresReturn: mode === 'RENT' })
+    if (mode === 'SALE') {
+      expect(saved.items[0]).toMatchObject({ deliveryStatus: 'PENDING', orderedQty: 2, deliveredQty: 0, remainingQty: 2 })
+    }
+  })
 
-  it('3. BOTH items appear in both modes.', () => {
-    const bothProduct = { id: 'p3', rentalType: 'BOTH' } as any;
-    expect(() => validateProductMode(bothProduct, 'RENT')).not.toThrow();
-    expect(() => validateProductMode(bothProduct, 'SALE')).not.toThrow();
-  });
+  it('mixed bill preserves RENT and SALE through production workflow', () => {
+    const { bill } = createBillWorkflow({
+      bill: buildFullBill({
+        id: 'master5-mixed', billNo: 'MASTER5-MIXED', rentalStatus: 'CONFIRMED',
+        items: [
+          buildFullBillItem({ productId: 'rent', quantity: 1, rentalType: 'NORMAL', status: 'PENDING' }),
+          buildFullBillItem({ productId: 'sale', quantity: 1, rentalType: 'SALE', status: 'PENDING' }),
+        ],
+      }),
+      actor: { userId: 'test', displayName: 'Tester' },
+    })
+    expect(bill.items.map((item) => [item.itemType, item.requiresReturn, item.status])).toEqual([
+      ['RENT', true, 'PENDING'], ['SALE', false, 'PENDING'],
+    ])
+  })
 
-  it('4. Rent mode cart item sets itemType = RENT, requiresReturn = true.', () => {
-    const item = { product: { rentalType: 'NORMAL' }, itemType: 'RENT' } as any;
-    const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
-    const mapped = { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING', deliveryStatus: 'PENDING' };
-    expect(mapped.itemType).toBe('RENT');
-    expect(mapped.requiresReturn).toBe(true);
-    expect(mapped.status).toBe('PENDING');
-  });
+  it.each([
+    null,
+    { customerName: '', phone: '0812345678', address: 'Bangkok' },
+    { customerName: 'Customer', phone: '', address: 'Bangkok' },
+    { customerName: 'Customer', phone: '0812345678', address: '' },
+    { customerName: 'Customer', phone: '   ', address: 'Bangkok' },
+  ])('RENT rejects incomplete customer %j', (customer) => {
+    expect(() => validateCartCustomer([{ itemType: 'RENT' }], customer)).toThrow()
+  })
 
-  it('5. Sale mode cart item sets itemType = SALE, requiresReturn = false.', () => {
-    const item = { product: { rentalType: 'SALE' }, itemType: 'SALE' } as any;
-    const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
-    const mapped = { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING', deliveryStatus: 'PENDING' };
-    expect(mapped.itemType).toBe('SALE');
-    expect(mapped.requiresReturn).toBe(false);
-    expect(mapped.status).toBe('PENDING');
-    expect(mapped.deliveryStatus).toBe('PENDING');
-  });
+  it.each(['NORMAL', 'DAILY', 'BOTH'])('legacy %s without itemType requires customer', (rentalType) => {
+    expect(() => validateCartCustomer([{ rentalType }], null)).toThrow()
+    expect(() => validateCartCustomer([{ product: { rentalType } }], null)).toThrow()
+  })
 
-  it('6. Mixed cart can have both itemTypes correctly mapped to BillItem.', () => {
-    const items = [
-      { product: { rentalType: 'NORMAL' }, itemType: 'RENT' },
-      { product: { rentalType: 'SALE' }, itemType: 'SALE' }
-    ] as any[];
-    const billItems = items.map(item => {
-      const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
-      return { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING' };
-    });
-    expect(billItems[0].itemType).toBe('RENT');
-    expect(billItems[0].status).toBe('PENDING');
-    expect(billItems[1].itemType).toBe('SALE');
-    expect(billItems[1].status).toBe('PENDING');
-  });
+  it('SALE-only walk-in allowed; explicit mode wins over legacy product mode', () => {
+    expect(() => validateCartCustomer([{ itemType: 'SALE', rentalType: 'NORMAL' }], null)).not.toThrow()
+    expect(() => validateCartCustomer([{ rentalType: 'SALE' }], null)).not.toThrow()
+    expect(() => validateCartCustomer([{ product: { rentalType: 'SALE' } }], null)).not.toThrow()
+    expect(isSaleCartItem({ itemType: 'RENT', rentalType: 'SALE' })).toBe(false)
+    expect(() => validateCartCustomer([{ itemType: 'SALE' }, { rentalType: 'NORMAL' }], null)).toThrow()
+    expect(() => validateCartCustomer([{ rentalType: 'NORMAL' }], {
+      customerName: 'Customer', phone: '0812345678', address: 'Bangkok',
+    })).not.toThrow()
+  })
 
-  it('7. Formula: Sale calculates as unit price * quantity.', () => {
-    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, itemType: 'SALE', rentalType: 'SALE' } as any);
-    expect(total).toBe(100);
-  });
+  it.each([
+    ['SALE', 3, 5, 100], ['NORMAL', 3, undefined, 300], ['DAILY', 1, 5, 500],
+  ])('%s uses production price formula', (rentalType, usageCount, billableDays, expected) => {
+    expect(calculateLineTotal({ rentalType: rentalType as string, quantity: 2, unitPrice: 50,
+      usageCount: usageCount as number, billableDays: billableDays as number | undefined })).toBe(expected)
+  })
 
-  it('8. Formula: Rent (per cycle) calculates as rent price * qty * usageCount.', () => {
-    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, usageCount: 3, itemType: 'RENT', rentalType: 'NORMAL' } as any);
-    expect(total).toBe(300);
-  });
+  it('product mode validation rejects wrong modes and permits BOTH', () => {
+    expect(() => validateProductMode({ rentalType: 'SALE' } as Product, 'RENT')).toThrow()
+    expect(() => validateProductMode({ rentalType: 'NORMAL' } as Product, 'SALE')).toThrow()
+    expect(() => validateProductMode({ productType: 'BOTH', rentalType: 'NORMAL' } as Product, 'RENT')).not.toThrow()
+    expect(() => validateProductMode({ productType: 'BOTH', rentalType: 'NORMAL' } as Product, 'SALE')).not.toThrow()
+  })
 
-  it('9. Formula: Rent (daily) calculates as rent price * qty * billableDays.', () => {
-    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, billableDays: 5, itemType: 'RENT', rentalType: 'DAILY' } as any);
-    expect(total).toBe(500);
-  });
-
-  it('10. Customer rules: RENT items require customer (blocks checkout if none).', () => {
-    const items = [{ itemType: 'RENT' }];
-    const hasRent = items.some(i => i.itemType === 'RENT');
-    const customer = null;
-    let error = false;
-    if (hasRent && (!customer)) error = true;
-    expect(error).toBe(true);
-  });
-
-  it('11. Customer rules: SALE-only items allow walk-in (no customer required).', () => {
-    const items = [{ itemType: 'SALE' }];
-    const hasRent = items.some(i => i.itemType === 'RENT');
-    const customer = null;
-    let error = false;
-    if (hasRent && (!customer)) error = true;
-    expect(error).toBe(false);
-  });
-
-  it('12. VAT: single VAT toggle (financePayment.defaultVatPercent).', () => {
-    const totalsOff = calculateBillTotals({
-      items: [{ product: { name: 'P' }, unitPrice: 100, quantity: 1, lineTotal: 100, itemType: 'SALE' } as any],
-      discount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      settings: { financePayment: { defaultVatPercent: 7, vatEnabled: false, vatCalculationMode: 'EXCLUSIVE' } } as any
-    });
-    expect(totalsOff.vatAmount).toBe(0);
-
-    const totalsOn = calculateBillTotals({
-      items: [{ product: { name: 'P' }, unitPrice: 100, quantity: 1, lineTotal: 100, itemType: 'SALE' } as any],
-      discount: 0,
-      shippingFee: 0,
-      depositAmount: 0,
-      settings: { financePayment: { defaultVatPercent: 7, vatEnabled: true, vatCalculationMode: 'EXCLUSIVE' } } as any
-    });
-    expect(totalsOn.vatAmount).toBe(7);
-  });
-
-  it('13. Checkout correctly saves explicit itemType as SALE in drafted/confirmed bills.', () => {
-    const billItem = { itemType: 'SALE' };
-    expect(billItem.itemType).toBe('SALE');
-  });
-
-  it('14. Stock limit: quantity + existing in cart cannot exceed available.', () => {
-    const validateStock = (cart: any[], available: number, newItemQty: number) => {
-      const cartQty = cart.reduce((acc, it) => acc + it.quantity, 0);
-      return cartQty + newItemQty <= available;
-    };
-    expect(validateStock([{ quantity: 5 }], 10, 6)).toBe(false);
-    expect(validateStock([{ quantity: 5 }], 10, 5)).toBe(true);
-  });
-
-  it('15. Price override per line works and does not affect master price.', () => {
-    const masterProduct = { id: 'p1', normalPrice: 100 };
-    const cartItem = { product: masterProduct, unitPrice: 80, quantity: 1, itemType: 'SALE', rentalType: 'SALE' } as any;
-    const total = calculateLineTotal(cartItem);
-    expect(total).toBe(80);
-    expect(masterProduct.normalPrice).toBe(100);
-  });
-});
+  it.each([false, true])('VAT enabled=%s uses configured 7 percent', (vatEnabled) => {
+    localStorageMock.setItem('app_system_settings', JSON.stringify({ financePayment: {
+      vatEnabled, defaultVatPercent: 7, vatCalculationMode: 'EXCLUSIVE',
+    } }))
+    const totals = calculateBillTotals({ items: [{ quantity: 1, unitPrice: 100 }], taxRate: 0.99 })
+    expect(totals.vatRate).toBe(vatEnabled ? 0.07 : 0)
+    expect(totals.vatAmount).toBe(vatEnabled ? 7 : 0)
+    expect(totals.grandTotal).toBe(vatEnabled ? 107 : 100)
+  })
+})
