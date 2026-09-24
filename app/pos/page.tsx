@@ -398,7 +398,7 @@ function POSContent() {
             initialDiscount={quotationValues.discount}
             initialShippingFee={quotationValues.shippingFee}
             initialDepositAmount={quotationValues.depositAmount}
-            initialTaxRate={quotationValues.taxRate}
+
             initialShippingAddress={quotationValues.shippingAddress}
             initialRentalStartDate={quotationValues.rentalStartDate}
             initialRentalEndDate={quotationValues.rentalEndDate}

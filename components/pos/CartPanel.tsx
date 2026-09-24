@@ -53,7 +53,7 @@ interface CartPanelProps {
   initialDiscount?: number
   initialShippingFee?: number
   initialDepositAmount?: number
-  initialTaxRate?: number
+
   initialShippingAddress?: string
   initialRentalStartDate?: string
   initialRentalEndDate?: string
@@ -75,7 +75,7 @@ export function CartPanel({
   initialDiscount,
   initialShippingFee,
   initialDepositAmount,
-  initialTaxRate,
+
   initialShippingAddress,
   initialRentalStartDate,
   initialRentalEndDate,
@@ -113,7 +113,6 @@ export function CartPanel({
     discount: Number(discount) || 0,
     shippingFee: Number(shippingFee) || 0,
     depositAmount: Number(depositAmount) || 0,
-    taxRate: undefined, // Always use system setting
   })
   const subtotal = totals.subtotal
   const tax = totals.vatAmount
@@ -443,9 +442,15 @@ export function CartPanel({
                 type="button"
                 onClick={() => {
                   const hasRent = items.some(item => item.itemType === 'RENT')
-                  if (hasRent && !customer) {
-                    showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
-                    return
+                  if (hasRent) {
+                    if (!customer) {
+                      showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
+                      return
+                    }
+                    if (!customer.customerName || !customer.phone || !customer.address) {
+                      showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
+                      return
+                    }
                   }
                   
                   saveActiveCart({

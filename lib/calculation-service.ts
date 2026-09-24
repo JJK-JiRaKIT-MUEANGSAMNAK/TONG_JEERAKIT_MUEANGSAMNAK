@@ -181,9 +181,7 @@ export function calculateBillTotals(options: CalculateTotalsOptions): BillCalcul
 
   // 5. VAT in Satang
   let vatRate = 0
-  if (options.taxRate !== undefined) {
-    vatRate = options.taxRate
-  } else if (options.enableVat !== false && cfg.financePayment.defaultVatPercent > 0) {
+  if (cfg.financePayment.vatEnabled && cfg.financePayment.defaultVatPercent > 0) {
     vatRate = cfg.financePayment.defaultVatPercent / 100
   }
 

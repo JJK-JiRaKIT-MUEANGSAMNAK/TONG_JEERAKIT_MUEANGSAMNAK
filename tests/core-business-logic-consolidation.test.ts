@@ -67,7 +67,7 @@ import {
   cancelOrVoidBillWorkflow,
 } from '../lib/bill-workflow-service'
 import {
-  calculateBillTotals,
+  calculateBillTotals, calculateLineTotal,
   calculateFinancialCore,
   calculateRevenueRecognized,
   getBillFinancialCoreSummary,
@@ -219,6 +219,9 @@ describe('Core Business Logic Consolidation - 18 Required Test Cases', () => {
 
   beforeEach(() => {
     localStorageMock.clear()
+    localStorageMock.setItem('app_system_settings', JSON.stringify({
+      financePayment: { vatEnabled: false, defaultVatPercent: 0 }
+    }))
     vi.clearAllMocks()
     saveProducts([
       JSON.parse(JSON.stringify(sampleProductA)),
@@ -1280,6 +1283,9 @@ describe('Workset 1 Financial Core & Integrity Suite (20 Mandated Requirements)'
 
   beforeEach(() => {
     localStorageMock.clear()
+    localStorageMock.setItem('app_system_settings', JSON.stringify({
+      financePayment: { vatEnabled: false, defaultVatPercent: 0 }
+    }))
     saveProducts([
       JSON.parse(JSON.stringify(sampleProductA)),
       JSON.parse(JSON.stringify(sampleProductB)),
@@ -2645,97 +2651,111 @@ describe('MASTER #5 - POS RENT/SALE/BOTH (15 Tests)', () => {
   });
 
   it('4. Rent mode cart item sets itemType = RENT, requiresReturn = true.', () => {
-    // Verified implicitly via POS logic in page.tsx
-    const isSale = false;
-    const itemType = isSale ? 'SALE' : 'RENT';
-    const requiresReturn = !isSale;
-    expect(itemType).toBe('RENT');
-    expect(requiresReturn).toBe(true);
+    const item = { product: { rentalType: 'NORMAL' }, itemType: 'RENT' } as any;
+    const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
+    const mapped = { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING', deliveryStatus: 'PENDING' };
+    expect(mapped.itemType).toBe('RENT');
+    expect(mapped.requiresReturn).toBe(true);
+    expect(mapped.status).toBe('PENDING');
   });
 
   it('5. Sale mode cart item sets itemType = SALE, requiresReturn = false.', () => {
-    const isSale = true;
-    const itemType = isSale ? 'SALE' : 'RENT';
-    const requiresReturn = !isSale;
-    expect(itemType).toBe('SALE');
-    expect(requiresReturn).toBe(false);
+    const item = { product: { rentalType: 'SALE' }, itemType: 'SALE' } as any;
+    const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
+    const mapped = { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING', deliveryStatus: 'PENDING' };
+    expect(mapped.itemType).toBe('SALE');
+    expect(mapped.requiresReturn).toBe(false);
+    expect(mapped.status).toBe('PENDING');
+    expect(mapped.deliveryStatus).toBe('PENDING');
   });
 
   it('6. Mixed cart can have both itemTypes correctly mapped to BillItem.', () => {
     const items = [
-      { itemType: 'RENT', requiresReturn: true },
-      { itemType: 'SALE', requiresReturn: false }
-    ];
-    const billItems = items.map(it => ({
-       itemType: it.itemType,
-       status: it.itemType === 'SALE' ? 'COMPLETED' : 'RENTING'
-    }));
-    expect(billItems[0].status).toBe('RENTING');
-    expect(billItems[1].status).toBe('COMPLETED');
+      { product: { rentalType: 'NORMAL' }, itemType: 'RENT' },
+      { product: { rentalType: 'SALE' }, itemType: 'SALE' }
+    ] as any[];
+    const billItems = items.map(item => {
+      const isSale = item.itemType === 'SALE' || item.rentalType === 'SALE' || item.product.rentalType === 'SALE';
+      return { itemType: isSale ? 'SALE' : 'RENT', requiresReturn: !isSale, status: 'PENDING' };
+    });
+    expect(billItems[0].itemType).toBe('RENT');
+    expect(billItems[0].status).toBe('PENDING');
+    expect(billItems[1].itemType).toBe('SALE');
+    expect(billItems[1].status).toBe('PENDING');
   });
 
   it('7. Formula: Sale calculates as unit price * quantity.', () => {
-    const qty = 2;
-    const price = 50;
-    const lineTotal = qty * price * 1;
-    expect(lineTotal).toBe(100);
+    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, itemType: 'SALE', rentalType: 'SALE' } as any);
+    expect(total).toBe(100);
   });
 
   it('8. Formula: Rent (per cycle) calculates as rent price * qty * usageCount.', () => {
-    const qty = 2;
-    const price = 50;
-    const usageCount = 3;
-    const lineTotal = qty * price * usageCount;
-    expect(lineTotal).toBe(300);
+    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, usageCount: 3, itemType: 'RENT', rentalType: 'NORMAL' } as any);
+    expect(total).toBe(300);
   });
 
   it('9. Formula: Rent (daily) calculates as rent price * qty * billableDays.', () => {
-    const qty = 2;
-    const price = 50;
-    const billableDays = 5;
-    const lineTotal = qty * price * billableDays;
-    expect(lineTotal).toBe(500);
+    const total = calculateLineTotal({ unitPrice: 50, quantity: 2, billableDays: 5, itemType: 'RENT', rentalType: 'DAILY' } as any);
+    expect(total).toBe(500);
   });
 
   it('10. Customer rules: RENT items require customer (blocks checkout if none).', () => {
     const items = [{ itemType: 'RENT' }];
     const hasRent = items.some(i => i.itemType === 'RENT');
     const customer = null;
-    const blocked = hasRent && !customer;
-    expect(blocked).toBe(true);
+    let error = false;
+    if (hasRent && (!customer)) error = true;
+    expect(error).toBe(true);
   });
 
   it('11. Customer rules: SALE-only items allow walk-in (no customer required).', () => {
     const items = [{ itemType: 'SALE' }];
     const hasRent = items.some(i => i.itemType === 'RENT');
     const customer = null;
-    const blocked = hasRent && !customer;
-    expect(blocked).toBe(false);
+    let error = false;
+    if (hasRent && (!customer)) error = true;
+    expect(error).toBe(false);
   });
 
   it('12. VAT: single VAT toggle (financePayment.defaultVatPercent).', () => {
-    const sysSettings = { financePayment: { defaultVatPercent: 7 } };
-    const taxRate = sysSettings.financePayment?.defaultVatPercent ?? 0;
-    expect(taxRate).toBe(7);
+    const totalsOff = calculateBillTotals({
+      items: [{ product: { name: 'P' }, unitPrice: 100, quantity: 1, lineTotal: 100, itemType: 'SALE' } as any],
+      discount: 0,
+      shippingFee: 0,
+      depositAmount: 0,
+      settings: { financePayment: { defaultVatPercent: 7, vatEnabled: false, vatCalculationMode: 'EXCLUSIVE' } } as any
+    });
+    expect(totalsOff.vatAmount).toBe(0);
+
+    const totalsOn = calculateBillTotals({
+      items: [{ product: { name: 'P' }, unitPrice: 100, quantity: 1, lineTotal: 100, itemType: 'SALE' } as any],
+      discount: 0,
+      shippingFee: 0,
+      depositAmount: 0,
+      settings: { financePayment: { defaultVatPercent: 7, vatEnabled: true, vatCalculationMode: 'EXCLUSIVE' } } as any
+    });
+    expect(totalsOn.vatAmount).toBe(7);
   });
 
   it('13. Checkout correctly saves explicit itemType as SALE in drafted/confirmed bills.', () => {
-    const it = { itemType: 'SALE' };
-    const isSale = it.itemType === 'SALE';
-    expect(isSale).toBe(true);
+    const billItem = { itemType: 'SALE' };
+    expect(billItem.itemType).toBe('SALE');
   });
 
   it('14. Stock limit: quantity + existing in cart cannot exceed available.', () => {
-    const available = 10;
-    const cartQty = 5;
-    const newQty = 6;
-    expect(cartQty + newQty > available).toBe(true);
+    const validateStock = (cart: any[], available: number, newItemQty: number) => {
+      const cartQty = cart.reduce((acc, it) => acc + it.quantity, 0);
+      return cartQty + newItemQty <= available;
+    };
+    expect(validateStock([{ quantity: 5 }], 10, 6)).toBe(false);
+    expect(validateStock([{ quantity: 5 }], 10, 5)).toBe(true);
   });
 
   it('15. Price override per line works and does not affect master price.', () => {
     const masterProduct = { id: 'p1', normalPrice: 100 };
-    const cartItem = { product: masterProduct, unitPrice: 80 };
-    expect(cartItem.unitPrice).toBe(80);
+    const cartItem = { product: masterProduct, unitPrice: 80, quantity: 1, itemType: 'SALE', rentalType: 'SALE' } as any;
+    const total = calculateLineTotal(cartItem);
+    expect(total).toBe(80);
     expect(masterProduct.normalPrice).toBe(100);
   });
 });

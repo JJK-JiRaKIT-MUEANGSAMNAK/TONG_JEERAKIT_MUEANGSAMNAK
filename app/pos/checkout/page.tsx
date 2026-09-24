@@ -100,14 +100,11 @@ export default function CheckoutPage() {
     }
   }, [])
 
-  const effectiveTaxRate = cartTaxRate !== null ? cartTaxRate : (tax > 0 ? defaultVat : 0)
-
   const totals = calculateBillTotals({
     items,
     discount,
     shippingFee,
     depositAmount,
-    taxRate: effectiveTaxRate,
   })
   const subtotal = totals.subtotal
   const grandTotal = totals.grandTotal
@@ -198,6 +195,18 @@ export default function CheckoutPage() {
       return
     }
 
+    const hasRent = items.some(item => item.itemType === 'RENT')
+    if (hasRent) {
+      if (!customer) {
+        showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
+        return
+      }
+      if (!customer.customerName || !customer.phone || !customer.address) {
+        showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       const correlationId = generateCorrelationId()
@@ -244,7 +253,8 @@ export default function CheckoutPage() {
         grandTotal: grandTotal,
         paidAmount: paid,
         outstandingAmount: outstanding,
-        rentalStatus: allItemsAreSale ? 'CLOSED' : 'RENTING',
+        rentalStatus: 'CONFIRMED',
+        dispatchStatus: 'PENDING',
         paymentStatus: isUnpaid ? 'UNPAID' : 'PAID',
         remark: remark || undefined,
         quotationId: quotationId || undefined,
@@ -256,20 +266,25 @@ export default function CheckoutPage() {
             productId: it.product.id,
             productCode: it.product.code,
             productName: it.product.name,
+            itemType: isSale ? 'SALE' : 'RENT',
             quantity: it.quantity,
+            orderedQty: it.quantity,
+            deliveredQty: 0,
+            remainingQty: it.quantity,
             returnedQty: 0,
             outstandingQty: isSale ? 0 : it.quantity,
             dailyRate: it.unitPrice,
             unit: it.product.unit || 'ชิ้น',
             defaultRepairFee: it.product.defaultDamageFee || 0,
             defaultReplacementFee: it.product.defaultLossFee || 0,
-            requiresReturn: it.requiresReturn !== undefined ? it.requiresReturn : (isSale ? false : (it.product.requiresReturn ?? true)),
+            requiresReturn: !isSale,
             rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
             scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
             rentalType: it.rentalType,
             usageCount: it.usageCount,
             lineTotal: it.lineTotal,
-            status: isSale ? ('COMPLETED' as const) : ('RENTING' as const),
+            status: 'PENDING',
+            deliveryStatus: 'PENDING',
           }
         }),
       }
@@ -346,6 +361,18 @@ export default function CheckoutPage() {
       return
     }
 
+    const hasRent = items.some(item => item.itemType === 'RENT')
+    if (hasRent) {
+      if (!customer) {
+        showToast('จำเป็นต้องเลือกลูกค้า', 'บิลที่มีรายการเช่าจำเป็นต้องระบุลูกค้า', 'ERROR')
+        return
+      }
+      if (!customer.customerName || !customer.phone || !customer.address) {
+        showToast('ข้อมูลลูกค้าไม่ครบถ้วน', 'ลูกค้าต้องมี ชื่อ, เบอร์โทร, และที่อยู่', 'ERROR')
+        return
+      }
+    }
+
     try {
       setIsSubmitting(true)
       const correlationId = generateCorrelationId()
@@ -390,20 +417,25 @@ export default function CheckoutPage() {
             productId: it.product.id,
             productCode: it.product.code,
             productName: it.product.name,
+            itemType: isSale ? 'SALE' : 'RENT',
             quantity: it.quantity,
+            orderedQty: it.quantity,
+            deliveredQty: 0,
+            remainingQty: it.quantity,
             returnedQty: 0,
             outstandingQty: isSale ? 0 : it.quantity,
             dailyRate: it.unitPrice,
             unit: it.product.unit || 'ชิ้น',
             defaultRepairFee: it.product.defaultDamageFee || 0,
             defaultReplacementFee: it.product.defaultLossFee || 0,
-            requiresReturn: it.requiresReturn !== undefined ? it.requiresReturn : (isSale ? false : (it.product.requiresReturn ?? true)),
+            requiresReturn: !isSale,
             rentalStartDate: headerRentalDate ? safeFormatDateStr(headerRentalDate) : now.toISOString().split('T')[0],
             scheduledReturnDate: headerReturnDate ? safeFormatDateStr(headerReturnDate) : now.toISOString().split('T')[0],
             rentalType: it.rentalType,
             usageCount: it.usageCount,
             lineTotal: it.lineTotal,
-            status: isSale ? ('COMPLETED' as const) : ('RENTING' as const),
+            status: 'PENDING',
+            deliveryStatus: 'PENDING',
           }
         }),
       }

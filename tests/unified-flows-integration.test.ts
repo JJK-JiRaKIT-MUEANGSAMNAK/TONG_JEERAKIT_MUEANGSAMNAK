@@ -823,6 +823,8 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
       financePayment: {
         ...loadSystemSettings().financePayment,
         maximumDiscountPercent: 20,
+        vatEnabled: false,
+        defaultVatPercent: 0,
       },
     })
 
@@ -831,7 +833,6 @@ describe('Unified Flows & System Integrations (18 Critical Invariants)', () => {
     const totals = calculateBillTotals({
       items: [{ quantity: 1, unitPrice: 1000, lineTotal: 1000 }],
       discount: 300,
-      enableVat: false,
     })
 
     // Invariant: Discount must be capped at 200

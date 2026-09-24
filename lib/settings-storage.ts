@@ -102,6 +102,7 @@ export interface FinancePaymentSettings {
     credit: boolean
   }
   defaultVatPercent: number
+  vatEnabled?: boolean
   vatCalculationMode: VatCalculationMode
   defaultWithholdingPercent: number
   maximumDiscountPercent: number
@@ -219,6 +220,7 @@ export const DEFAULT_FINANCE_PAYMENT_SETTINGS: FinancePaymentSettings = {
     credit: false,
   },
   defaultVatPercent: 7,
+  vatEnabled: true,
   vatCalculationMode: 'EXCLUSIVE',
   defaultWithholdingPercent: 0,
   maximumDiscountPercent: 50,
@@ -290,6 +292,7 @@ function mergeWithDefaults(loaded: Partial<SystemConfig>): SystemConfig {
       ...(loaded.financePayment || {}),
       paymentMethods: { ...DEFAULT_FINANCE_PAYMENT_SETTINGS.paymentMethods, ...(loaded.financePayment?.paymentMethods || {}) },
       defaultVatPercent: Number(loaded.financePayment?.defaultVatPercent ?? DEFAULT_FINANCE_PAYMENT_SETTINGS.defaultVatPercent),
+      vatEnabled: loaded.financePayment?.vatEnabled ?? DEFAULT_FINANCE_PAYMENT_SETTINGS.vatEnabled,
       vatCalculationMode: loaded.financePayment?.vatCalculationMode || DEFAULT_FINANCE_PAYMENT_SETTINGS.vatCalculationMode,
       maximumDiscountPercent: Number(loaded.financePayment?.maximumDiscountPercent ?? DEFAULT_FINANCE_PAYMENT_SETTINGS.maximumDiscountPercent),
       defaultDepositPercent: Number(loaded.financePayment?.defaultDepositPercent ?? DEFAULT_FINANCE_PAYMENT_SETTINGS.defaultDepositPercent),
