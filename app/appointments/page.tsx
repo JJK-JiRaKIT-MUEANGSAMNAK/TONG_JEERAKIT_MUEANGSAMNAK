@@ -37,15 +37,28 @@ import { useToast } from '@/components/common/Toast'
 import { logger } from '@/lib/utils/logger'
 import { AddAppointmentModal, DEFAULT_APPOINTMENT_TYPES } from '@/components/appointments/AddAppointmentModal'
 
-const WORK_ORDER_STAGES = [
+const WORK_ORDER_STAGES_DELIVERY = [
   { key: 'DISPATCH', label: 'สั่งงาน' },
   { key: 'ACCEPT', label: 'รับงาน' },
   { key: 'PREPARE', label: 'เตรียม' },
   { key: 'PREPARED', label: 'เตรียมเสร็จ' },
-  { key: 'TRANSIT', label: 'ออกส่ง/ออกเก็บ' },
+  { key: 'TRANSIT', label: 'ออกส่ง' },
   { key: 'ARRIVED', label: 'ถึงหน้างาน' },
   { key: 'INSPECT', label: 'ตรวจรายการ' },
-  { key: 'COMPLETED', label: 'เสร็จงาน' },
+  { key: 'COMPLETED', label: 'ส่งเสร็จ' },
+  { key: 'CLOSED', label: 'ปิดงาน' },
+]
+
+const WORK_ORDER_STAGES_RETURN = [
+  { key: 'DISPATCH', label: 'สั่งงานเก็บ' },
+  { key: 'ACCEPT', label: 'รับงาน' },
+  { key: 'TRANSIT', label: 'ออกเก็บ' },
+  { key: 'ARRIVED', label: 'ถึงหน้างาน' },
+  { key: 'INSPECT', label: 'ตรวจรายการ' },
+  { key: 'COLLECTED', label: 'เก็บบางส่วน/ครบ' },
+  { key: 'RETURN', label: 'กลับร้าน' },
+  { key: 'RECEIVED', label: 'รับคืนสินค้า' },
+  { key: 'CLOSED', label: 'ปิดงาน' },
 ]
 import {
   loadAppointments,
@@ -110,6 +123,14 @@ export default function AppointmentsPage() {
 
   // Work Order Dispatch Modal State (สั่งงาน)
   const [orderApt, setOrderApt] = useState<Appointment | null>(null)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
+
+  // Mock Employees
+  const MOCK_EMPLOYEES = [
+    { id: 'emp-1', name: 'นายช่าง 1 (เอก)' },
+    { id: 'emp-2', name: 'นายช่าง 2 (ชัย)' },
+    { id: 'emp-3', name: 'พนักงานขับรถ 1' }
+  ]
 
   // Work Order Timeline Modal State (สถานะงาน)
   const [timelineApt, setTimelineApt] = useState<Appointment | null>(null)
@@ -280,7 +301,6 @@ export default function AppointmentsPage() {
     }
   })
 
-  // Filter Tasks for Right Sidebar
   const todayStr = getLocalDateString()
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -293,8 +313,41 @@ export default function AppointmentsPage() {
     return true
   })
 
+  // KPI Calculations
+  const todayTasksCount = appointments.filter(a => a.date === todayStr && a.status !== 'DONE' && a.status !== 'CANCELLED').length
+  const pendingTasksCount = appointments.filter(a => a.status === 'PENDING' || a.status === 'IN_PROGRESS').length
+  const completedTasksCount = appointments.filter(a => a.status === 'DONE').length
+  const nearTasksCount = appointments.filter(a => {
+    if (a.status === 'DONE' || a.status === 'CANCELLED') return false;
+    const taskDate = parseLocalDate(a.date);
+    if (!taskDate) return false;
+    const diffTime = taskDate.getTime() - new Date().getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 3; // within 3 days
+  }).length
+
   return (
     <div className="h-full min-h-0 min-w-0 p-2 bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden">
+      {/* Mini Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 shrink-0">
+        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
+          <span className="text-slate-500 text-[11px] font-bold">งานวันนี้</span>
+          <span className="text-xl font-black text-blue-600">{todayTasksCount}</span>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
+          <span className="text-slate-500 text-[11px] font-bold">งานค้าง</span>
+          <span className="text-xl font-black text-amber-600">{pendingTasksCount}</span>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
+          <span className="text-slate-500 text-[11px] font-bold">ใกล้ถึงกำหนด (3 วัน)</span>
+          <span className="text-xl font-black text-purple-600">{nearTasksCount}</span>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
+          <span className="text-slate-500 text-[11px] font-bold">งานเสร็จสิ้น</span>
+          <span className="text-xl font-black text-emerald-600">{completedTasksCount}</span>
+        </div>
+      </div>
+
       {/* Unified Appointment Container */}
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden">
         {/* 1. Appointment Toolbar */}
@@ -605,6 +658,24 @@ export default function AppointmentsPage() {
                 )}
               </div>
 
+              {/* SECTION: รายการสินค้า (ถ้ามี) */}
+              {selectedApt.items && selectedApt.items.length > 0 && (
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                    <CheckSquare className="w-4 h-4 text-emerald-600" />
+                    <span>รายการสินค้า ({selectedApt.items.length} รายการ)</span>
+                  </div>
+                  <div className="space-y-1">
+                    {selectedApt.items.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs bg-white dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</span>
+                        <span className="text-slate-500">จำนวน: {item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Information Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. ข้อมูลลูกค้า */}
@@ -810,6 +881,16 @@ export default function AppointmentsPage() {
                       💬 {orderApt.details}
                     </p>
                   )}
+                  {orderApt.items && orderApt.items.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block mb-1">รายการสินค้า:</span>
+                      <ul className="list-disc list-inside text-slate-600 dark:text-slate-300 ml-1 space-y-0.5">
+                        {orderApt.items.map((item, idx) => (
+                          <li key={idx}>{item.name} (x{item.quantity})</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -818,9 +899,12 @@ export default function AppointmentsPage() {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   พนักงานผู้รับผิดชอบ
                 </label>
-                <div className="px-3.5 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-900 text-xs text-slate-400 dark:text-slate-500 font-medium">
-                  ยังไม่ได้เชื่อมข้อมูลพนักงาน
-                </div>
+                <CustomSelect
+                  value={selectedEmployeeId}
+                  onChange={setSelectedEmployeeId}
+                  options={MOCK_EMPLOYEES.map(e => ({ value: e.id, label: e.name }))}
+                  placeholder="เลือกพนักงาน..."
+                />
               </div>
 
               {/* Channel / LINE Field */}
@@ -830,11 +914,11 @@ export default function AppointmentsPage() {
                 </label>
                 <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                     <span className="font-semibold text-slate-700 dark:text-slate-300">LINE Notify / OA</span>
                   </div>
                   <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-                    ยังไม่เชื่อม LINE
+                    เตรียมส่งงาน (UI Only)
                   </span>
                 </div>
               </div>
@@ -849,11 +933,19 @@ export default function AppointmentsPage() {
               </button>
               <button
                 type="button"
-                disabled
-                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700"
-                title="ยังไม่เชื่อม LINE"
+                onClick={() => {
+                  if (!selectedEmployeeId) {
+                    showToast('กรุณาเลือกพนักงาน', '', 'ERROR')
+                    return
+                  }
+                  showToast('สั่งงานสำเร็จ (UI Only)', `ส่งงาน "${orderApt.title}" ให้พนักงานแล้ว`, 'SUCCESS')
+                  setOrderApt(null)
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer border border-emerald-700 shadow-sm flex items-center gap-2"
+                title="สั่งงานผ่าน LINE"
               >
-                ส่งงาน (ยังไม่เชื่อม LINE)
+                <Send className="w-3.5 h-3.5" />
+                สั่งงาน
               </button>
             </AppModalFooter>
           </>
@@ -910,7 +1002,7 @@ export default function AppointmentsPage() {
                   ขั้นตอนงาน (Work Order Stages)
                 </p>
                 <div className="relative pl-7 space-y-2 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
-                  {WORK_ORDER_STAGES.map((stage, idx) => (
+                  {(timelineApt.type === 'RETURN' ? WORK_ORDER_STAGES_RETURN : WORK_ORDER_STAGES_DELIVERY).map((stage, idx) => (
                     <div key={stage.key} className="relative flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                       <span className="absolute -left-7 flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-xs">
                         {idx + 1}
@@ -928,7 +1020,7 @@ export default function AppointmentsPage() {
 
               {/* Note */}
               <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
-                ⚠️ ยังไม่มีการบันทึก Work Order Event รายขั้นตอนจริง ข้อมูลด้านบนแสดงตามโครงสร้าง MASTER ขั้นตอนงาน
+                ⚠️ ยังไม่มีการบันทึก Work Order Event รายขั้นตอนจริง ข้อมูลด้านบนแสดงตามโครงสร้าง MASTER ขั้นตอนงาน (UI Only)
               </div>
             </AppModalBody>
             <AppModalFooter>

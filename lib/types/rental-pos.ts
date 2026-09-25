@@ -220,6 +220,18 @@ export interface Customer {
   createdAt?: string
 }
 
+export interface WorkOrderEvent {
+  id: string
+  stage: string
+  status: 'PENDING' | 'DONE' | 'SKIPPED'
+  by?: string
+  timestamp?: string
+  note?: string
+  images?: string[]
+  actualQuantity?: number
+  issues?: string
+}
+
 export interface Appointment {
   id: string
   businessId?: string
@@ -240,6 +252,11 @@ export interface Appointment {
   quotationNo?: string
   details?: string
   status: AppointmentStatus
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+  assigneeId?: string
+  assigneeName?: string
+  items?: { id: string; name: string; quantity: number }[]
+  events?: WorkOrderEvent[]
   createdAt?: string
 }
 
