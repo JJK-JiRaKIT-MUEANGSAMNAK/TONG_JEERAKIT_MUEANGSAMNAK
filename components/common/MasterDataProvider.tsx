@@ -8,6 +8,7 @@ import { loadCustomers, setCachedCustomers } from '@/lib/customer-storage'
 import { fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchUnitsFromSupabase } from '@/lib/repositories/product-repository'
 import { fetchCustomersFromSupabase } from '@/lib/repositories/customer-repository'
 import { RefreshCw } from 'lucide-react'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 interface MasterDataContextType {
   isLoaded: boolean
@@ -23,9 +24,17 @@ export function useMasterData() {
 export function MasterDataProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+  const { session, loading: authLoading } = useAuth()
 
   useEffect(() => {
     async function initData() {
+      if (authLoading) return
+      
+      if (!session) {
+        setIsLoaded(true)
+        return
+      }
+
       try {
         const [products, categories, units, customers] = await Promise.all([
           fetchProductsFromSupabase(),
@@ -35,10 +44,22 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
         ])
 
         // Categories mapping
-        setCachedCategories(categories.map(c => ({ id: c.id, name: c.name })))
+        setCachedCategories(categories.map(c => ({ 
+          id: c.id, 
+          name: c.name,
+          calculationType: c.calculation_type,
+          calculationLabel: c.calculation_label,
+          defaultUnitId: c.default_unit_id,
+          isDefault: c.is_default,
+          isActive: c.is_active
+        })))
         
         // Units mapping
-        setCachedUnits(units.map(u => ({ id: u.id, name: u.name, isActive: true })))
+        setCachedUnits(units.map(u => ({ 
+          id: u.id, 
+          name: u.name, 
+          isActive: u.is_active ?? true 
+        })))
 
         // Products mapping (already done inside fetchProductsFromSupabase)
         setCachedProducts(products)
@@ -53,7 +74,18 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       }
     }
     initData()
-  }, [])
+  }, [session, authLoading])
+
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-500">
+        <div className="flex flex-col items-center">
+          <RefreshCw className="h-8 w-8 animate-spin mb-4" />
+          <p className="font-semibold">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (error) {
     return (

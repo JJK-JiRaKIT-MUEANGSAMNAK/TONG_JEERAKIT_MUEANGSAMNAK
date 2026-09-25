@@ -45,7 +45,7 @@ import { NewCustomerModal } from '@/components/customers/NewCustomerModal'
 import { useToast } from '@/components/common/Toast'
 import { AppModal, AppModalHeader, AppModalBody, AppModalFooter } from '@/components/common/AppModal'
 import { logger } from '@/lib/utils/logger'
-import { loadCustomers, addCustomer, updateCustomer, deleteCustomer } from '@/lib/customer-storage'
+import { loadCustomers, addCustomerAsync, updateCustomerAsync, deleteCustomerAsync } from '@/lib/customer-storage'
 import { loadRentalBills, deleteBill, canHardDeleteBill } from '@/lib/bill-storage'
 import { returnProductStock, restoreSaleProductStock } from '@/lib/product-storage'
 import { loadTransactions } from '@/lib/finance-storage'
@@ -316,7 +316,7 @@ export default function CustomersPage() {
 
     try {
       const updatedCustomer = { ...c, isSuspended: targetSuspend }
-      updateCustomer(updatedCustomer)
+      await updateCustomerAsync(updatedCustomer)
       setCustomers((prev) =>
         prev.map((item) => (item.id === updatedCustomer.id ? updatedCustomer : item))
       )
@@ -341,14 +341,14 @@ export default function CustomersPage() {
     }
 
     try {
-      deleteCustomer(customerToDelete.id)
-      setCustomers((prev) => prev.filter((item) => item.id !== customerToDelete.id))
+      await deleteCustomerAsync(customerToDelete.id)
+      setCustomers((prev) => prev.map((item) => (item.id === customerToDelete.id ? { ...item, isSuspended: true, status: 'INACTIVE' } : item)))
       if (selectedCustomerId === customerToDelete.id) {
         setSelectedCustomerId('')
       }
       showToast(
-        'ลบลูกค้าสำเร็จ',
-        `ทำการลบข้อมูลลูกค้า ${customerToDelete.customerName} เรียบร้อยแล้ว`,
+        'ระงับลูกค้าสำเร็จ',
+        `ทำการระงับข้อมูลลูกค้า ${customerToDelete.customerName} เรียบร้อยแล้ว`,
         'SUCCESS'
       )
       setCustomerDeleteReason('')
@@ -366,15 +366,23 @@ export default function CustomersPage() {
         showToast('กรุณาระบุเหตุผล', 'จำเป็นต้องระบุเหตุผลในการแก้ไขข้อมูลลูกค้า', 'ERROR')
         return
       }
-      updateCustomer(updatedCustomer)
-      setCustomers(customers.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c)))
-      showToast('แก้ไขข้อมูลลูกค้าสำเร็จ', `ปรับปรุงข้อมูลของ ${updatedCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+      try {
+        await updateCustomerAsync(updatedCustomer)
+        setCustomers(customers.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c)))
+        showToast('แก้ไขข้อมูลลูกค้าสำเร็จ', `ปรับปรุงข้อมูลของ ${updatedCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+      } catch (err: any) {
+        showToast('แก้ไขข้อมูลลูกค้าไม่สำเร็จ', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+      }
     } else {
       const newCustomer = { ...updatedCustomer, id: updatedCustomer.id || `cust-${Date.now()}` }
-      addCustomer(newCustomer)
-      setCustomers([newCustomer, ...customers])
-      setSelectedCustomerId(newCustomer.id)
-      showToast('เพิ่มลูกค้าใหม่สำเร็จ', `บันทึกข้อมูลลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+      try {
+        await addCustomerAsync(newCustomer)
+        setCustomers([newCustomer, ...customers])
+        setSelectedCustomerId(newCustomer.id)
+        showToast('เพิ่มลูกค้าใหม่สำเร็จ', `บันทึกข้อมูลลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+      } catch (err: any) {
+        showToast('เพิ่มลูกค้าใหม่ไม่สำเร็จ', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+      }
     }
   }
 
@@ -394,7 +402,7 @@ export default function CustomersPage() {
         ...selectedCustomer,
         note: customerNoteInput.trim() || undefined,
       }
-      updateCustomer(updated)
+      await updateCustomerAsync(updated)
       setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
       showToast('บันทึกหมายเหตุสำเร็จ', `อัปเดตหมายเหตุของ ${updated.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
     } catch (err: any) {

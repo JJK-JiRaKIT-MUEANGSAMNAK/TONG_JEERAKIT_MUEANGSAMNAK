@@ -18,7 +18,7 @@ import {
 import { useTheme } from '@/lib/contexts/ThemeContext'
 import { NewCustomerModal } from '@/components/customers/NewCustomerModal'
 import { AddAppointmentModal } from '@/components/appointments/AddAppointmentModal'
-import { addCustomer } from '@/lib/customer-storage'
+import { addCustomerAsync } from '@/lib/customer-storage'
 import { addAppointment } from '@/lib/appointment-storage'
 
 interface QuickActionLauncherProps {
@@ -165,9 +165,14 @@ export function QuickActionLauncher({ className = '' }: QuickActionLauncherProps
       <NewCustomerModal
         isOpen={showNewCustomerModal}
         onClose={() => setShowNewCustomerModal(false)}
-        onSave={(c) => {
-          addCustomer(c)
-          setShowNewCustomerModal(false)
+        onSave={async (c) => {
+          try {
+            await addCustomerAsync(c)
+            setShowNewCustomerModal(false)
+          } catch (err) {
+            console.error(err)
+            alert('บันทึกลูกค้าไม่สำเร็จ โปรดลองอีกครั้ง')
+          }
         }}
       />
 

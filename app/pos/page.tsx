@@ -15,7 +15,7 @@ import {
 } from '@/components/common/ActionButton'
 import { ShoppingBag, Package, FileText, ArrowLeft } from 'lucide-react'
 import { loadProducts } from '@/lib/product-storage'
-import { loadCustomers, addCustomer as addStorageCustomer } from '@/lib/customer-storage'
+import { loadCustomers, addCustomerAsync as addStorageCustomer } from '@/lib/customer-storage'
 import { CartItem } from '@/lib/cart-storage'
 import { addQuotation, getQuotationById, generateQuotationNo, mapQuotationToPos } from '@/lib/quotation-storage'
 import { loadBillById } from '@/lib/bill-storage'
@@ -231,10 +231,14 @@ function POSContent() {
   }
 
   const handleAddCustomer = async (newCustomer: Customer) => {
-    const updated = addStorageCustomer(newCustomer)
-    setCustomersList(updated)
-    setSelectedCustomer(newCustomer)
-    showToast('เพิ่มลูกค้าสำเร็จ', `เพิ่มลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+    try {
+      const updated = await addStorageCustomer(newCustomer)
+      setCustomersList(updated)
+      setSelectedCustomer(newCustomer)
+      showToast('เพิ่มลูกค้าสำเร็จ', `เพิ่มลูกค้า ${newCustomer.customerName} เรียบร้อยแล้ว`, 'SUCCESS')
+    } catch (err: any) {
+      showToast('ไม่สามารถเพิ่มลูกค้าได้', err?.message || 'เกิดข้อผิดพลาด', 'ERROR')
+    }
   }
 
   const handleCheckout = () => {

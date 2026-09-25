@@ -221,9 +221,9 @@ export async function deleteProductFromSupabase(id: string): Promise<void> {
 /**
  * Categories repository methods
  */
-export async function fetchCategoriesFromSupabase(): Promise<Array<{ id: string; name: string }>> {
+export async function fetchCategoriesFromSupabase(): Promise<any[]> {
   if (isPlaceholderConfig()) return []
-  const { data, error } = await supabase.from('product_categories').select('id, name').order('name')
+  const { data, error } = await supabase.from('product_categories').select('id, name, calculation_type, calculation_label, default_unit_id, is_default, is_active').order('name')
   if (error) throw error
   return data || []
 }
@@ -246,9 +246,9 @@ export async function deleteCategoryFromSupabase(id: string): Promise<void> {
 /**
  * Units repository methods
  */
-export async function fetchUnitsFromSupabase(): Promise<Array<{ id: string; name: string }>> {
+export async function fetchUnitsFromSupabase(): Promise<any[]> {
   if (isPlaceholderConfig()) return []
-  const { data, error } = await supabase.from('units').select('id, name').order('name')
+  const { data, error } = await supabase.from('units').select('id, name, is_active').order('name')
   if (error) throw error
   return data || []
 }
