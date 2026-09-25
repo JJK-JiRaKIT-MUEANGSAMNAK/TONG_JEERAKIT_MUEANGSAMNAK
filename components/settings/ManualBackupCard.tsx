@@ -19,11 +19,7 @@ export function ManualBackupCard() {
     try {
       const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
       setLastExportTime(nowStr)
-      showToast(
-        'ดาวน์โหลดไฟล์สำรองข้อมูลสำเร็จ',
-        `บันทึกไฟล์สำรองข้อมูล (${format}) ลงในอุปกรณ์ของคุณเรียบร้อยแล้ว`,
-        'SUCCESS'
-      )
+      /* no real export */
     } catch (err: any) {
       logger.error('Backup export failed:', err)
       showToast(
@@ -37,7 +33,7 @@ export function ManualBackupCard() {
   }
 
   return (
-    <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+    <div className="py-6 px-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900 shrink-0">
@@ -121,21 +117,21 @@ export function ManualBackupCard() {
         <button
           type="button"
           onClick={() => handleExport('EXCEL')}
-          disabled={isExporting}
+          disabled
           className="h-9 py-0 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer flex-1 min-w-[200px]"
         >
           <FileSpreadsheet className="w-4 h-4 shrink-0" />
-          <span>{isExporting ? 'กำลังสร้างไฟล์...' : 'ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)'}</span>
+          <span>ยังไม่เชื่อมระบบสำรองข้อมูล</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleExport('JSON')}
-          disabled={isExporting}
+          disabled
           className="h-9 py-0 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer flex-1 min-w-[200px]"
         >
           <FileCode className="w-4 h-4 shrink-0" />
-          <span>{isExporting ? 'กำลังสร้างไฟล์...' : 'ดาวน์โหลดเป็นไฟล์ Database JSON'}</span>
+          <span>ยังไม่เชื่อมระบบสำรองข้อมูล</span>
         </button>
       </div>
 

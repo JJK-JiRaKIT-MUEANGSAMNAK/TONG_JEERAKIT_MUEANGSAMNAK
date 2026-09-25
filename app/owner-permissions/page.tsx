@@ -378,7 +378,7 @@ export default function OwnerPermissionsPage() {
                           <th className="py-2 px-3 sm:px-4">ชื่อเข้าสู่ระบบ (Username)</th>
                           <th className="py-2 px-3 sm:px-4 text-center">ระดับสิทธิ์ (Role)</th>
                           <th className="py-2 px-3 sm:px-4 text-center">สถานะ</th>
-                          <th className="py-2 px-3 sm:px-4">เข้าใช้ล่าสุด</th>
+                          <th className="py-2 px-3 sm:px-4">วันที่สร้างบัญชี</th>
                           <th className="py-2 px-3 sm:px-4 text-right">จัดการ</th>
                         </tr>
                       </thead>

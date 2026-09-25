@@ -257,6 +257,7 @@ import {
   DEFAULT_BRANDING_SETTINGS,
 } from '@/lib/settings-storage'
 import { updatePassword } from '@/app/actions/auth'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export default function SettingsPage() {
   const { showToast } = useToast()
@@ -295,27 +296,7 @@ export default function SettingsPage() {
   const resetFinancePaymentSettings = () => setConfig((prev) => ({ ...prev, financePayment: DEFAULT_FINANCE_PAYMENT_SETTINGS }))
   const resetDocumentPrintingSettings = () => setConfig((prev) => ({ ...prev, documentPrinting: DEFAULT_DOCUMENT_PRINTING_SETTINGS }))
   const resetNotificationSettings = () => setConfig((prev) => ({ ...prev, notifications: DEFAULT_NOTIFICATION_SETTINGS }))
-  const [user, setUser] = useState<{
-    id: string
-    username: string
-    email: string
-    emailVerified: boolean
-    fullName: string
-    firstName: string
-    role: string
-    businessId: string
-    avatarUrl: string | null
-  }>({
-    id: '',
-    username: '',
-    email: '',
-    emailVerified: false,
-    fullName: '',
-    firstName: '',
-    role: '',
-    businessId: '',
-    avatarUrl: null,
-  })
+  const { user, signOut } = useAuth()
 
   const [autoLockDuration, setAutoLockDuration] = useState<AutoLockDuration>('5')
   const [isMfaEnrolled, setIsMfaEnrolled] = useState(false)
@@ -353,7 +334,7 @@ export default function SettingsPage() {
           sessionStorage.removeItem(key)
         }
       })
-      window.location.href = '/login'
+      await signOut()
     }
   }
 
@@ -391,7 +372,7 @@ export default function SettingsPage() {
     showToast('บันทึกสำเร็จ', 'อัปเดตระยะเวลาล็อกหน้าจอแล้ว', 'SUCCESS')
   }
   const updateUserAvatar = async (url: string | null) => {
-    setUser((prev) => ({ ...prev, avatarUrl: url }))
+    /* avatar update removed for auth context */
   }
   const [activeTab, setActiveTab] = useState<SettingsTab>('BUSINESS')
   const [businessSubTab, setBusinessSubTab] = useState<BusinessSubTab>('INFO')
@@ -1278,7 +1259,7 @@ export default function SettingsPage() {
                   {businessSubTab === 'INFO' && (
                     <div className="space-y-2">
                       {/* Logo Section */}
-                      <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="py-6 px-4 space-y-4">
                         <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                           <ImageIcon className="w-4 h-4 text-blue-500" />
                           <span>โลโก้กิจการ</span>
@@ -1428,7 +1409,7 @@ export default function SettingsPage() {
                     <div className="space-y-2">
                       <div className="grid grid-cols-1 gap-2">
                         {/* CARD 0: ชื่อระบบ (System Name) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
+                        <div className="py-6 px-4 space-y-4">
                           <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
                               <Store className="w-4 h-4" />
@@ -1468,7 +1449,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 1: พื้นหลังเข้าสู่ระบบ (Login + PIN Lock Background) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
+                        <div className="py-6 px-4 space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">
@@ -1557,7 +1538,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 2: รูปโปรไฟล์ผู้ใช้งาน (User Avatar) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
+                        <div className="py-6 px-4 space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
@@ -1568,7 +1549,7 @@ export default function SettingsPage() {
                                   รูปโปรไฟล์ผู้ใช้งาน
                                 </h4>
                                 <p className="text-[11px] text-slate-500">
-                                  รูป Avatar ประจำตัวสำหรับบัญชีปัจจุบัน (@{user?.username || 'user'}) แสดงบนหน้าจอ PIN Lock และส่วนหัวผู้ใช้
+                                  รูป Avatar ประจำตัวสำหรับบัญชีปัจจุบัน (@{user?.username || user?.email || 'N/A'}) แสดงบนหน้าจอ PIN Lock และส่วนหัวผู้ใช้
                                 </p>
                               </div>
                             </div>
@@ -1617,7 +1598,7 @@ export default function SettingsPage() {
                               <div className="flex items-center justify-center sm:justify-start gap-2">
                                 <span className="font-black text-sm text-slate-900 dark:text-slate-100">{user?.fullName || 'ผู้ใช้งานระบบ'}</span>
                                 <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px]">
-                                  @{user?.username || 'user'}
+                                  @{user?.username || user?.email || 'N/A'}
                                 </span>
                               </div>
                               <p className="text-[11px] text-slate-500">
@@ -1631,7 +1612,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* CARD 3: โลโก้แอปและไอคอนระบบ (App Logo & System Icon) */}
-                        <div className="bg-slate-50 dark:bg-slate-850 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2">
+                        <div className="py-6 px-4 space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/60 pb-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
@@ -2054,7 +2035,7 @@ export default function SettingsPage() {
               {activeTab === 'RENTAL_BILLS' && (
                 <div className="space-y-2">
                   {/* กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-emerald-500" />
                       <span>กลุ่ม A: ค่าเริ่มต้นการเช่า (Rental Defaults)</span>
@@ -2112,7 +2093,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
                       <span>กลุ่ม B: วิธีการคำนวณและเวลาตัดรอบ (Billing Calculation & Cutoff)</span>
@@ -2207,7 +2188,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
                       <span>กลุ่ม C: การคืนสินค้าล่าช้าและค่าปรับ (Overdue & Late Return Policy)</span>
@@ -2313,7 +2294,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-indigo-500" />
                       <span>กลุ่ม D: นโยบายบิลและการจอง (Order & Booking Policies)</span>
@@ -2473,7 +2454,7 @@ export default function SettingsPage() {
                     const preview = previewDocumentNumber(dConfig)
 
                     return (
-                      <div key={doc.key} className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div key={doc.key} className="py-6 px-4 space-y-4">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <h4 className="font-bold text-slate-900 dark:text-slate-100">{doc.name}</h4>
                           <div className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-xs border border-indigo-200 dark:border-indigo-800">
@@ -3002,7 +2983,7 @@ export default function SettingsPage() {
               {activeTab === 'FINANCE' && (
                 <div className="space-y-2">
                   {/* Section A: บัญชีรับเงินของร้าน & PromptPay (ยกมาจากหมวดกิจการเดิม) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
                       <span>ส่วนที่ 1: บัญชีรับเงิน & PromptPay สำหรับรับชำระ</span>
@@ -3147,7 +3128,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section B: ช่องทางรับชำระเงิน (Payment Methods) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-blue-500" />
                       <span>ส่วนที่ 2: ช่องทางการชำระเงินที่เปิดใช้งาน</span>
@@ -3241,7 +3222,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section C: ภาษีและส่วนลด (Tax & Discount Settings) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-amber-500" />
                       <span>ส่วนที่ 3: ภาษีและส่วนลด (Tax & Discount Settings)</span>
@@ -3353,7 +3334,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section D: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Save className="w-4 h-4 text-emerald-500" />
                       <span>ส่วนที่ 4: เงินมัดจำและการเงินอัตโนมัติ (Deposit & Automation)</span>
@@ -3408,7 +3389,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Section E: การปัดเศษทศนิยม (Currency & Rounding) */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <Hash className="w-4 h-4 text-indigo-500" />
                       <span>ส่วนที่ 5: การปัดเศษทศนิยม (Currency & Rounding)</span>
@@ -3608,7 +3589,7 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* 1. กำหนดส่งสินค้า */}
-                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="py-2 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3665,7 +3646,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 2. กำหนดคืนสินค้า */}
-                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="py-2 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3722,7 +3703,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 3. ค้างชำระ */}
-                      <div className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                      <div className="py-2 flex items-center justify-between gap-2">
                         <label className="flex items-center gap-2.5 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3779,7 +3760,7 @@ export default function SettingsPage() {
                       </div>
 
                       {/* 4. สต็อกต่ำ */}
-                      <label className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                      <label className="py-2 flex items-center justify-between gap-2.5 cursor-pointer">
                         <div className="flex items-center gap-2.5">
                           <input
                             type="checkbox"
@@ -3817,7 +3798,7 @@ export default function SettingsPage() {
                       </label>
 
                       {/* 5. สินค้าค้างคืน/คืนล่าช้า */}
-                      <label className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2.5 cursor-pointer">
+                      <label className="py-2 flex items-center justify-between gap-2.5 cursor-pointer">
                         <div className="flex items-center gap-2.5">
                           <input
                             type="checkbox"
@@ -3926,11 +3907,11 @@ export default function SettingsPage() {
 
                       <button
                         type="button"
-                        onClick={() => showToast('ทดสอบส่ง LINE สำเร็จ', 'ส่งสัญญาณข้อความทดสอบเข้า LINE Notify เรียบร้อยแล้ว', 'SUCCESS')}
+                        onClick={() => { /* No-op or disabled */ }}
                         className="h-9 px-3.5 py-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                       >
                         <MessageSquare className="w-4 h-4" />
-                        <span>⚡ ทดสอบส่งข้อความ LINE แจ้งเตือน</span>
+                        <span>⚡ ทดสอบส่งข้อความ LINE แจ้งเตือน (ยังไม่เชื่อม)</span>
                       </button>
                     </div>
                   </div>
@@ -3943,7 +3924,7 @@ export default function SettingsPage() {
                   {systemAccountSubTab === 'SECURITY' && (
                     <div className="space-y-2">
                       {/* 1. User Profile Information */}
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="py-6 px-4 space-y-4">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <User className="w-4 h-4 text-blue-500" />
                       <span>ข้อมูลบัญชีผู้ใช้งาน</span>
@@ -3953,14 +3934,14 @@ export default function SettingsPage() {
                       <div>
                         <label className="block text-slate-500 mb-0.5 text-[11px]">ชื่อผู้ใช้งาน (Username)</label>
                         <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold font-mono text-slate-900 dark:text-slate-100">
-                          @{user?.username || 'user'}
+                          @{user?.username || user?.email || 'N/A'}
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-slate-500 mb-0.5 text-[11px]">อีเมล (Email สำหรับกู้คืน)</label>
                         <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-slate-900 dark:text-slate-100 flex items-center justify-between">
-                          <span>{user?.email || 'user@rentalpos.com'}</span>
+                          <span>{user?.email || 'N/A'}</span>
                           {user?.emailVerified ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
                               ยืนยันแล้ว
@@ -4140,7 +4121,7 @@ export default function SettingsPage() {
                                 </button>
                               </div>
                               <p className="text-[10px] text-slate-500">
-                                ผู้ให้บริการ: Rental POS &bull; บัญชี: @{user?.username || 'user'}
+                                ผู้ให้บริการ: Rental POS &bull; บัญชี: @{user?.username || user?.email || 'N/A'}
                               </p>
                             </div>
                           </div>
@@ -4351,7 +4332,7 @@ export default function SettingsPage() {
                     </div>
 
                     {/* 5. Session Management */}
-                    <div className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="py-6 px-4 space-y-4">
                       <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         <LogOut className="w-4 h-4 text-rose-500" />
                         <span>เซสชันการใช้งาน</span>
@@ -4372,7 +4353,7 @@ export default function SettingsPage() {
                           onClick={async () => {
                             try {
                               await logout('global')
-                              showToast('ออกจากระบบสำเร็จ', 'ออกจากระบบทุกอุปกรณ์เรียบร้อยแล้ว', 'INFO')
+                              showToast('ออกจากระบบสำเร็จ', 'ออกจากระบบทุกอุปกรณ์ (ยังไม่รองรับ)เรียบร้อยแล้ว', 'INFO')
                             } catch {
                               await logout()
                             }
