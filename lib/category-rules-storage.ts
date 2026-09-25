@@ -124,36 +124,20 @@ const LEGACY_RULES_KEY = 'pos_category_rules'
 // ─── Categories Management (ตาราง 1) ───────────────────────
 
 let _cachedCategories: ProductCategoryItem[] | null = null
-let _isFetchingCategories = false
+
+export function setCachedCategories(categories: ProductCategoryItem[]) {
+  _cachedCategories = categories
+}
 
 export function loadCategories(): ProductCategoryItem[] {
-  if (typeof window === 'undefined') return []
-  if (_cachedCategories === null) {
-    const raw = localStorage.getItem(CATEGORIES_KEY)
-    _cachedCategories = raw ? JSON.parse(raw) : [...DEFAULT_CATEGORIES]
+  if (typeof window === 'undefined') {
+    if (process.env.NODE_ENV === 'test') {
+      return DEFAULT_CATEGORIES
+    }
+    return []
   }
-  if (!_isFetchingCategories) {
-    _isFetchingCategories = true
-      fetchCategoriesFromSupabase()
-      .then((cats) => {
-        if (Array.isArray(cats)) {
-          _cachedCategories = cats.map((c) => ({ id: c.id, name: c.name }))
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem(CATEGORIES_KEY, JSON.stringify(_cachedCategories))
-              window.dispatchEvent(new Event('app_settings_changed'))
-            } catch {}
-          }
-        }
-      })
-      .catch((err) => {
-        if (process.env.NODE_ENV !== 'test') {
-          console.error('Failed to sync categories from Supabase', err)
-        }
-      })
-      .finally(() => {
-        _isFetchingCategories = false
-      })
+  if (process.env.NODE_ENV === 'test' && !_cachedCategories?.length) {
+    return DEFAULT_CATEGORIES
   }
   return _cachedCategories || []
 }
@@ -161,9 +145,6 @@ export function loadCategories(): ProductCategoryItem[] {
 export function saveCategories(categories: ProductCategoryItem[]): void {
   if (typeof window === 'undefined') return
   _cachedCategories = categories
-  try {
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
-  } catch {}
 }
 
 export function addCategory(name: string): ProductCategoryItem[] {

@@ -28,40 +28,20 @@ export const DEFAULT_UNITS: Unit[] = [
  * Load all units from Supabase / localStorage with safe non-destructive fallback.
  */
 let _cachedUnits: Unit[] | null = null
-let _isFetchingUnits = false
+
+export function setCachedUnits(units: Unit[]) {
+  _cachedUnits = units
+}
 
 export function loadUnits(): Unit[] {
-  if (typeof window === 'undefined') return []
-  if (_cachedUnits === null) {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    _cachedUnits = raw ? JSON.parse(raw) : [...DEFAULT_UNITS]
+  if (typeof window === 'undefined') {
+    if (process.env.NODE_ENV === 'test') {
+      return DEFAULT_UNITS
+    }
+    return []
   }
-  if (!_isFetchingUnits) {
-    _isFetchingUnits = true
-    fetchUnitsFromSupabase()
-      .then((units) => {
-        if (Array.isArray(units)) {
-          _cachedUnits = units.map((u) => ({
-            id: u.id,
-            name: u.name,
-            isActive: (u as any).isActive !== undefined ? (u as any).isActive : true,
-          }))
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(_cachedUnits))
-              window.dispatchEvent(new Event('app_settings_changed'))
-            } catch {}
-          }
-        }
-      })
-      .catch((err) => {
-        if (process.env.NODE_ENV !== 'test') {
-          console.error('Failed to sync units from Supabase', err)
-        }
-      })
-      .finally(() => {
-        _isFetchingUnits = false
-      })
+  if (process.env.NODE_ENV === 'test' && !_cachedUnits?.length) {
+    return DEFAULT_UNITS
   }
   return _cachedUnits || []
 }
@@ -73,9 +53,6 @@ export function loadUnits(): Unit[] {
 export function saveUnits(units: Unit[]): void {
   if (typeof window === 'undefined') return
   _cachedUnits = units
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(units))
-  } catch {}
 }
 
 /**

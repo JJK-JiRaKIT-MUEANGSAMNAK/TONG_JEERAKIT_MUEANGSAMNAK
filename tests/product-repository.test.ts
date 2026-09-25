@@ -155,22 +155,14 @@ describe('Master #4 - Product Repository Schema & Mapping Tests', () => {
     expect(capturedUpsertPayload.stock_quantity).toBe(30)
     expect(capturedUpsertPayload.updated_at).toBeDefined()
 
-    // STRICT CHECK: Ensure forbidden columns are NOT present
+    // STRICT CHECK: Ensure legacy columns are NOT present (only real db columns)
     const forbiddenColumns = [
-      'rental_type',
       'normal_price',
-      'daily_price',
-      'default_damage_fee',
-      'default_loss_fee',
       'total_quantity',
       'available_quantity',
       'rented_quantity',
       'damaged_quantity',
       'lost_quantity',
-      'minimum_stock',
-      'status',
-      'calculation_type',
-      'calculation_label',
       'category',
       'unit',
     ]

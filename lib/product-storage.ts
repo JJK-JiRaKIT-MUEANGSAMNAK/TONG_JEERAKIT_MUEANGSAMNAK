@@ -151,78 +151,43 @@ const SEED_PRODUCTS: Product[] = [
   buildProduct('seed-bs-010', 'BS-010', 'แบบเสา 25x25x3.00', 'แบบเสา', 'cat-2', 'NORMAL', 'rt-1', 'ต้น', 'unit-2'),
 
   // ── นั่งร้าน (4) ──
-  buildProduct('seed-nr-001', 'NR-001', 'นั่งร้าน 1.70(ชุด)', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-4'),
-  buildProduct('seed-nr-002', 'NR-002', 'ล้อ 6นิ้ว', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-4'),
-  buildProduct('seed-nr-003', 'NR-003', 'ล้อ 8นิ้ว', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-4'),
-  buildProduct('seed-nr-004', 'NR-004', 'ขาปรับระดับ', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-4'),
+  buildProduct('seed-nr-001', 'NR-001', 'นั่งร้าน 1.70(ชุด)', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-3'),
+  buildProduct('seed-nr-002', 'NR-002', 'ล้อ 6นิ้ว', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-3'),
+  buildProduct('seed-nr-003', 'NR-003', 'ล้อ 8นิ้ว', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-3'),
+  buildProduct('seed-nr-004', 'NR-004', 'ขาปรับระดับ', 'นั่งร้าน', 'cat-3', 'NORMAL', 'rt-1', 'ชุด', 'unit-3'),
 
   // ── อุปกรณ์เสริม (6) ──
-  buildProduct('seed-acc-001', 'ACC-NUT-0410', 'น็อต 4/10"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
-  buildProduct('seed-acc-002', 'ACC-NUT-0414', 'น็อต 4/14"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
-  buildProduct('seed-acc-003', 'ACC-NUT-0401', 'น็อต 4/1"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
-  buildProduct('seed-acc-004', 'ACC-CROSS', 'กากบาท', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
-  buildProduct('seed-acc-005', 'ACC-CAP', 'ครอบนั่งร้าน', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
-  buildProduct('seed-acc-006', 'ACC-JOINT', 'ข้อต่อ', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-3', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-001', 'ACC-NUT-0410', 'น็อต 4/10"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-002', 'ACC-NUT-0414', 'น็อต 4/14"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-003', 'ACC-NUT-0401', 'น็อต 4/1"', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-004', 'ACC-CROSS', 'กากบาท', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-005', 'ACC-CAP', 'ครอบนั่งร้าน', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
+  buildProduct('seed-acc-006', 'ACC-JOINT', 'ข้อต่อ', 'อุปกรณ์เสริม', 'cat-4', 'NORMAL', 'rt-1', 'ชิ้น', 'unit-4', { isAccessory: true, isChargeable: false }),
 ]
 
-// ─── Storage helpers ──────────────────────────────────────────────────
+/// ─── Storage helpers ──────────────────────────────────────────────────
 
 /**
- * Load products from Supabase / localStorage cache.
+ * Load products from Supabase cache.
  * Supabase is authoritative runtime source of truth.
  * Safe to call on the server (returns [] when `window` is undefined).
  */
 let _cachedProducts: Product[] | null = null
-let _isFetchingProducts = false
+
+export function setCachedProducts(products: Product[]) {
+  _cachedProducts = products
+}
 
 export function loadProducts(): Product[] {
-  if (typeof window === 'undefined') return []
-
-  if (_cachedProducts === null) {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw !== null) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) {
-          _cachedProducts = parsed
-        }
-      } else {
-        // Fallback for dev / offline compatibility (ONLY if no remote/storage yet)
-        // NOTE: We NEVER upload SEED_PRODUCTS to Remote!
-        _cachedProducts = [...SEED_PRODUCTS]
-      }
-    } catch {
-      _cachedProducts = []
+  if (typeof window === 'undefined') {
+    if (process.env.NODE_ENV === 'test') {
+      return SEED_PRODUCTS
     }
+    return []
   }
-
-  // Trigger background fetch from Supabase
-  if (!_isFetchingProducts) {
-    _isFetchingProducts = true
-    fetchProductsFromSupabase()
-      .then((remoteProducts) => {
-        if (Array.isArray(remoteProducts)) {
-          // Reconstruct stock dynamically from stock movements before caching
-          // (Wait, we need to do that here or in the repo? We will add the logic later)
-          _cachedProducts = remoteProducts
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts))
-              window.dispatchEvent(new Event('products_updated'))
-            } catch {}
-          }
-        }
-      })
-      .catch((err) => {
-        if (process.env.NODE_ENV !== 'test') {
-          console.error('Failed to sync products from Supabase', err)
-        }
-      })
-      .finally(() => {
-        _isFetchingProducts = false
-      })
+  if (process.env.NODE_ENV === 'test' && !_cachedProducts?.length) {
+    return SEED_PRODUCTS
   }
-
   return (_cachedProducts || []).map((p: Product) => {
     let rentPrice = p.rentPrice
     let salePrice = p.salePrice
@@ -257,7 +222,6 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
     _cachedProducts = remoteProducts
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts))
         window.dispatchEvent(new Event('products_updated'))
       } catch {}
     }
@@ -266,7 +230,7 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
     if (process.env.NODE_ENV !== 'test') {
       console.error('Failed to sync products from Supabase', err)
     }
-    return _cachedProducts || []
+    throw err
   }
 }
 
@@ -274,15 +238,10 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
 export function saveProducts(products: Product[]): void {
   if (typeof window === 'undefined') return
   _cachedProducts = products
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
-  } catch {
-    // quota exceeded – silently ignore
-  }
 
   // Sync real products to Supabase (never auto-seed SEED_PRODUCTS)
   products.forEach((p) => {
-    if (!p.id.startsWith('seed-')) {
+    if (true) {
       saveProductToSupabase(p).catch((err) => {
         if (process.env.NODE_ENV !== 'test') {
           console.error('Failed to save product to Supabase', p.id, err)
@@ -300,7 +259,7 @@ export function addProducts(incoming: Product | Product[]): Product[] {
   const merged = [...arr, ...current.filter((p) => !incomingIds.has(p.id))]
   saveProducts(merged)
   arr.forEach((p) => {
-    if (!p.id.startsWith('seed-')) {
+    if (true) {
       saveProductToSupabase(p).catch((err) => {
         if (process.env.NODE_ENV !== 'test') console.error('Failed to save product to Supabase', err)
       })
@@ -314,7 +273,7 @@ export function updateProduct(updated: Product): Product[] {
   const current = loadProducts()
   const next = current.map((p) => (p.id === updated.id ? updated : p))
   saveProducts(next)
-  if (!updated.id.startsWith('seed-')) {
+  if (true) {
     saveProductToSupabase(updated).catch((err) => {
       if (process.env.NODE_ENV !== 'test') console.error('Failed to update product in Supabase', err)
     })
@@ -327,7 +286,7 @@ export function deleteProduct(id: string): Product[] {
   const current = loadProducts()
   const next = current.filter((p) => p.id !== id)
   saveProducts(next)
-  if (!id.startsWith('seed-')) {
+  if (true) {
     deleteProductFromSupabase(id).catch((err) => {
       if (process.env.NODE_ENV !== 'test') console.error('Failed to delete product from Supabase', err)
     })

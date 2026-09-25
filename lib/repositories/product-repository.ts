@@ -40,7 +40,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
   const [{ data, error }, { data: movementsData }] = await Promise.all([
     supabase
       .from('products')
-      .select('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url, created_at, updated_at')
+      .select('id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url, created_at, updated_at, rental_type, daily_price, cost_price, default_damage_fee, default_loss_fee, minimum_stock, status, calculation_type, calculation_label, category_rule_id, is_accessory, is_chargeable, requires_return, category:product_categories(name), unit:units(name)')
       .order('created_at', { ascending: false }),
     supabase
       .from('stock_movements')
@@ -93,24 +93,34 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       code: p.code || '',
       name: p.name || '',
       categoryId: p.category_id || undefined,
-      category: '',
+      category: p.category?.name || '',
       unitId: p.unit_id || undefined,
-      unit: '',
-      rentalType: type === 'SALE' ? 'SALE' : 'NORMAL',
+      unit: p.unit?.name || '',
+      rentalType: p.rental_type || (type === 'SALE' ? 'SALE' : 'NORMAL'),
       productType: type,
       rentPrice,
       salePrice,
       normalPrice: rentPrice ?? 0,
-      dailyPrice: 0,
+      dailyPrice: Number(p.daily_price ?? 0),
+      costPrice: Number(p.cost_price ?? 0),
+      defaultDamageFee: Number(p.default_damage_fee ?? 0),
+      defaultLossFee: Number(p.default_loss_fee ?? 0),
       totalQuantity: stockQty,
       availableQuantity: available,
       rentedQuantity: rented,
       damagedQuantity: damaged,
       lostQuantity: lost,
-      minimumStock: 0,
-      status: 'ACTIVE',
-      requiresReturn: type !== 'SALE',
+      minimumStock: Number(p.minimum_stock ?? 0),
+      status: p.status || 'ACTIVE',
+      calculationType: p.calculation_type || undefined,
+      calculationLabel: p.calculation_label || undefined,
+      categoryRuleId: p.category_rule_id || p.category_id || undefined,
+      isAccessory: Boolean(p.is_accessory),
+      isChargeable: p.is_chargeable !== false,
+      requiresReturn: p.requires_return !== false,
       createdAt: p.created_at,
+      updatedAt: p.updated_at,
+      // legacy fields to support old components temporarily
       product_code: p.code,
       product_name: p.name,
       stock_quantity: stockQty,
@@ -122,8 +132,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
 }
 
 /**
- * Upsert product to Supabase using ONLY real Remote schema columns:
- * id, code, name, category_id, unit_id, type, rent_price, sale_price, stock_quantity, image_url, updated_at
+ * Upsert product to Supabase using ONLY real Remote schema columns.
  */
 export async function saveProductToSupabase(product: Product): Promise<void> {
   if (isPlaceholderConfig()) return
@@ -156,7 +165,6 @@ export async function saveProductToSupabase(product: Product): Promise<void> {
   const stockQuantity = Number((product as any).stock_quantity ?? product.totalQuantity ?? product.availableQuantity ?? 0)
 
   // categoryId -> category_id; unitId -> unit_id
-  // DO NOT use product.category or product.unit display names as IDs
   let categoryId = product.categoryId || (product as any).category_id || null
   let unitId = product.unitId || (product as any).unit_id || null
 
@@ -181,6 +189,19 @@ export async function saveProductToSupabase(product: Product): Promise<void> {
     sale_price: salePrice,
     stock_quantity: stockQuantity,
     image_url: imageUrl,
+    rental_type: product.rentalType || (type === 'SALE' ? 'SALE' : 'NORMAL'),
+    daily_price: Number(product.dailyPrice ?? 0),
+    cost_price: Number(product.costPrice ?? 0),
+    default_damage_fee: Number(product.defaultDamageFee ?? 0),
+    default_loss_fee: Number(product.defaultLossFee ?? 0),
+    minimum_stock: Number(product.minimumStock ?? 0),
+    status: product.status || 'ACTIVE',
+    calculation_type: product.calculationType || null,
+    calculation_label: product.calculationLabel || null,
+    category_rule_id: product.categoryRuleId || categoryId,
+    is_accessory: Boolean(product.isAccessory),
+    is_chargeable: product.isChargeable !== false,
+    requires_return: product.requiresReturn !== false,
     updated_at: new Date().toISOString(),
   }
 
