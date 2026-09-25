@@ -19,7 +19,7 @@ import {
   formatNumber,
 } from '@/lib/report-data'
 import { ReportDonutChart, ReportBarChart } from './ReportCharts'
-import { DataTableFrame } from '@/components/common/DataTableFrame'
+import { DataTableFrame, DATA_TABLE_CLASSES } from '@/components/common/DataTableFrame'
 
 export function StockReportView({ data }: { data: StockReportData }) {
   return (
@@ -231,7 +231,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
             </div>
           }
         >
-          <table className="w-full text-left border-collapse text-[11px]">
+          <table className={`${DATA_TABLE_CLASSES} text-[11px]`}>
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                 <th className="px-1.5">รหัส</th>
@@ -311,7 +311,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
           </div>
 
           <div className="overflow-x-auto max-h-56 w-full">
-            <table className="w-full text-left border-collapse text-[11px]">
+            <table className={`${DATA_TABLE_CLASSES} text-[11px]`}>
               <thead className="bg-[#E3E3E3] dark:bg-slate-800 font-bold">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                   <th className="py-2 px-1.5 font-bold">อันดับ</th>
@@ -364,7 +364,7 @@ export function StockReportView({ data }: { data: StockReportData }) {
           </div>
         }
       >
-        <table className="w-full text-left border-collapse text-[11px]">
+        <table className={`${DATA_TABLE_CLASSES} text-[11px]`}>
           <thead className="text-slate-600 dark:text-slate-300">
             <tr className="border-b border-slate-200 dark:border-slate-700">
               <th className="px-2">รหัส</th>

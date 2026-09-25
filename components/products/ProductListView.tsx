@@ -12,6 +12,7 @@ import { CustomSelect } from '@/components/common/CustomSelect'
 import { ActionButton } from '@/components/common/ActionButton'
 import { Product } from '@/lib/types/rental-pos'
 import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
+import { DATA_TABLE_CLASSES } from '@/components/common/DataTableFrame'
 
 interface ProductListViewProps {
   products: Product[]
@@ -159,18 +160,18 @@ export function ProductListView({
         ref={autoFit.containerRef}
         className="flex-1 min-h-0 min-w-0 flex flex-col justify-between overflow-hidden"
       >
-        <div className="flex-1 min-h-0 w-full overflow-hidden">
-          <table className="w-full text-xs text-left border-collapse table-fixed">
+        <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden">
+          <table className={`${DATA_TABLE_CLASSES} text-xs`}>
             {activeViewTab === 'DAMAGED' ? (
               <>
                 <thead className="sticky top-0 z-10 bg-slate-800 dark:bg-slate-950 text-slate-100 font-bold border-b border-slate-700 shadow-xs text-xs">
                   <tr>
                     <th className="py-2 px-2 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                    <th className="py-2 px-2 w-28 text-left whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-2 px-2 w-24 text-center whitespace-nowrap bg-amber-900/90 text-amber-200 font-black">จำนวนชำรุด</th>
-                    <th className="py-2 px-2 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
-                    <th className="py-2 px-2 w-20 text-center whitespace-nowrap">กำลังเช่า</th>
-                    <th className="py-2 px-2 w-32 text-center whitespace-nowrap">การจัดการ</th>
+                    <th className="py-2 px-2 text-left whitespace-nowrap">หมวดหมู่</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap bg-amber-900/90 text-amber-200 font-black">จำนวนชำรุด</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">พร้อมใช้</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">กำลังเช่า</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -181,23 +182,23 @@ export function ProductListView({
                           {p.name}
                         </div>
                       </td>
-                      <td className="py-1.5 px-2 w-28">
+                      <td className="py-1.5 px-2 whitespace-nowrap">
                         <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                           {p.category}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 w-24 text-center whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-black text-xs border border-amber-300 dark:border-amber-800">
                           {p.damagedQuantity} {p.unit}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 w-20 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {p.availableQuantity} {p.unit}
                       </td>
-                      <td className="py-1.5 px-2 w-20 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                      <td className="py-1.5 px-2 text-center font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         {p.rentedQuantity} {p.unit}
                       </td>
-                      <td className="py-1.5 px-2 w-32 text-center">
+                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -244,14 +245,14 @@ export function ProductListView({
                 <thead className="sticky top-0 z-10 bg-[#E3E3E3] dark:bg-slate-900 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 shadow-xs text-xs">
                   <tr>
                     <th className="py-2 px-2 text-left whitespace-nowrap">ชื่อสินค้า</th>
-                    <th className="py-2 px-2 w-28 text-left whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-2 px-2 w-24 text-right whitespace-nowrap">ราคาเช่า</th>
-                    <th className="py-2 px-2 w-20 text-right whitespace-nowrap">ค่าชำรุด</th>
-                    <th className="py-2 px-2 w-20 text-right whitespace-nowrap">ค่าสูญหาย</th>
-                    <th className="py-2 px-2 w-20 text-center whitespace-nowrap">พร้อมใช้</th>
-                    <th className="py-2 px-2 w-20 text-center whitespace-nowrap">ทั้งหมด</th>
-                    <th className="py-2 px-2 w-24 text-center whitespace-nowrap">สถานะ</th>
-                    <th className="py-2 px-2 w-14 text-center whitespace-nowrap">การจัดการ</th>
+                    <th className="py-2 px-2 text-left whitespace-nowrap">หมวดหมู่</th>
+                    <th className="py-2 px-2 text-right whitespace-nowrap">ราคาเช่า</th>
+                    <th className="py-2 px-2 text-right whitespace-nowrap">ค่าชำรุด</th>
+                    <th className="py-2 px-2 text-right whitespace-nowrap">ค่าสูญหาย</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">พร้อมใช้</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">ทั้งหมด</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">สถานะ</th>
+                    <th className="py-2 px-2 text-center whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -264,12 +265,12 @@ export function ProductListView({
                             {p.name}
                           </div>
                         </td>
-                        <td className="py-1.5 px-2 w-28">
+                        <td className="py-1.5 px-2 whitespace-nowrap">
                           <span className="inline-block max-w-full px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold truncate" title={p.category}>
                             {p.category}
                           </span>
                         </td>
-                        <td className="py-1.5 px-2 w-24 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-right font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                           {p.rentPrice !== undefined && p.rentPrice !== null ? (
                             <span>฿{p.rentPrice.toLocaleString()}{p.calculationType === 'PER_DAY' || p.rentalType === 'DAILY' ? '/วัน' : '/รอบ'}</span>
                           ) : p.salePrice !== undefined && p.salePrice !== null ? (
@@ -278,21 +279,21 @@ export function ProductListView({
                             <span>฿{p.rentalType === 'DAILY' ? `${p.dailyPrice.toLocaleString()}/วัน` : `${p.normalPrice.toLocaleString()}/รอบ`}</span>
                           )}
                         </td>
-                        <td className="py-1.5 px-2 w-20 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-right font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">
                           ฿{p.defaultDamageFee.toLocaleString()}
                         </td>
-                        <td className="py-1.5 px-2 w-20 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-right font-mono text-[11px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
                           ฿{p.defaultLossFee.toLocaleString()}
                         </td>
-                        <td className="py-1.5 px-2 w-20 text-center font-mono whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-center font-mono whitespace-nowrap">
                           <span className={`font-extrabold ${p.availableQuantity === 0 ? 'text-red-500' : isLow ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {p.availableQuantity} {p.unit}
                           </span>
                         </td>
-                        <td className="py-1.5 px-2 w-20 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-center font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           <span>{p.totalQuantity} {p.unit}</span>
                         </td>
-                        <td className="py-1.5 px-2 w-24 text-center whitespace-nowrap">
+                        <td className="py-1.5 px-2 text-center whitespace-nowrap">
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                               p.availableQuantity === 0
@@ -305,7 +306,7 @@ export function ProductListView({
                             {p.availableQuantity === 0 ? 'สินค้าหมด' : isLow ? 'สต็อกใกล้หมด' : 'พร้อมใช้'}
                           </span>
                         </td>
-                        <td className="py-1.5 px-2 w-14 text-center">
+                        <td className="py-1.5 px-2 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"

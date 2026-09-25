@@ -18,6 +18,15 @@ export const DATA_TABLE_TH_CLASSES = 'py-2 font-bold whitespace-nowrap'
 export const DATA_TABLE_TD_CLASSES = 'py-1.5'
 
 /**
+ * Shared standard table class based on StockReportView:
+ * Full width, table-auto (browser distributes column widths automatically),
+ * border-collapse, and left-aligned.
+ */
+export const DATA_TABLE_CLASSES = 'w-full text-left border-collapse table-auto'
+export const DATA_TABLE_AUTO_CLASSES = DATA_TABLE_CLASSES
+export const DATA_TABLE_LAYOUT_CLASSES = DATA_TABLE_CLASSES
+
+/**
  * DataTableFrame: Source of truth for full data tables
  * Handles presentation: card container, scrollable area with 8-row height, sticky thead, and cell padding.
  */
