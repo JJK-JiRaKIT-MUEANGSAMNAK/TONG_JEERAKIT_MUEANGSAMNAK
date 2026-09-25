@@ -34,6 +34,7 @@ import { ProductCreateView, ProductCreateDraftRow, createInitialDraftRows } from
 import { ProductSettingsView } from '@/components/products/ProductSettingsView'
 import { logger } from '@/lib/utils/logger'
 import { loadProducts as loadStorageProducts, saveProducts as saveStorageProducts, deleteProduct as deleteStorageProduct } from '@/lib/product-storage'
+import { saveProductToSupabase, deleteProductFromSupabase } from '@/lib/repositories/product-repository'
 import {
   loadCategories,
   addCategory,
@@ -251,6 +252,8 @@ function ProductsContent() {
       const actorUserId = user?.userId || 'system'
       const actorDisplayName = user?.displayName || 'ระบบ'
 
+      await Promise.all(createdProducts.map(p => saveProductToSupabase(p)))
+
       setProducts((prev) => {
         const next = [...createdProducts, ...prev]
         saveStorageProducts(next)
@@ -355,6 +358,8 @@ function ProductsContent() {
       const correlationId = generateCorrelationId()
       const actorUserId = user?.userId || 'system'
       const actorDisplayName = user?.displayName || 'ระบบ'
+
+      await deleteProductFromSupabase(productToDelete.id)
 
       const updated = deleteStorageProduct(productToDelete.id)
       setProducts(updated)
@@ -470,7 +475,7 @@ function ProductsContent() {
     setIsEditingInline(true)
   }
 
-  const handleSaveInlineEdit = () => {
+  const handleSaveInlineEdit = async () => {
     if (!selectedProduct) return
     if (!editForm.name.trim()) {
       showToast('กรุณาระบุชื่อสินค้า', 'ชื่อสินค้าต้องไม่เว้นว่าง', 'ERROR')
@@ -500,15 +505,18 @@ function ProductsContent() {
       createdAt: editForm.createdAt,
     }
 
-    const next = products.map((p) => (p.id === updated.id ? updated : p))
-    saveStorageProducts(next)
-    setProducts(next)
-    setSelectedProduct(updated)
-    setIsEditingInline(false)
+    try {
+      await saveProductToSupabase(updated)
+      
+      const next = products.map((p) => (p.id === updated.id ? updated : p))
+      saveStorageProducts(next)
+      setProducts(next)
+      setSelectedProduct(updated)
+      setIsEditingInline(false)
 
-    const correlationId = generateCorrelationId()
-    const actorUserId = user?.userId || 'system'
-    const actorDisplayName = user?.displayName || 'ระบบ'
+      const correlationId = generateCorrelationId()
+      const actorUserId = user?.userId || 'system'
+      const actorDisplayName = user?.displayName || 'ระบบ'
 
     recordAuditLog({
       userId: actorUserId,
@@ -534,6 +542,10 @@ function ProductsContent() {
     })
 
     showToast('บันทึกสำเร็จ', `อัปเดตข้อมูลสินค้า "${updated.name}" เรียบร้อยแล้ว`, 'SUCCESS')
+    } catch (err: any) {
+      logger.error('Failed to update product inline', err)
+      showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ โปรดลองอีกครั้ง', 'ERROR')
+    }
   }
 
   return (
@@ -698,7 +710,10 @@ function ProductsContent() {
         {activeMainTab === 'COUNT' && (
           <ProductStockCountView
             products={products}
-            onSuccess={(updated) => {
+            onSuccess={async (updated) => {
+              const updatedItems = updated.filter(p => products.some(oldP => oldP.id === p.id && (oldP.totalQuantity !== p.totalQuantity || oldP.damagedQuantity !== p.damagedQuantity || oldP.lostQuantity !== p.lostQuantity || oldP.availableQuantity !== p.availableQuantity || oldP.rentedQuantity !== p.rentedQuantity)))
+              await Promise.all(updatedItems.map(p => saveProductToSupabase(p)))
+              
               saveStorageProducts(updated)
               setProducts(updated)
               const correlationId = generateCorrelationId()
@@ -726,12 +741,13 @@ function ProductsContent() {
         onClose={() => setShowManageModal(false)}
         targetProduct={targetManageProduct}
         initialTab={activeManageTab}
-        onSave={(saved) => {
+        onSave={async (saved) => {
           const correlationId = generateCorrelationId()
           const actorUserId = user?.userId || 'system'
           const actorDisplayName = user?.displayName || 'ระบบ'
 
           if (Array.isArray(saved)) {
+            await Promise.all(saved.map(p => saveProductToSupabase(p)))
             setProducts((prev) => {
               const savedIds = new Set(saved.map((s) => s.id))
               const next = [...saved, ...prev.filter((p) => !savedIds.has(p.id))]
@@ -751,6 +767,7 @@ function ProductsContent() {
               })
             })
           } else {
+            await saveProductToSupabase(saved as Product)
             setProducts((prev) => {
               const exists = prev.some((p) => p.id === saved.id)
               let next: Product[]
@@ -783,7 +800,8 @@ function ProductsContent() {
         isOpen={!!restoreTargetProduct}
         onClose={() => setRestoreTargetProduct(null)}
         product={restoreTargetProduct}
-        onSuccess={({ product: updatedP }) => {
+        onSuccess={async ({ product: updatedP }) => {
+          await saveProductToSupabase(updatedP)
           setProducts((prev) => {
             const next = prev.map((p) => (p.id === updatedP.id ? updatedP : p))
             saveStorageProducts(next)
@@ -802,7 +820,11 @@ function ProductsContent() {
         onClose={() => setTransformTargetProduct(null)}
         sourceProduct={transformTargetProduct}
         allProducts={products}
-        onSuccess={({ sourceProduct: updatedSource, targetProduct: updatedTarget }) => {
+        onSuccess={async ({ sourceProduct: updatedSource, targetProduct: updatedTarget }) => {
+          await Promise.all([
+            saveProductToSupabase(updatedSource),
+            saveProductToSupabase(updatedTarget)
+          ])
           setProducts((prev) => {
             const next = prev.map((p) => {
               if (p.id === updatedSource.id) return updatedSource

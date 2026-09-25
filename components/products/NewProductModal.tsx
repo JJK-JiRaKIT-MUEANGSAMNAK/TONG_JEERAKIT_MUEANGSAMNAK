@@ -21,9 +21,9 @@ import {
   CalculationType,
   CALCULATION_OPTIONS,
   loadCategoryRules,
-  addCategoryRule,
-  updateCategoryRule,
-  deleteCategoryRule,
+  addCategoryRuleAsync as addCategoryRule,
+  updateCategoryRuleAsync as updateCategoryRule,
+  deleteCategoryRuleAsync as deleteCategoryRule,
 } from '@/lib/category-rules-storage'
 
 export interface ProductRowItem {
@@ -157,7 +157,7 @@ export function NewProductModal({
   }
 
   // Quick Settings (Category Rules) CRUD Handlers
-  const handleRuleAdd = () => {
+  const handleRuleAdd = async () => {
     const name = ruleNewName.trim()
     const unit = ruleNewUnit.trim()
     if (!name) {
@@ -172,7 +172,7 @@ export function NewProductModal({
     const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === ruleNewCalcType)
     const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
 
-    const updated = addCategoryRule({
+    const updated = await addCategoryRule({
       name,
       calculationType: ruleNewCalcType,
       calculationLabel,
@@ -185,7 +185,7 @@ export function NewProductModal({
     showToast('เพิ่มชุดกฎสินค้าสำเร็จ', `เพิ่ม "${name}" (${unit}) เรียบร้อยแล้ว`, 'SUCCESS')
   }
 
-  const handleRuleUpdate = (id: string) => {
+  const handleRuleUpdate = async (id: string) => {
     const name = ruleEditName.trim()
     const unit = ruleEditUnit.trim()
     if (!name || !unit) {
@@ -196,7 +196,7 @@ export function NewProductModal({
     const matchedCalc = CALCULATION_OPTIONS.find((c) => c.type === ruleEditCalcType)
     const calculationLabel = matchedCalc?.label || 'ราคาเช่าต่อรอบ × จำนวนสินค้า × จำนวนรอบ'
 
-    const updated = updateCategoryRule({
+    const updated = await updateCategoryRule({
       id,
       name,
       calculationType: ruleEditCalcType,
@@ -210,8 +210,8 @@ export function NewProductModal({
     showToast('แก้ไขสำเร็จ', `อัปเดต "${name}" เรียบร้อยแล้ว`, 'SUCCESS')
   }
 
-  const handleRuleDelete = (id: string) => {
-    const updated = deleteCategoryRule(id)
+  const handleRuleDelete = async (id: string) => {
+    const updated = await deleteCategoryRule(id)
     setCategoryRules(updated)
     setRuleDeleteConfirmId(null)
     showToast('ลบชุดกฎสินค้าสำเร็จ', 'ลบข้อมูลออกจากระบบเรียบร้อยแล้ว', 'SUCCESS')
@@ -305,9 +305,9 @@ export function NewProductModal({
 
       if (onSave) {
         if (createdProducts.length === 1) {
-          onSave(createdProducts[0])
+          await onSave(createdProducts[0])
         } else {
-          onSave(createdProducts)
+          await onSave(createdProducts)
         }
       }
 

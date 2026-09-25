@@ -60,90 +60,87 @@ export function saveUnits(units: Unit[]): void {
  */
 export function addUnit(name: string): Unit[] {
   const trimmed = name.trim()
-  if (!trimmed) {
-    throw new Error('กรุณาระบุชื่อหน่วยนับ')
-  }
-
   const current = loadUnits()
-  const exists = current.some((u) => u.name.toLowerCase() === trimmed.toLowerCase())
-  if (exists) {
+  if (current.some((u) => u.name.toLowerCase() === trimmed.toLowerCase())) {
     throw new Error(`หน่วยนับ "${trimmed}" มีอยู่ในระบบแล้ว`)
   }
-
-  const newUnit: Unit = {
-    id: generateUUID(),
-    name: trimmed,
-    isActive: true,
-  }
-
+  const newUnit: Unit = { id: generateUUID(), name: trimmed, isActive: true }
   const updated = [...current, newUnit]
   saveUnits(updated)
-  saveUnitToSupabase(newUnit).catch((err) => {
-    if (process.env.NODE_ENV !== 'test') console.error('Failed to save unit to Supabase', err)
-  })
   return updated
 }
 
-/**
- * Update an existing Master Unit.
- */
+export async function addUnitAsync(name: string): Promise<Unit[]> {
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('กรุณาระบุชื่อหน่วยนับ')
+  const current = loadUnits()
+  if (current.some((u) => u.name.toLowerCase() === trimmed.toLowerCase())) {
+    throw new Error(`หน่วยนับ "${trimmed}" มีอยู่ในระบบแล้ว`)
+  }
+  const newUnit: Unit = { id: generateUUID(), name: trimmed, isActive: true }
+  await saveUnitToSupabase(newUnit)
+  const updated = [...current, newUnit]
+  saveUnits(updated)
+  return updated
+}
+
 export function updateUnit(id: string, name: string): Unit[] {
   const trimmed = name.trim()
-  if (!trimmed) {
-    throw new Error('กรุณาระบุชื่อหน่วยนับ')
-  }
-
   const current = loadUnits()
-  const duplicate = current.some((u) => u.id !== id && u.name.toLowerCase() === trimmed.toLowerCase())
-  if (duplicate) {
-    throw new Error(`ชื่อหน่วยนับ "${trimmed}" มีอยู่ในระบบแล้ว`)
-  }
-
   const updated = current.map((u) => (u.id === id ? { ...u, name: trimmed } : u))
   saveUnits(updated)
-  const target = updated.find((u) => u.id === id)
-  if (target) {
-    saveUnitToSupabase(target).catch((err) => {
-      if (process.env.NODE_ENV !== 'test') console.error('Failed to update unit in Supabase', err)
-    })
-  }
   return updated
 }
 
-/**
- * Toggle unit active status.
- */
+export async function updateUnitAsync(id: string, name: string): Promise<Unit[]> {
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('กรุณาระบุชื่อหน่วยนับ')
+  const current = loadUnits()
+  if (current.some((u) => u.id !== id && u.name.toLowerCase() === trimmed.toLowerCase())) {
+    throw new Error(`ชื่อหน่วยนับ "${trimmed}" มีอยู่ในระบบแล้ว`)
+  }
+  const target = current.find(u => u.id === id)
+  if (!target) return current
+  await saveUnitToSupabase({ ...target, name: trimmed })
+  return updateUnit(id, name)
+}
+
 export function toggleUnitStatus(id: string): Unit[] {
   const current = loadUnits()
   const updated = current.map((u) => (u.id === id ? { ...u, isActive: !u.isActive } : u))
   saveUnits(updated)
-  const target = updated.find((u) => u.id === id)
-  if (target) {
-    saveUnitToSupabase(target).catch((err) => {
-      if (process.env.NODE_ENV !== 'test') console.error('Failed to toggle unit status in Supabase', err)
-    })
-  }
   return updated
 }
 
-/**
- * Delete a unit by ID safely.
- */
+export async function toggleUnitStatusAsync(id: string): Promise<Unit[]> {
+  const current = loadUnits()
+  const target = current.find((u) => u.id === id)
+  if (!target) return current
+  await saveUnitToSupabase({ ...target, isActive: !target.isActive })
+  return toggleUnitStatus(id)
+}
+
 export function deleteUnit(id: string, inUseCheck?: (unit: Unit) => boolean): Unit[] {
   const current = loadUnits()
   const target = current.find((u) => u.id === id)
   if (!target) return current
-
   if (inUseCheck && inUseCheck(target)) {
     throw new Error(`ไม่สามารถลบหน่วยนับ "${target.name}" ได้เนื่องจากกำลังถูกใช้งานอยู่`)
   }
-
   const updated = current.filter((u) => u.id !== id)
   saveUnits(updated)
-  deleteUnitFromSupabase(id).catch((err) => {
-    if (process.env.NODE_ENV !== 'test') console.error('Failed to delete unit from Supabase', err)
-  })
   return updated
+}
+
+export async function deleteUnitAsync(id: string, inUseCheck?: (unit: Unit) => boolean): Promise<Unit[]> {
+  const current = loadUnits()
+  const target = current.find((u) => u.id === id)
+  if (!target) return current
+  if (inUseCheck && inUseCheck(target)) {
+    throw new Error(`ไม่สามารถลบหน่วยนับ "${target.name}" ได้เนื่องจากกำลังถูกใช้งานอยู่`)
+  }
+  await deleteUnitFromSupabase(id)
+  return deleteUnit(id)
 }
 
 /**

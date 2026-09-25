@@ -228,11 +228,16 @@ export async function fetchCategoriesFromSupabase(): Promise<any[]> {
   return data || []
 }
 
-export async function saveCategoryToSupabase(category: { id: string; name: string }): Promise<void> {
+export async function saveCategoryToSupabase(category: { id: string; name: string; calculationType?: string; calculationLabel?: string; defaultUnitId?: string; isDefault?: boolean; isActive?: boolean }): Promise<void> {
   if (isPlaceholderConfig()) return
   const { error } = await supabase.from('product_categories').upsert({
     id: category.id,
     name: category.name,
+    calculation_type: category.calculationType ?? null,
+    calculation_label: category.calculationLabel ?? null,
+    default_unit_id: category.defaultUnitId ?? null,
+    is_default: category.isDefault ?? false,
+    is_active: category.isActive ?? true,
   })
   if (error) throw error
 }
@@ -258,6 +263,7 @@ export async function saveUnitToSupabase(unit: { id: string; name: string; isAct
   const { error } = await supabase.from('units').upsert({
     id: unit.id,
     name: unit.name,
+    is_active: unit.isActive ?? true,
   })
   if (error) throw error
 }

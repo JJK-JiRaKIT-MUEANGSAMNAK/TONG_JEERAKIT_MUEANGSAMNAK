@@ -31,9 +31,16 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       if (authLoading) return
       
       if (!session) {
+        setCachedProducts([])
+        setCachedCategories([])
+        setCachedUnits([])
+        setCachedCustomers([])
         setIsLoaded(true)
         return
       }
+
+      setIsLoaded(false)
+      setError(null)
 
       try {
         const [products, categories, units, customers] = await Promise.all([

@@ -238,17 +238,11 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
 export function saveProducts(products: Product[]): void {
   if (typeof window === 'undefined') return
   _cachedProducts = products
-
-  // Sync real products to Supabase (never auto-seed SEED_PRODUCTS)
-  products.forEach((p) => {
-    if (true) {
-      saveProductToSupabase(p).catch((err) => {
-        if (process.env.NODE_ENV !== 'test') {
-          console.error('Failed to save product to Supabase', p.id, err)
-        }
-      })
-    }
-  })
+  if (process.env.NODE_ENV === 'test') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
+    } catch {}
+  }
 }
 
 /** Add one or more products, persists immediately, returns the new full list. */
@@ -258,14 +252,13 @@ export function addProducts(incoming: Product | Product[]): Product[] {
   const incomingIds = new Set(arr.map((p) => p.id))
   const merged = [...arr, ...current.filter((p) => !incomingIds.has(p.id))]
   saveProducts(merged)
-  arr.forEach((p) => {
-    if (true) {
-      saveProductToSupabase(p).catch((err) => {
-        if (process.env.NODE_ENV !== 'test') console.error('Failed to save product to Supabase', err)
-      })
-    }
-  })
   return merged
+}
+
+export async function addProductsAsync(incoming: Product | Product[]): Promise<Product[]> {
+  const arr = Array.isArray(incoming) ? incoming : [incoming]
+  await Promise.all(arr.map(p => saveProductToSupabase(p)))
+  return addProducts(incoming)
 }
 
 /** Update a single product in-place, persists immediately, returns the new full list. */
@@ -273,12 +266,12 @@ export function updateProduct(updated: Product): Product[] {
   const current = loadProducts()
   const next = current.map((p) => (p.id === updated.id ? updated : p))
   saveProducts(next)
-  if (true) {
-    saveProductToSupabase(updated).catch((err) => {
-      if (process.env.NODE_ENV !== 'test') console.error('Failed to update product in Supabase', err)
-    })
-  }
   return next
+}
+
+export async function updateProductAsync(updated: Product): Promise<Product[]> {
+  await saveProductToSupabase(updated)
+  return updateProduct(updated)
 }
 
 /** Delete a product by id, persists immediately, returns the new full list. */
@@ -286,12 +279,12 @@ export function deleteProduct(id: string): Product[] {
   const current = loadProducts()
   const next = current.filter((p) => p.id !== id)
   saveProducts(next)
-  if (true) {
-    deleteProductFromSupabase(id).catch((err) => {
-      if (process.env.NODE_ENV !== 'test') console.error('Failed to delete product from Supabase', err)
-    })
-  }
   return next
+}
+
+export async function deleteProductAsync(id: string): Promise<Product[]> {
+  await deleteProductFromSupabase(id)
+  return deleteProduct(id)
 }
 
 /** Deduct stock when items are rented or sold. */

@@ -10,19 +10,19 @@ import {
   CalculationType,
   CALCULATION_OPTIONS,
   loadCategories,
-  addCategory,
-  updateCategory,
-  deleteCategory,
+  addCategoryAsync as addCategory,
+  updateCategoryAsync as updateCategory,
+  deleteCategoryAsync as deleteCategory,
   loadCompositeRules,
-  addCompositeRule,
-  updateCompositeRule,
+  addCompositeRuleAsync as addCompositeRule,
+  updateCompositeRuleAsync as updateCompositeRule,
   ProductCategoryRule,
 } from '@/lib/category-rules-storage'
 import {
   Unit,
-  addUnit,
-  updateUnit,
-  deleteUnit,
+  addUnitAsync as addUnit,
+  updateUnitAsync as updateUnit,
+  deleteUnitAsync as deleteUnit,
 } from '@/lib/unit-storage'
 import { Product } from '@/lib/types/rental-pos'
 
@@ -89,7 +89,7 @@ export function ProductSettingsView({
   const [compPage, setCompPage] = useState(1)
 
   // ─── Categories Handlers (ตาราง 1) ─────────────────────────
-  const handleCategoryAdd = () => {
+  const handleCategoryAdd = async () => {
     const trimmed = newCatName.trim()
     if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหมวดหมู่', 'ชื่อหมวดหมู่ต้องไม่เป็นค่าว่าง', 'ERROR')
@@ -97,7 +97,7 @@ export function ProductSettingsView({
     }
 
     try {
-      const updated = addCategory(trimmed)
+      const updated = await addCategory(trimmed)
       setCategories(updated)
       setNewCatName('')
       onShowToast('เพิ่มหมวดหมู่สำเร็จ', `เพิ่มหมวดหมู่ "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
@@ -112,7 +112,7 @@ export function ProductSettingsView({
     setCatDeleteConfirmId(null)
   }
 
-  const handleCategorySaveEdit = (id: string) => {
+  const handleCategorySaveEdit = async (id: string) => {
     const trimmed = catEditName.trim()
     if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหมวดหมู่', 'ชื่อหมวดหมู่ต้องไม่เป็นค่าว่าง', 'ERROR')
@@ -120,7 +120,7 @@ export function ProductSettingsView({
     }
 
     try {
-      const updated = updateCategory(id, trimmed)
+      const updated = await updateCategory(id, trimmed)
       setCategories(updated)
       setCatEditId(null)
       setCatEditName('')
@@ -130,9 +130,9 @@ export function ProductSettingsView({
     }
   }
 
-  const handleCategoryDelete = (id: string) => {
+  const handleCategoryDelete = async (id: string) => {
     try {
-      const updated = deleteCategory(id, (targetCat) => {
+      const updated = await deleteCategory(id, (targetCat) => {
         // Safe check: used in products or composite rules?
         const usedInProducts = allProducts.some(
           (p) => p.categoryId === targetCat.id || p.category === targetCat.name
@@ -150,7 +150,7 @@ export function ProductSettingsView({
   }
 
   // ─── Units Handlers (ตาราง 2) ──────────────────────────────
-  const handleUnitAdd = () => {
+  const handleUnitAdd = async () => {
     const trimmed = newUnitName.trim()
     if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหน่วยนับ', 'ชื่อหน่วยนับต้องไม่ว่าง', 'ERROR')
@@ -158,7 +158,7 @@ export function ProductSettingsView({
     }
 
     try {
-      const updated = addUnit(trimmed)
+      const updated = await addUnit(trimmed)
       setMasterUnits(updated)
       setNewUnitName('')
       onShowToast('เพิ่มหน่วยนับสำเร็จ', `เพิ่มหน่วยนับ "${trimmed}" เรียบร้อยแล้ว`, 'SUCCESS')
@@ -173,7 +173,7 @@ export function ProductSettingsView({
     setUnitDeleteConfirmId(null)
   }
 
-  const handleUnitSaveEdit = (id: string) => {
+  const handleUnitSaveEdit = async (id: string) => {
     const trimmed = unitEditName.trim()
     if (!trimmed) {
       onShowToast('กรุณาระบุชื่อหน่วยนับ', 'ชื่อหน่วยนับต้องไม่ว่าง', 'ERROR')
@@ -181,7 +181,7 @@ export function ProductSettingsView({
     }
 
     try {
-      const updated = updateUnit(id, trimmed)
+      const updated = await updateUnit(id, trimmed)
       setMasterUnits(updated)
       setUnitEditId(null)
       setUnitEditName('')
@@ -191,9 +191,9 @@ export function ProductSettingsView({
     }
   }
 
-  const handleUnitDelete = (id: string) => {
+  const handleUnitDelete = async (id: string) => {
     try {
-      const updated = deleteUnit(id, (targetUnit) => {
+      const updated = await deleteUnit(id, (targetUnit) => {
         const usedInProducts = allProducts.some(
           (p) => p.unitId === targetUnit.id || p.unit === targetUnit.name
         )
@@ -219,14 +219,14 @@ export function ProductSettingsView({
     setCompEditId(null)
   }
 
-  const handleSaveAddCompositeRow = () => {
+  const handleSaveAddCompositeRow = async () => {
     if (!newCompCategoryId) {
       onShowToast('กรุณาเลือกหมวดหมู่', 'ต้องเลือกหมวดหมู่สินค้าสำหรับแถวนี้', 'ERROR')
       return
     }
 
     try {
-      const updated = addCompositeRule({
+      const updated = await addCompositeRule({
         categoryId: newCompCategoryId,
         calculationType: newCompCalcType,
         unitId: newCompUnitId || undefined,
@@ -247,14 +247,14 @@ export function ProductSettingsView({
     setIsAddingCompositeRow(false)
   }
 
-  const handleSaveEditCompositeRow = (id: string) => {
+  const handleSaveEditCompositeRow = async (id: string) => {
     if (!compEditCategoryId) {
       onShowToast('กรุณาเลือกหมวดหมู่', 'ต้องเลือกหมวดหมู่สินค้า', 'ERROR')
       return
     }
 
     try {
-      const updated = updateCompositeRule({
+      const updated = await updateCompositeRule({
         id,
         categoryId: compEditCategoryId,
         calculationType: compEditCalcType,

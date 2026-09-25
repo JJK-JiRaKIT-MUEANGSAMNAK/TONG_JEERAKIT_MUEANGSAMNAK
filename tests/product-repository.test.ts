@@ -314,14 +314,22 @@ describe('Master #4 - Product Repository Schema & Mapping Tests', () => {
   })
 
   it('6. category and unit functions sync only id and name, and handle deletion cleanly', async () => {
-    await saveCategoryToSupabase({ id: 'cat-new-01', name: 'หมวดเหล็ก' })
-    expect(capturedUpsertPayload).toEqual({ id: 'cat-new-01', name: 'หมวดเหล็ก' })
+    await saveCategoryToSupabase({ id: 'cat-new-01', name: 'หมวดเหล็ก' } as any)
+    expect(capturedUpsertPayload).toEqual({ 
+      id: 'cat-new-01', 
+      name: 'หมวดเหล็ก',
+      calculation_type: null,
+      calculation_label: null,
+      default_unit_id: null,
+      is_default: false,
+      is_active: true
+    })
 
     await deleteCategoryFromSupabase('cat-del-01')
     expect(capturedDeleteFilter).toEqual({ col: 'id', val: 'cat-del-01' })
 
     await saveUnitToSupabase({ id: 'unit-new-01', name: 'กิโลกรัม' })
-    expect(capturedUpsertPayload).toEqual({ id: 'unit-new-01', name: 'กิโลกรัม' })
+    expect(capturedUpsertPayload).toEqual({ id: 'unit-new-01', name: 'กิโลกรัม', is_active: true })
 
     await deleteUnitFromSupabase('unit-del-01')
     expect(capturedDeleteFilter).toEqual({ col: 'id', val: 'unit-del-01' })
