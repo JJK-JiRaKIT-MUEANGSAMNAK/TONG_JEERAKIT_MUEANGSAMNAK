@@ -1098,15 +1098,17 @@ export default function AppointmentsPage() {
                                 รูปภาพ ({matchedEvent.images.length} รูป):
                               </span>
                               <div className="flex gap-1.5 flex-wrap">
-                                {matchedEvent.images.map((imgUrl, imgIdx) => (
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    key={imgIdx}
-                                    src={imgUrl}
-                                    alt={`event-img-${imgIdx}`}
-                                    className="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
-                                  />
-                                ))}
+                                {matchedEvent.images.map((imgUrl, imgIdx) => {
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  return (
+                                    <img
+                                      key={imgIdx}
+                                      src={imgUrl}
+                                      alt={`event-img-${imgIdx}`}
+                                      className="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                                    />
+                                  )
+                                })}
                               </div>
                             </div>
                           )}
