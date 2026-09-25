@@ -39,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="th" className={`dark ${promptFont.variable} font-sans`} suppressHydrationWarning>
+    <html lang="th" className={`${promptFont.variable} font-sans`} suppressHydrationWarning>
       <body className="bg-slate-100 dark:bg-[#07111f] text-slate-900 dark:text-slate-100 flex flex-col xl:flex-row h-dvh max-h-dvh min-h-0 w-full overflow-hidden">
         <script
           dangerouslySetInnerHTML={{
@@ -47,10 +47,10 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('rental_pos_theme');
-                  if (theme === 'light') {
-                    document.documentElement.classList.remove('dark');
-                  } else {
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}
               })();

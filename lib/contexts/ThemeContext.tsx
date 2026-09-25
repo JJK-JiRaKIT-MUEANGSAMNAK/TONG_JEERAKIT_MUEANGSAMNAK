@@ -17,7 +17,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 const THEME_STORAGE_KEY = 'rental_pos_theme'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('dark')
+  const [theme, setThemeState] = useState<ThemeMode>('light')
 
   // Initialize theme from localStorage or document element
   useEffect(() => {
@@ -31,12 +31,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           document.documentElement.classList.remove('dark')
         }
       } else {
-        // Default to dark mode
-        document.documentElement.classList.add('dark')
-        localStorage.setItem(THEME_STORAGE_KEY, 'dark')
+        // Default to light mode
+        setThemeState('light')
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem(THEME_STORAGE_KEY, 'light')
       }
     } catch {
-      document.documentElement.classList.add('dark')
+      setThemeState('light')
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 
