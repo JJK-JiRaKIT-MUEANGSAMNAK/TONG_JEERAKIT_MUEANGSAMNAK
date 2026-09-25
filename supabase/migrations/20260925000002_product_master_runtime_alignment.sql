@@ -1,0 +1,27 @@
+-- Align product master schema with the fields used by the current runtime.
+-- Non-destructive: only adds missing columns.
+
+ALTER TABLE public.units
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+
+ALTER TABLE public.product_categories
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS calculation_type TEXT,
+  ADD COLUMN IF NOT EXISTS calculation_label TEXT,
+  ADD COLUMN IF NOT EXISTS default_unit_id TEXT REFERENCES public.units(id),
+  ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS rental_type TEXT NOT NULL DEFAULT 'NORMAL',
+  ADD COLUMN IF NOT EXISTS daily_price NUMERIC NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cost_price NUMERIC NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS default_damage_fee NUMERIC NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS default_loss_fee NUMERIC NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS minimum_stock INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE',
+  ADD COLUMN IF NOT EXISTS calculation_type TEXT,
+  ADD COLUMN IF NOT EXISTS calculation_label TEXT,
+  ADD COLUMN IF NOT EXISTS category_rule_id TEXT,
+  ADD COLUMN IF NOT EXISTS is_accessory BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_chargeable BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS requires_return BOOLEAN NOT NULL DEFAULT true;
