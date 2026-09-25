@@ -346,6 +346,7 @@ export interface Quotation {
   acceptedAt?: string
   reservationId?: string
   convertedBillId?: string
+  createdAt?: string
 }
 
 export interface RentalBillItem {
@@ -413,6 +414,7 @@ export interface RentalBill {
   documentType?: string
   documentTitle?: string
   quotationId?: string
+  quotationNo?: string
   reservationId?: string
   originalBillId?: string
   parentBillId?: string

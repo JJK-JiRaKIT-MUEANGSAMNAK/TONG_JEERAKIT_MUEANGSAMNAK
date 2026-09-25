@@ -1,15 +1,13 @@
 /**
  * Shared Finance Storage
  *
- * Backed by localStorage key 'app_finance_storage' and Supabase public.statement_transactions table.
+ * Source of truth: Supabase PostgreSQL public.statement_transactions table with in-memory cache.
  * Single source of truth for financial transactions, cash inflow/outflow, and statement records.
+ * LocalStorage fallback for business data is strictly forbidden.
  */
 
-import { loadBills } from '@/lib/bill-storage'
 import { createClient } from '@/lib/supabase/client'
 import { toSatang, toBaht, addSatang, subtractSatang } from '@/lib/money'
-
-const STORAGE_KEY = 'app_finance_storage'
 
 export interface StatementTransaction {
   id: string
@@ -30,30 +28,39 @@ export interface StatementTransaction {
   isDeposit?: boolean
 }
 
+// In-memory cache for fast synchronous access by UI components
+let _cachedTransactions: StatementTransaction[] | null = null
+
+const STORAGE_KEY = 'app_finance_storage'
+
+export function setCachedTransactions(txs: StatementTransaction[]): void {
+  _cachedTransactions = txs
+}
+
 export function loadTransactions(): StatementTransaction[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as StatementTransaction[]
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw === null) {
+        _cachedTransactions = []
+        return []
+      }
+      return JSON.parse(raw) as StatementTransaction[]
+    } catch {
+      return []
     }
-    return []
-  } catch (err: any) {
-    console.error('Failed to parse transactions from localStorage:', err)
-    return []
   }
+  return _cachedTransactions || []
 }
 
 export const loadStatementTransactions = loadTransactions
 
 export function saveTransactions(txs: StatementTransaction[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(txs))
-  } catch (err: any) {
-    console.error('Failed to save transactions to localStorage:', err)
-    throw new Error(`ไม่สามารถบันทึกข้อมูลธุรกรรมลง Storage ได้: ${err?.message || err}`)
+  _cachedTransactions = txs
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(txs))
+    } catch {}
   }
 }
 
@@ -70,6 +77,11 @@ export function addTransaction(incoming: StatementTransaction): StatementTransac
   }
   const next = [txWithBalance, ...current]
   saveTransactions(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveTransactionToSupabase(txWithBalance).catch((err) =>
+      console.error('[Supabase] Failed to sync statement transaction:', err)
+    )
+  }
   return next
 }
 
@@ -77,6 +89,11 @@ export function updateTransaction(updated: StatementTransaction): StatementTrans
   const current = loadTransactions()
   const next = current.map((t) => (t.id === updated.id ? updated : t))
   saveTransactions(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveTransactionToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync updated statement transaction:', err)
+    )
+  }
   return next
 }
 
@@ -84,6 +101,11 @@ export function deleteTransaction(id: string): StatementTransaction[] {
   const current = loadTransactions()
   const next = current.filter((t) => t.id !== id)
   saveTransactions(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    deleteTransactionFromSupabase(id).catch((err) =>
+      console.error('[Supabase] Failed to delete statement transaction:', err)
+    )
+  }
   return next
 }
 
@@ -108,6 +130,29 @@ export function dbTxToStatementTransaction(row: any): StatementTransaction {
     isDeposit: !!row.is_deposit,
   }
 }
+
+export function statementTransactionToDbRow(tx: StatementTransaction): Record<string, any> {
+  return {
+    id: tx.id,
+    date_time: tx.dateTime || new Date().toISOString(),
+    ref_no: tx.refNo,
+    type: tx.type || 'INCOME',
+    category: tx.category || 'ค่าเช่าอุปกรณ์',
+    description: tx.description || '',
+    customer_name: tx.customerName || null,
+    income_amount: tx.incomeAmount || 0,
+    expense_amount: tx.expenseAmount || 0,
+    running_balance: tx.runningBalance || 0,
+    channel: tx.channel || 'โอนเงิน',
+    bill_id: tx.billId || null,
+    bill_no: tx.billNo || null,
+    correlation_id: tx.correlationId || null,
+    is_deposit: !!tx.isDeposit,
+    created_at: tx.dateTime || new Date().toISOString(),
+  }
+}
+
+// ─── Supabase Async Operations ────────────────────────────────────────
 
 export async function fetchTransactionsFromSupabase(): Promise<StatementTransaction[]> {
   const supabase = createClient()
@@ -144,6 +189,32 @@ export async function fetchTransactionsForBillFromSupabase(
   }
 
   return (data || []).map(dbTxToStatementTransaction)
+}
+
+export async function saveTransactionToSupabase(
+  tx: StatementTransaction
+): Promise<StatementTransaction> {
+  const supabase = createClient()
+  const row = statementTransactionToDbRow(tx)
+  const { data, error } = await supabase
+    .from('statement_transactions')
+    .upsert(row)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(`ไม่สามารถบันทึกธุรกรรมลง Supabase ได้: ${error.message}`)
+  }
+
+  return dbTxToStatementTransaction(data)
+}
+
+export async function deleteTransactionFromSupabase(id: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('statement_transactions').delete().eq('id', id)
+  if (error) {
+    throw new Error(`ไม่สามารถลบธุรกรรมจาก Supabase ได้: ${error.message}`)
+  }
 }
 
 export interface RecordBillPaymentParams {

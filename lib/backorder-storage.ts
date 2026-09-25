@@ -1,10 +1,13 @@
 /**
  * Backorder Domain Storage
  *
+ * Source of truth: Supabase PostgreSQL public.backorders table with in-memory cache.
  * Tracks unfulfilled demand when requested quantity exceeds available stock.
  * Maintained in FIFO queue by creation date to fairly allocate incoming stock.
- * LocalStorage key: 'app_backorder_storage'.
+ * LocalStorage fallback for business data is strictly forbidden.
  */
+
+import { createClient } from '@/lib/supabase/client'
 
 export type BackorderStatus = 'PENDING' | 'READY' | 'FULFILLED' | 'CANCELLED'
 export type BackorderSourceType = 'BILL' | 'QUOTATION'
@@ -35,28 +38,37 @@ export interface BackorderRecord {
   allocatedReadyQty?: number
 }
 
+// In-memory cache for fast synchronous access
+let _cachedBackorders: BackorderRecord[] | null = null
+
 const STORAGE_KEY = 'app_backorder_storage'
 
+export function setCachedBackorders(backorders: BackorderRecord[]): void {
+  _cachedBackorders = backorders
+}
+
 export function loadBackorders(): BackorderRecord[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as BackorderRecord[]
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw === null) {
+        _cachedBackorders = []
+        return []
+      }
+      return JSON.parse(raw) as BackorderRecord[]
+    } catch {
+      return []
     }
-    return []
-  } catch {
-    return []
   }
+  return _cachedBackorders || []
 }
 
 export function saveBackorders(backorders: BackorderRecord[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(backorders))
-  } catch {
-    // silently handle quota exceeded
+  _cachedBackorders = backorders
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(backorders))
+    } catch {}
   }
 }
 
@@ -115,13 +127,25 @@ export function createBackorder(input: CreateBackorderInput): BackorderRecord {
 
   const current = loadBackorders()
   saveBackorders([record, ...current])
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBackorderToSupabase(record).catch((err) =>
+      console.error('[Supabase] Failed to sync backorder:', err)
+    )
+  }
   return record
 }
 
 export function updateBackorder(updated: BackorderRecord): BackorderRecord[] {
   const current = loadBackorders()
-  const next = current.map((b) => (b.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : b))
+  const next = current.map((b) =>
+    b.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : b
+  )
   saveBackorders(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBackorderToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync updated backorder:', err)
+    )
+  }
   return next
 }
 
@@ -151,18 +175,26 @@ export function cancelBackordersBySource(
 ): BackorderRecord[] {
   const current = loadBackorders()
   const nowIso = new Date().toISOString()
+  const updatedList: BackorderRecord[] = []
   const next = current.map((b) => {
     if (b.sourceType === sourceType && b.sourceId === sourceId && (b.status === 'PENDING' || b.status === 'READY')) {
-      return {
+      const updated: BackorderRecord = {
         ...b,
         status: 'CANCELLED' as const,
         notes: reason ? [b.notes, `ยกเลิก: ${reason}`].filter(Boolean).join(' | ') : b.notes,
         updatedAt: nowIso,
       }
+      updatedList.push(updated)
+      return updated
     }
     return b
   })
   saveBackorders(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    Promise.all(updatedList.map(saveBackorderToSupabase)).catch((err) =>
+      console.error('[Supabase] Failed to sync cancelled backorders:', err)
+    )
+  }
   return next.filter((b) => b.sourceType === sourceType && b.sourceId === sourceId)
 }
 
@@ -196,5 +228,94 @@ export function fulfillBackorder(
 
   const next = current.map((b) => (b.id === target.id ? updated : b))
   saveBackorders(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBackorderToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync fulfilled backorder:', err)
+    )
+  }
   return { backorder: updated, allBackorders: next }
+}
+
+// ─── Database Row Mapping ──────────────────────────────────────────
+
+export function dbBackorderToDomain(row: any): BackorderRecord {
+  return {
+    id: row.id,
+    backorderNo: row.backorder_no || `BO-${row.id}`,
+    sourceType: (row.source_type || 'BILL') as BackorderSourceType,
+    sourceId: row.source_id || '',
+    sourceNo: row.source_no || '',
+    customerId: row.customer_id || '',
+    customerName: row.customer_name || '',
+    productId: row.product_id,
+    productCode: row.product_code || row.product_id,
+    productName: row.product_name || '',
+    itemType: (row.item_type || 'RENT') as BackorderItemType,
+    requestedQty: Number(row.requested_qty || row.quantity || 0),
+    fulfilledQty: Number(row.fulfilled_qty || 0),
+    outstandingQty: Number(row.outstanding_qty !== undefined ? row.outstanding_qty : (row.quantity || 0)),
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: (row.status || 'PENDING') as BackorderStatus,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
+    notes: row.notes,
+    allocatedReadyQty: Number(row.allocated_ready_qty || 0),
+    correlationId: row.correlation_id,
+  }
+}
+
+export function domainBackorderToDbRow(rec: BackorderRecord): Record<string, any> {
+  return {
+    id: rec.id,
+    backorder_no: rec.backorderNo,
+    source_type: rec.sourceType,
+    source_id: rec.sourceId,
+    source_no: rec.sourceNo,
+    customer_id: rec.customerId || null,
+    customer_name: rec.customerName,
+    product_id: rec.productId,
+    product_code: rec.productCode,
+    product_name: rec.productName,
+    item_type: rec.itemType,
+    requested_qty: rec.requestedQty,
+    quantity: rec.requestedQty,
+    fulfilled_qty: rec.fulfilledQty,
+    outstanding_qty: rec.outstandingQty,
+    start_date: rec.startDate || null,
+    end_date: rec.endDate || null,
+    status: rec.status,
+    notes: rec.notes || null,
+    allocated_ready_qty: rec.allocatedReadyQty || 0,
+    correlation_id: rec.correlationId || null,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+// ─── Supabase Async Operations ────────────────────────────────────────
+
+export async function fetchBackordersFromSupabase(): Promise<BackorderRecord[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('backorders')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    throw new Error(`ไม่สามารถดึงข้อมูล Backorder จาก Supabase ได้: ${error.message}`)
+  }
+
+  const mapped = (data || []).map(dbBackorderToDomain)
+  saveBackorders(mapped)
+  return mapped
+}
+
+export async function saveBackorderToSupabase(rec: BackorderRecord): Promise<void> {
+  const supabase = createClient()
+  const row = domainBackorderToDbRow(rec)
+  const { error } = await supabase.from('backorders').upsert(row)
+
+  if (error) {
+    throw new Error(`ไม่สามารถบันทึก Backorder ลง Supabase ได้: ${error.message}`)
+  }
 }

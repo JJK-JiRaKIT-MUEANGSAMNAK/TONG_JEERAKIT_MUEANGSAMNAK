@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/auth'
 import { validateSupabaseAdminConfig, createAdminClient } from '@/lib/supabase/admin'
 import { createClient as createServerSupabase } from '@/lib/supabase/server'
+import * as serverSupabase from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth'
 import { buildCurrentUser, type AuthUserLike } from '@/lib/auth-utils'
 
@@ -79,6 +80,72 @@ describe('Supabase Username Auth Flow', () => {
       expect(result.success).toBe(false)
       expect(result.error).toBe('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
       expect(result.email).toBeUndefined()
+    })
+  })
+
+  describe('Exact username lookup regression', () => {
+    const exactProfile = { id: 'user-underscore', username: 'shop_user', email: 'exact@example.com' }
+    const similarProfile = { id: 'user-letter', username: 'shopxuser', email: 'similar@example.com' }
+    const profiles = [exactProfile, similarProfile]
+    const signIn = vi.fn()
+
+    beforeEach(() => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://auth-regression.example.com')
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'test-anon-key')
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key')
+      signIn.mockReset().mockResolvedValue({
+        data: { user: { id: exactProfile.id }, session: { access_token: 'test-token' } },
+        error: null,
+      })
+      vi.spyOn(serverSupabase, 'createClient').mockResolvedValue({
+        auth: { signInWithPassword: signIn },
+      } as unknown as Awaited<ReturnType<typeof createServerSupabase>>)
+      // Keep the real Supabase query builder; stub only its HTTP boundary.
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = new URL(input instanceof Request ? input.url : String(input))
+        expect(url.origin).toBe('https://auth-regression.example.com')
+        expect(url.pathname).toBe('/rest/v1/profiles')
+        const filter = url.searchParams.get('username') || ''
+        let matches = profiles.filter(profile => filter === `eq.${profile.username}`)
+        // Database responses for the old wildcard query against these two profiles.
+        if (filter === 'ilike.shop_user') matches = profiles
+        if (filter === 'ilike.shopx%') matches = [similarProfile]
+        return new Response(JSON.stringify(matches), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      })
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      vi.unstubAllEnvs()
+    })
+
+    it.each(['shop_user', '  @SHOP_USER  '])('logs in the exact account for %s despite a similarly named account', async username => {
+      const result = await loginWithUsername({ username, password: 'ValidPassword123!' })
+
+      expect(result).toEqual({ success: true, data: { userId: exactProfile.id } })
+      expect(signIn).toHaveBeenCalledExactlyOnceWith({
+        email: exactProfile.email,
+        password: 'ValidPassword123!',
+      })
+    })
+
+    it('rejects a wildcard alias before attempting password authentication', async () => {
+      const result = await loginWithUsername({ username: 'shopx%', password: 'ValidPassword123!' })
+
+      expect(result).toEqual({ success: false, error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' })
+      expect(signIn).not.toHaveBeenCalled()
+    })
+
+    it('preserves credential failure handling after an exact username match', async () => {
+      signIn.mockResolvedValue({ data: { user: null, session: null }, error: { status: 400, message: 'Invalid login credentials' } })
+
+      const result = await loginWithUsername({ username: 'shop_user', password: 'WrongPassword123!' })
+
+      expect(result).toEqual({ success: false, error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' })
+      expect(signIn).toHaveBeenCalledExactlyOnceWith({ email: exactProfile.email, password: 'WrongPassword123!' })
     })
   })
 

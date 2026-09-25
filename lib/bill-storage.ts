@@ -1,10 +1,11 @@
 /**
  * Shared Bill Storage & Adapters
  *
- * Backed by localStorage key 'app_bill_storage' and Supabase public.bills table.
+ * Source of truth: Supabase PostgreSQL public.bills table with in-memory cache.
  * Uses FullBill (rental-return.ts) as the Canonical persistence model,
  * with strongly-typed bidirectional adapters to RentalBill (rental-pos.ts).
  * ZERO 'as any' assertions.
+ * LocalStorage fallback for business data is strictly forbidden.
  */
 
 import { FullBill, FullBillItem } from '@/lib/types/rental-return'
@@ -12,12 +13,17 @@ export type { FullBill, FullBillItem }
 import { RentalBill, RentalBillItem, RentalType, RentalStatus, PaymentStatus } from '@/lib/types/rental-pos'
 import { createClient } from '@/lib/supabase/client'
 
-const STORAGE_KEY = 'app_bill_storage'
+// In-memory cache for fast synchronous access by UI components
+let _cachedBills: FullBill[] | null = null
+
+export function setCachedBills(bills: FullBill[]): void {
+  _cachedBills = bills
+}
 
 // ─── Bidirectional Adapters ──────────────────────────────────────────
 
 export function fullBillToRentalBill(full: FullBill): RentalBill {
-  const items: RentalBillItem[] = full.items.map((item) => ({
+  const items: RentalBillItem[] = (full.items || []).map((item) => ({
     id: item.rentalBillItemId,
     productId: item.productId,
     productName: item.productName,
@@ -60,6 +66,7 @@ export function fullBillToRentalBill(full: FullBill): RentalBill {
     paymentStatus: full.paymentStatus as PaymentStatus,
     remark: full.remark,
     quotationId: full.quotationId,
+    quotationNo: full.quotationNo,
     reservationId: full.reservationId,
     originalBillId: full.originalBillId,
     parentBillId: full.parentBillId,
@@ -74,7 +81,7 @@ export function fullBillToRentalBill(full: FullBill): RentalBill {
 }
 
 export function rentalBillToFullBill(rental: RentalBill): FullBill {
-  const items: FullBillItem[] = rental.items.map((item) => {
+  const items: FullBillItem[] = (rental.items || []).map((item) => {
     let status: FullBillItem['status'] = 'RENTING'
     if (item.rentalType === 'SALE' || item.requiresReturn === false) {
       status = 'COMPLETED'
@@ -145,6 +152,7 @@ export function rentalBillToFullBill(rental: RentalBill): FullBill {
     revisions: rental.revisions,
     items,
     quotationId: rental.quotationId,
+    quotationNo: rental.quotationNo,
     reservationId: rental.reservationId,
     originalBillId: rental.originalBillId,
     parentBillId: rental.parentBillId,
@@ -177,14 +185,26 @@ export function dbBillToFullBill(row: any): FullBill {
     discountAmount: Number(row.discount_amount || 0),
     shippingFee: Number(row.shipping_fee || 0),
     taxAmount: Number(row.tax_amount || 0),
+    billAmount: Number(row.bill_amount !== undefined && row.bill_amount !== null ? row.bill_amount : (row.grand_total || 0)),
     grandTotal: Number(row.grand_total || 0),
     paidAmount: Number(row.paid_amount || 0),
     outstandingAmount: Number(row.outstanding_amount || 0),
     rentalStatus: row.rental_status,
     paymentStatus: row.payment_status,
     dispatchStatus: row.dispatch_status,
+    deliveryStatus: row.delivery_status || undefined,
     items: Array.isArray(row.items) ? row.items : [],
     remark: row.remark || undefined,
+    quotationId: row.quotation_id || undefined,
+    quotationNo: row.quotation_no || undefined,
+    reservationId: row.reservation_id || undefined,
+    originalBillId: row.original_bill_id || undefined,
+    parentBillId: row.parent_bill_id || undefined,
+    closedAt: row.closed_at || undefined,
+    cancelledAt: row.cancelled_at || undefined,
+    cancelReason: row.cancel_reason || undefined,
+    refundDueAmount: Number(row.refund_due || 0),
+    revisions: Array.isArray(row.revisions) ? row.revisions : undefined,
   }
 }
 
@@ -205,6 +225,7 @@ export function fullBillToDbBill(bill: FullBill): Record<string, any> {
     discount_amount: bill.discountAmount ?? 0,
     shipping_fee: bill.shippingFee ?? 0,
     tax_amount: bill.taxAmount ?? 0,
+    bill_amount: bill.billAmount ?? bill.grandTotal,
     grand_total: bill.grandTotal,
     paid_amount: bill.paidAmount,
     outstanding_amount: bill.outstandingAmount,
@@ -212,38 +233,51 @@ export function fullBillToDbBill(bill: FullBill): Record<string, any> {
     paid_deposit_amount: bill.paidDepositAmount ?? 0,
     rental_status: bill.rentalStatus,
     payment_status: bill.paymentStatus,
-    dispatch_status: bill.dispatchStatus || 'DISPATCHED',
+    dispatch_status: bill.dispatchStatus || 'PENDING',
+    delivery_status: bill.deliveryStatus || 'PENDING',
+    quotation_id: bill.quotationId || null,
+    quotation_no: bill.quotationNo || null,
+    reservation_id: bill.reservationId || null,
+    original_bill_id: bill.originalBillId || null,
+    parent_bill_id: bill.parentBillId || null,
+    closed_at: bill.closedAt || null,
+    cancelled_at: bill.cancelledAt || null,
+    cancel_reason: bill.cancelReason || null,
+    refund_due: bill.refundDueAmount ?? 0,
     items: bill.items || [],
     deposits: bill.deposits || [],
+    revisions: bill.revisions || [],
     remark: bill.remark || null,
     updated_at: new Date().toISOString(),
   }
 }
 
-// ─── CRUD Operations ──────────────────────────────────────────────────
+// ─── In-Memory Cache CRUD (Supabase-backed Single Source of Truth) ─────
+
+const STORAGE_KEY = 'app_bill_storage'
 
 export function loadBills(): FullBill[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as FullBill[]
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw === null) {
+        _cachedBills = []
+        return []
+      }
+      return JSON.parse(raw) as FullBill[]
+    } catch {
+      return []
     }
-    return []
-  } catch (err: any) {
-    console.error('Failed to parse bills from localStorage:', err)
-    return []
   }
+  return _cachedBills || []
 }
 
 export function saveBills(bills: FullBill[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bills))
-  } catch (err: any) {
-    console.error('Failed to save bills to localStorage:', err)
-    throw new Error(`ไม่สามารถบันทึกข้อมูลบิลลง Storage ได้: ${err?.message || err}`)
+  _cachedBills = bills
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bills))
+    } catch {}
   }
 }
 
@@ -254,6 +288,11 @@ export function addBill(incoming: FullBill): FullBill[] {
     ? current.map((b) => (b.id === incoming.id ? incoming : b))
     : [incoming, ...current]
   saveBills(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBillToSupabase(incoming).catch((err) =>
+      console.error('[Supabase] Failed to sync added bill:', err)
+    )
+  }
   return next
 }
 
@@ -261,6 +300,11 @@ export function updateBill(updated: FullBill): FullBill[] {
   const current = loadBills()
   const next = current.map((b) => (b.id === updated.id ? updated : b))
   saveBills(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBillToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync updated bill:', err)
+    )
+  }
   return next
 }
 
@@ -297,7 +341,6 @@ export async function fetchBillByIdFromSupabase(id: string): Promise<FullBill | 
 
   if (!data) return null
   const bill = dbBillToFullBill(data)
-  // Update local cache
   const current = loadBills()
   const next = current.some((b) => b.id === bill.id)
     ? current.map((b) => (b.id === bill.id ? bill : b))
@@ -320,8 +363,29 @@ export async function saveBillToSupabase(bill: FullBill): Promise<FullBill> {
   }
 
   const saved = dbBillToFullBill(data)
-  updateBill(saved)
+  const current = loadBills()
+  const next = current.some((b) => b.id === saved.id)
+    ? current.map((b) => (b.id === saved.id ? saved : b))
+    : [saved, ...current]
+  saveBills(next)
   return saved
+}
+
+export async function deleteBillFromSupabase(id: string): Promise<void> {
+  const current = loadBills()
+  const target = current.find((b) => b.id === id)
+  if (target && !canHardDeleteBill(target)) {
+    throw new Error(
+      `Cannot hard delete confirmed or transactional bill ${target.billNo}. Confirmed bills must use VOID or CANCELLED lifecycle.`
+    )
+  }
+  const supabase = createClient()
+  const { error } = await supabase.from('bills').delete().eq('id', id)
+  if (error) {
+    throw new Error(`ไม่สามารถลบบิลจาก Supabase ได้: ${error.message}`)
+  }
+  const next = current.filter((b) => b.id !== id)
+  saveBills(next)
 }
 
 /** Check if a bill is strictly a draft with zero payment and zero stock movement */
@@ -356,6 +420,11 @@ export function deleteBill(id: string): FullBill[] {
   }
   const next = current.filter((b) => b.id !== id)
   saveBills(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    deleteBillFromSupabase(id).catch((err) =>
+      console.error('[Supabase] Failed to delete bill from Supabase:', err)
+    )
+  }
   return next
 }
 

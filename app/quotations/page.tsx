@@ -26,6 +26,7 @@ import {
   updateQuotationStatus,
   confirmQuotationWorkflow,
   cancelQuotationWorkflow,
+  fetchQuotationsFromSupabase,
 } from '@/lib/quotation-storage'
 import { checkAndExpireReservations } from '@/lib/bill-workflow-service'
 import { useAutoFitPageSize } from '@/lib/hooks/useAutoFitPageSize'
@@ -116,6 +117,15 @@ export default function QuotationsPage() {
         checkAndExpireReservations()
       } catch {
         // ignore on early boot
+      }
+      try {
+        const remote = await fetchQuotationsFromSupabase()
+        if (remote && remote.length >= 0) {
+          setQuotations(remote)
+          return
+        }
+      } catch (err) {
+        console.warn('[QuotationsPage] Supabase fetch fallback to local cache:', err)
       }
       const data = loadQuotationsFromStorage()
       setQuotations(data)

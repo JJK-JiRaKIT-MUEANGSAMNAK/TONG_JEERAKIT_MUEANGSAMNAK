@@ -1,7 +1,7 @@
 /**
  * Shared Product Storage
  *
- * Single source of truth for product data, backed by localStorage.
+ * Single source of truth for product data, backed by Supabase PostgreSQL (with in-memory cache for fast read access).
  * - Seeds 43 products on first launch (no storage key found).
  * - All CRUD helpers persist changes immediately.
  * - Both /products and /pos must import from here.
@@ -238,11 +238,6 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
 export function saveProducts(products: Product[]): void {
   if (typeof window === 'undefined') return
   _cachedProducts = products
-  if (process.env.NODE_ENV === 'test') {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
-    } catch {}
-  }
 }
 
 /** Add one or more products, persists immediately, returns the new full list. */

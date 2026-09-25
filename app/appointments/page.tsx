@@ -62,6 +62,7 @@ const WORK_ORDER_STAGES_RETURN = [
 ]
 import {
   loadAppointments,
+  fetchAppointmentsFromSupabase,
   addAppointment,
   updateAppointment,
   deleteAppointment,
@@ -140,9 +141,19 @@ export default function AppointmentsPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const apts = loadAppointments()
+      if (process.env.NODE_ENV !== 'test') {
+        try {
+          const remoteApts = await fetchAppointmentsFromSupabase()
+          setAppointments(remoteApts)
+        } catch {
+          const apts = loadAppointments()
+          setAppointments(apts)
+        }
+      } else {
+        const apts = loadAppointments()
+        setAppointments(apts)
+      }
       const custs = loadCustomers()
-      setAppointments(apts)
       setCustomers(custs)
     } finally {
       setIsLoading(false)

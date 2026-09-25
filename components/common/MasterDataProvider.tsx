@@ -7,6 +7,12 @@ import { loadUnits, setCachedUnits } from '@/lib/unit-storage'
 import { loadCustomers, setCachedCustomers } from '@/lib/customer-storage'
 import { fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchUnitsFromSupabase } from '@/lib/repositories/product-repository'
 import { fetchCustomersFromSupabase } from '@/lib/repositories/customer-repository'
+import { fetchBillsFromSupabase, setCachedBills } from '@/lib/bill-storage'
+import { fetchQuotationsFromSupabase, setCachedQuotations } from '@/lib/quotation-storage'
+import { fetchAppointmentsFromSupabase, setCachedAppointments } from '@/lib/appointment-storage'
+import { fetchTransactionsFromSupabase, setCachedTransactions } from '@/lib/finance-storage'
+import { fetchReservationsFromSupabase, setCachedReservations } from '@/lib/reservation-storage'
+import { fetchBackordersFromSupabase, setCachedBackorders } from '@/lib/backorder-storage'
 import { RefreshCw } from 'lucide-react'
 import { useAuth } from '@/lib/contexts/AuthContext'
 
@@ -35,6 +41,12 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
         setCachedCategories([])
         setCachedUnits([])
         setCachedCustomers([])
+        setCachedBills([])
+        setCachedQuotations([])
+        setCachedAppointments([])
+        setCachedTransactions([])
+        setCachedReservations([])
+        setCachedBackorders([])
         setIsLoaded(true)
         return
       }
@@ -73,6 +85,16 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
 
         // Customers mapping (already done inside fetchCustomersFromSupabase)
         setCachedCustomers(customers)
+
+        // Hydrate business entities from Supabase
+        Promise.allSettled([
+          fetchBillsFromSupabase(),
+          fetchQuotationsFromSupabase(),
+          fetchAppointmentsFromSupabase(),
+          fetchTransactionsFromSupabase(),
+          fetchReservationsFromSupabase(),
+          fetchBackordersFromSupabase(),
+        ]).catch(() => {})
 
         setIsLoaded(true)
       } catch (err: any) {

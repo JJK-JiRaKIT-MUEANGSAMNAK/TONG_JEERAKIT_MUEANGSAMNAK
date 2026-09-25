@@ -17,6 +17,7 @@ import {
   saveBills,
   updateBill,
   addBill,
+  saveBillToSupabase,
   dbBillToFullBill,
   canHardDeleteBill,
   deleteBill as deleteBillFromStorage,
@@ -512,6 +513,11 @@ export function createBillWorkflow(options: CreateBillOptions): {
 
   const currentBills = loadBills()
   saveBills([finalBill, ...currentBills.filter((b) => b.id !== finalBill.id)])
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBillToSupabase(finalBill).catch((err) =>
+      console.error('[Supabase] Failed to sync created bill:', err)
+    )
+  }
 
   recordAuditLog({
     userId: actorUserId,
@@ -606,6 +612,11 @@ export function saveDraftBillWorkflow(options: SaveDraftBillOptions): {
 
   const currentBills = loadBills()
   saveBills([draftBill, ...currentBills.filter((b) => b.id !== draftBill.id)])
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveBillToSupabase(draftBill).catch((err) =>
+      console.error('[Supabase] Failed to sync draft bill:', err)
+    )
+  }
 
   recordAuditLog({
     userId: actorUserId,

@@ -51,12 +51,12 @@ export async function resolveUsernameToEmail(username: string): Promise<{
 
     const cleanUsername = await normalizeUsername(rawUsername)
 
-    // Server-side admin client queries public.profiles
+    // Registration and the profile trigger store lowercase usernames; match literally.
     const adminClient = createAdminClient()
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('id, email, username')
-      .ilike('username', cleanUsername)
+      .eq('username', cleanUsername)
       .maybeSingle()
 
     if (profileError) {

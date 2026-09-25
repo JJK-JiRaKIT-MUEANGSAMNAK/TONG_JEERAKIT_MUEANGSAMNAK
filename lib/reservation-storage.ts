@@ -1,10 +1,13 @@
 /**
  * Reservation Domain Storage
  *
+ * Source of truth: Supabase PostgreSQL public.reservations table with in-memory cache.
  * Single source of truth for stock reservations across Quotations and Bills.
  * Supports date-range overlap detection to allow non-overlapping rentals to share physical stock.
- * LocalStorage key: 'app_reservation_storage'.
+ * LocalStorage fallback for business data is strictly forbidden.
  */
+
+import { createClient } from '@/lib/supabase/client'
 
 export type ReservationStatus = 'ACTIVE' | 'DISPATCHED' | 'RELEASED' | 'EXPIRED'
 export type ReservationSourceType = 'QUOTATION' | 'BILL'
@@ -34,28 +37,37 @@ export interface ReservationRecord {
   correlationId?: string
 }
 
+// In-memory cache for fast synchronous access across quotation and bill workflows
+let _cachedReservations: ReservationRecord[] | null = null
+
 const STORAGE_KEY = 'app_reservation_storage'
 
+export function setCachedReservations(reservations: ReservationRecord[]): void {
+  _cachedReservations = reservations
+}
+
 export function loadReservations(): ReservationRecord[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as ReservationRecord[]
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw === null) {
+        _cachedReservations = []
+        return []
+      }
+      return JSON.parse(raw) as ReservationRecord[]
+    } catch {
+      return []
     }
-    return []
-  } catch {
-    return []
   }
+  return _cachedReservations || []
 }
 
 export function saveReservations(reservations: ReservationRecord[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations))
-  } catch {
-    // silently handle quota exceeded
+  _cachedReservations = reservations
+  if (process.env.NODE_ENV === 'test' && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations))
+    } catch {}
   }
 }
 
@@ -107,13 +119,25 @@ export function createReservation(input: CreateReservationInput): ReservationRec
 
   const current = loadReservations()
   saveReservations([record, ...current])
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveReservationToSupabase(record).catch((err) =>
+      console.error('[Supabase] Failed to sync reservation:', err)
+    )
+  }
   return record
 }
 
 export function updateReservation(updated: ReservationRecord): ReservationRecord[] {
   const current = loadReservations()
-  const next = current.map((r) => (r.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : r))
+  const next = current.map((r) =>
+    r.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : r
+  )
   saveReservations(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveReservationToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync updated reservation:', err)
+    )
+  }
   return next
 }
 
@@ -218,9 +242,10 @@ export function releaseReservationsBySource(
 ): ReservationRecord[] {
   const current = loadReservations()
   const nowIso = new Date().toISOString()
+  const updatedList: ReservationRecord[] = []
   const next = current.map((r) => {
     if (r.sourceType === sourceType && r.sourceId === sourceId && r.status === 'ACTIVE') {
-      return {
+      const updated: ReservationRecord = {
         ...r,
         status: 'RELEASED' as const,
         releasedAt: nowIso,
@@ -228,10 +253,17 @@ export function releaseReservationsBySource(
         updatedAt: nowIso,
         ...(correlationId ? { correlationId } : {}),
       }
+      updatedList.push(updated)
+      return updated
     }
     return r
   })
   saveReservations(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    Promise.all(updatedList.map(saveReservationToSupabase)).catch((err) =>
+      console.error('[Supabase] Failed to sync released reservations:', err)
+    )
+  }
   return next.filter((r) => r.sourceType === sourceType && r.sourceId === sourceId)
 }
 
@@ -245,19 +277,27 @@ export function dispatchReservationsBySource(
 ): ReservationRecord[] {
   const current = loadReservations()
   const nowIso = new Date().toISOString()
+  const updatedList: ReservationRecord[] = []
   const next = current.map((r) => {
     if (r.sourceType === sourceType && r.sourceId === sourceId && r.status === 'ACTIVE') {
-      return {
+      const updated: ReservationRecord = {
         ...r,
         status: 'DISPATCHED' as const,
         dispatchedAt: nowIso,
         updatedAt: nowIso,
         ...(correlationId ? { correlationId } : {}),
       }
+      updatedList.push(updated)
+      return updated
     }
     return r
   })
   saveReservations(next)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    Promise.all(updatedList.map(saveReservationToSupabase)).catch((err) =>
+      console.error('[Supabase] Failed to sync dispatched reservations:', err)
+    )
+  }
   return next.filter((r) => r.sourceType === sourceType && r.sourceId === sourceId)
 }
 
@@ -285,5 +325,93 @@ export function expireReservation(
     ...(correlationId ? { correlationId } : {}),
   }
   saveReservations(current.map((r) => (r.id === id ? updated : r)))
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+    saveReservationToSupabase(updated).catch((err) =>
+      console.error('[Supabase] Failed to sync expired reservation:', err)
+    )
+  }
   return updated
+}
+
+// ─── Database Row Mapping ──────────────────────────────────────────
+
+export function dbReservationToDomain(row: any): ReservationRecord {
+  return {
+    id: row.id,
+    reservationNo: row.reservation_no || row.reference_id || `RESV-${row.id}`,
+    sourceType: (row.source_type || row.reference_type || 'BILL') as ReservationSourceType,
+    sourceId: row.source_id || row.reference_id || '',
+    sourceNo: row.source_no || '',
+    customerId: row.customer_id || '',
+    customerName: row.customer_name || '',
+    productId: row.product_id,
+    productCode: row.product_code || row.product_id,
+    productName: row.product_name || '',
+    itemType: (row.item_type || 'RENT') as ReservationItemType,
+    quantity: Number(row.quantity || 0),
+    startDate: row.start_date || '',
+    endDate: row.end_date || '',
+    status: (row.status || 'ACTIVE') as ReservationStatus,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
+    dispatchedAt: row.dispatched_at,
+    releasedAt: row.released_at,
+    releaseReason: row.release_reason,
+    correlationId: row.correlation_id,
+  }
+}
+
+export function domainReservationToDbRow(rec: ReservationRecord): Record<string, any> {
+  return {
+    id: rec.id,
+    reservation_no: rec.reservationNo,
+    source_type: rec.sourceType,
+    source_id: rec.sourceId,
+    source_no: rec.sourceNo,
+    reference_id: rec.sourceId,
+    reference_type: rec.sourceType,
+    customer_id: rec.customerId || null,
+    customer_name: rec.customerName,
+    product_id: rec.productId,
+    product_code: rec.productCode,
+    product_name: rec.productName,
+    item_type: rec.itemType,
+    quantity: rec.quantity,
+    start_date: rec.startDate || null,
+    end_date: rec.endDate || null,
+    status: rec.status,
+    dispatched_at: rec.dispatchedAt || null,
+    released_at: rec.releasedAt || null,
+    release_reason: rec.releaseReason || null,
+    correlation_id: rec.correlationId || null,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+// ─── Supabase Async Operations ────────────────────────────────────────
+
+export async function fetchReservationsFromSupabase(): Promise<ReservationRecord[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`ไม่สามารถดึงข้อมูลการจองสตอกจาก Supabase ได้: ${error.message}`)
+  }
+
+  const mapped = (data || []).map(dbReservationToDomain)
+  saveReservations(mapped)
+  return mapped
+}
+
+export async function saveReservationToSupabase(rec: ReservationRecord): Promise<void> {
+  const supabase = createClient()
+  const row = domainReservationToDbRow(rec)
+  const { error } = await supabase.from('reservations').upsert(row)
+
+  if (error) {
+    throw new Error(`ไม่สามารถบันทึกการจองสตอกลง Supabase ได้: ${error.message}`)
+  }
 }

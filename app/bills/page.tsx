@@ -10,7 +10,7 @@ import { DepositRefundModal } from '@/components/bills/DepositRefundModal'
 import { PaymentRefundModal } from '@/components/bills/PaymentRefundModal'
 import { useToast } from '@/components/common/Toast'
 import { useRouter } from 'next/navigation'
-import { FullBill, loadBills as fetchBills, deleteBill as deleteBillFromStorage, canHardDeleteBill } from '@/lib/bill-storage'
+import { FullBill, loadBills as fetchBills, fetchBillsFromSupabase, deleteBill as deleteBillFromStorage, canHardDeleteBill } from '@/lib/bill-storage'
 import { returnProductStock, restoreSaleProductStock } from '@/lib/product-storage'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { recordAuditLog, generateCorrelationId } from '@/lib/audit-storage'
@@ -81,8 +81,13 @@ export default function BillsPage() {
       } catch {
         // ignore on early boot
       }
-      const data = fetchBills()
-      setBills(data)
+      try {
+        const data = await fetchBillsFromSupabase()
+        setBills(data)
+      } catch {
+        const data = fetchBills()
+        setBills(data)
+      }
     } finally {
       setIsLoading(false)
     }

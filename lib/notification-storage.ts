@@ -2,8 +2,7 @@
  * Actionable Notification Domain Storage
  *
  * Stores actionable alerts such as Backorder Ready notifications when stock increases.
- * Adheres strictly to the invariant: NO auto-allocation without user confirmation.
- * LocalStorage key: 'app_actionable_notifications'.
+ * In-memory notification state synchronized during application session.
  */
 
 import { getPendingBackordersForProduct, updateBackorder } from '@/lib/backorder-storage'
@@ -42,29 +41,18 @@ export interface ActionableNotification {
   correlationId?: string
 }
 
-const STORAGE_KEY = 'app_actionable_notifications'
+let _cachedNotifications: ActionableNotification[] | null = null
+
+export function setCachedNotifications(notifications: ActionableNotification[]): void {
+  _cachedNotifications = notifications
+}
 
 export function loadNotifications(): ActionableNotification[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw !== null) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as ActionableNotification[]
-    }
-    return []
-  } catch {
-    return []
-  }
+  return _cachedNotifications || []
 }
 
 export function saveNotifications(notifications: ActionableNotification[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications))
-  } catch {
-    // silently handle quota exceeded
-  }
+  _cachedNotifications = notifications
 }
 
 export interface CreateNotificationInput {
