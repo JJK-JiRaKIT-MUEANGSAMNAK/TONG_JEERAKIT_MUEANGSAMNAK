@@ -123,24 +123,16 @@ export default function AppointmentsPage() {
 
   // Work Order Dispatch Modal State (สั่งงาน)
   const [orderApt, setOrderApt] = useState<Appointment | null>(null)
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
-
-  // Mock Employees
-  const MOCK_EMPLOYEES = [
-    { id: 'emp-1', name: 'นายช่าง 1 (เอก)' },
-    { id: 'emp-2', name: 'นายช่าง 2 (ชัย)' },
-    { id: 'emp-3', name: 'พนักงานขับรถ 1' }
-  ]
 
   // Work Order Timeline Modal State (สถานะงาน)
   const [timelineApt, setTimelineApt] = useState<Appointment | null>(null)
 
-  // UI-only Bill action handler
+  // UI-only Bill action handler (ยังไม่เชื่อมต่อ POS)
   const handleBillClick = (apt: Appointment) => {
     if (apt.billId || apt.billNo) {
-      showToast('สถานะบิล (UI)', `บิลเลขที่ ${apt.billNo || apt.billId}`, 'INFO')
+      showToast('สถานะบิล (UI Only)', `บิลเลขที่ ${apt.billNo || apt.billId} (ยังไม่เชื่อม POS)`, 'INFO')
     } else {
-      showToast('สร้างบิล (UI)', `งาน "${apt.title}" ยังไม่มีบิลเชื่อมโยง (รอบนี้เป็น UI only)`, 'INFO')
+      showToast('สร้างบิล (UI Only)', 'ยังไม่เชื่อม POS (ยังไม่มีการสร้างบิลจริง)', 'INFO')
     }
   }
 
@@ -899,12 +891,15 @@ export default function AppointmentsPage() {
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   พนักงานผู้รับผิดชอบ
                 </label>
-                <CustomSelect
-                  value={selectedEmployeeId}
-                  onChange={setSelectedEmployeeId}
-                  options={MOCK_EMPLOYEES.map(e => ({ value: e.id, label: e.name }))}
-                  placeholder="เลือกพนักงาน..."
-                />
+                {orderApt.assigneeName ? (
+                  <div className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 font-medium">
+                    {orderApt.assigneeName} {orderApt.assigneeId ? `(${orderApt.assigneeId})` : ''}
+                  </div>
+                ) : (
+                  <div className="px-3.5 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-900 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                    ยังไม่มีข้อมูลพนักงาน
+                  </div>
+                )}
               </div>
 
               {/* Channel / LINE Field */}
@@ -914,11 +909,11 @@ export default function AppointmentsPage() {
                 </label>
                 <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
                     <span className="font-semibold text-slate-700 dark:text-slate-300">LINE Notify / OA</span>
                   </div>
                   <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-                    เตรียมส่งงาน (UI Only)
+                    LINE ยังไม่เชื่อม
                   </span>
                 </div>
               </div>
@@ -933,19 +928,16 @@ export default function AppointmentsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!selectedEmployeeId) {
-                    showToast('กรุณาเลือกพนักงาน', '', 'ERROR')
-                    return
-                  }
-                  showToast('สั่งงานสำเร็จ (UI Only)', `ส่งงาน "${orderApt.title}" ให้พนักงานแล้ว`, 'SUCCESS')
-                  setOrderApt(null)
-                }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer border border-emerald-700 shadow-sm flex items-center gap-2"
-                title="สั่งงานผ่าน LINE"
+                disabled
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700 flex items-center gap-2"
+                title={
+                  !orderApt.assigneeId && !orderApt.assigneeName
+                    ? 'ยังไม่มีข้อมูลพนักงาน'
+                    : 'LINE ยังไม่เชื่อม'
+                }
               >
                 <Send className="w-3.5 h-3.5" />
-                สั่งงาน
+                สั่งงาน ({!orderApt.assigneeId && !orderApt.assigneeName ? 'ยังไม่มีข้อมูลพนักงาน' : 'LINE ยังไม่เชื่อม'})
               </button>
             </AppModalFooter>
           </>
@@ -1002,26 +994,135 @@ export default function AppointmentsPage() {
                   ขั้นตอนงาน (Work Order Stages)
                 </p>
                 <div className="relative pl-7 space-y-2 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
-                  {(timelineApt.type === 'RETURN' ? WORK_ORDER_STAGES_RETURN : WORK_ORDER_STAGES_DELIVERY).map((stage, idx) => (
-                    <div key={stage.key} className="relative flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                      <span className="absolute -left-7 flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-xs">
-                        {idx + 1}
-                      </span>
-                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                        {stage.label}
-                      </span>
-                      <span className="text-[11px] text-slate-400 italic">
-                        ยังไม่มีข้อมูล
-                      </span>
-                    </div>
-                  ))}
+                  {(timelineApt.type === 'RETURN' ? WORK_ORDER_STAGES_RETURN : WORK_ORDER_STAGES_DELIVERY).map((stage, idx) => {
+                    const matchedEvent = timelineApt.events?.find(
+                      (e) => e.stage.toUpperCase() === stage.key.toUpperCase()
+                    )
+                    const isDone = matchedEvent?.status === 'DONE'
+
+                    if (!matchedEvent) {
+                      return (
+                        <div
+                          key={stage.key}
+                          data-stage-key={stage.key}
+                          className="relative flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800"
+                        >
+                          <span className="absolute -left-7 flex items-center justify-center w-5 h-5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-xs">
+                            {idx + 1}
+                          </span>
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                            {stage.label}
+                          </span>
+                          <span className="text-[11px] text-slate-400 italic">
+                            ยังไม่มีข้อมูล
+                          </span>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div
+                        key={stage.key}
+                        data-stage-key={stage.key}
+                        className={`relative p-2.5 rounded-xl border ${
+                          isDone
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
+                        }`}
+                      >
+                        <span
+                          className={`absolute -left-7 flex items-center justify-center w-5 h-5 rounded-full border text-[10px] font-bold shadow-xs ${
+                            isDone
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600'
+                          }`}
+                        >
+                          {isDone ? '✓' : idx + 1}
+                        </span>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                            {stage.label}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isDone
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                                : matchedEvent.status === 'SKIPPED'
+                                ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                            }`}
+                          >
+                            {isDone
+                              ? 'เสร็จสิ้น'
+                              : matchedEvent.status === 'SKIPPED'
+                              ? 'ข้าม'
+                              : 'กำลังดำเนินการ'}
+                          </span>
+                        </div>
+
+                        {/* Event Details: ผู้ดำเนินการ / เวลา / หมายเหตุ / รูป / จำนวนจริง / ปัญหา */}
+                        <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-[11px] space-y-1 text-slate-600 dark:text-slate-300">
+                          {matchedEvent.by && (
+                            <p>
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">ผู้ดำเนินการ:</span>{' '}
+                              {matchedEvent.by}
+                            </p>
+                          )}
+                          {matchedEvent.timestamp && (
+                            <p>
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">เวลา:</span>{' '}
+                              {matchedEvent.timestamp}
+                            </p>
+                          )}
+                          {matchedEvent.actualQuantity !== undefined && (
+                            <p>
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">จำนวนจริง:</span>{' '}
+                              {matchedEvent.actualQuantity}
+                            </p>
+                          )}
+                          {matchedEvent.note && (
+                            <p>
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">หมายเหตุ:</span>{' '}
+                              {matchedEvent.note}
+                            </p>
+                          )}
+                          {matchedEvent.issues && (
+                            <p className="text-red-600 dark:text-red-400 font-medium">
+                              <span className="font-semibold">ปัญหา:</span> {matchedEvent.issues}
+                            </p>
+                          )}
+                          {matchedEvent.images && matchedEvent.images.length > 0 && (
+                            <div className="pt-1">
+                              <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                รูปภาพ ({matchedEvent.images.length} รูป):
+                              </span>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {matchedEvent.images.map((imgUrl, imgIdx) => (
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    key={imgIdx}
+                                    src={imgUrl}
+                                    alt={`event-img-${imgIdx}`}
+                                    className="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Note */}
-              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
-                ⚠️ ยังไม่มีการบันทึก Work Order Event รายขั้นตอนจริง ข้อมูลด้านบนแสดงตามโครงสร้าง MASTER ขั้นตอนงาน (UI Only)
-              </div>
+              {/* Status Note */}
+              {(!timelineApt.events || timelineApt.events.length === 0) && (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
+                  ⚠️ นัดหมายนี้ยังไม่มีการบันทึก Work Order Event รายขั้นตอน
+                </div>
+              )}
             </AppModalBody>
             <AppModalFooter>
               <button
