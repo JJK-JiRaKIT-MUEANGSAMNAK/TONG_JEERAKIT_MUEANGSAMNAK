@@ -96,4 +96,59 @@ describe('Security Migrations Static Analysis', () => {
     expect(m7).toMatch(/GRANT EXECUTE ON FUNCTION public\.process_split_payment_rpc\(TEXT, TEXT, TEXT, JSONB, TIMESTAMPTZ, TEXT, TEXT, TEXT\) TO authenticated, service_role;/i);
     expect(m7).toMatch(/process_split_payment_rpc_secure/i);
   });
+
+  describe('CUSTOMERS MIGRATION SAFETY', () => {
+    const getCustomerMigration = () => {
+      const fullPath = path.join(__dirname, '../supabase/migrations', '20260925000001_customer_runtime_alignment.sql');
+      return fs.readFileSync(fullPath, 'utf8');
+    };
+
+    it('ใช้ ADD COLUMN IF NOT EXISTS ทุกครั้ง', () => {
+      const m = getCustomerMigration();
+      const addColumnLines = m.split('\n').filter(l => l.includes('ADD COLUMN'));
+      expect(addColumnLines.length).toBeGreaterThan(0);
+      for (const line of addColumnLines) {
+        expect(line).toMatch(/ADD COLUMN IF NOT EXISTS/i);
+      }
+    });
+
+    it('ฟิลด์ครบ 15 ฟิลด์ (customer_type, status, ฯลฯ)', () => {
+      const m = getCustomerMigration();
+      expect(m).toMatch(/customer_type TEXT/i);
+      expect(m).toMatch(/status TEXT NOT NULL DEFAULT 'ACTIVE'/i);
+      expect(m).toMatch(/phone2 TEXT/i);
+      expect(m).toMatch(/line_id TEXT/i);
+      expect(m).toMatch(/house_no TEXT/i);
+      expect(m).toMatch(/moo TEXT/i);
+      expect(m).toMatch(/soi TEXT/i);
+      expect(m).toMatch(/road TEXT/i);
+      expect(m).toMatch(/sub_district TEXT/i);
+      expect(m).toMatch(/district TEXT/i);
+      expect(m).toMatch(/province TEXT/i);
+      expect(m).toMatch(/postal_code TEXT/i);
+      expect(m).toMatch(/id_card_image_url TEXT/i);
+      expect(m).toMatch(/is_suspended BOOLEAN NOT NULL DEFAULT false/i);
+      expect(m).toMatch(/note TEXT/i);
+    });
+
+    it('ไม่มี DROP TABLE', () => {
+      const m = getCustomerMigration();
+      expect(m).not.toMatch(/DROP TABLE/i);
+    });
+
+    it('ไม่มี DROP COLUMN', () => {
+      const m = getCustomerMigration();
+      expect(m).not.toMatch(/DROP COLUMN/i);
+    });
+
+    it('ไม่มี DELETE FROM', () => {
+      const m = getCustomerMigration();
+      expect(m).not.toMatch(/DELETE FROM/i);
+    });
+
+    it('ไม่มี TRUNCATE', () => {
+      const m = getCustomerMigration();
+      expect(m).not.toMatch(/TRUNCATE/i);
+    });
+  });
 });
